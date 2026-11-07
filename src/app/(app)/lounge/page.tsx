@@ -50,8 +50,8 @@ export default async function LoungePage(props: PageProps<"/lounge">) {
               {t("{country} 라운지", { country })}
             </p>
             <h1 className="mt-2 font-culture text-3xl leading-tight md:text-[42px]">{culture.greet}</h1>
-            <p className="mt-2 text-sm opacity-90">{t("{country} 이웃만 볼 수 있는 공간이에요. 우리말로 편하게 이야기해요.", { country })}</p>
-            <p className="mt-3 flex flex-wrap items-center gap-3 text-xs opacity-85">
+            <p className="mt-2 text-sm opacity-90 [text-shadow:0_1px_6px_rgb(0_0_0/.4)]">{t("{country} 이웃만 볼 수 있는 공간이에요. 우리말로 편하게 이야기해요.", { country })}</p>
+            <p className="mt-3 flex flex-wrap items-center gap-3 text-xs opacity-85 [text-shadow:0_1px_6px_rgb(0_0_0/.4)]">
               <span className="inline-flex items-center gap-1">
                 <Icon name="users" size={14} />
                 {t("이웃 {n}명", { n: neighbors })}

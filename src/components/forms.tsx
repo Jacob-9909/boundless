@@ -353,7 +353,7 @@ export function NationalityForm({ current, countries }: { current: string; count
             </option>
           ))}
         </select>
-        <button disabled={pending} className={btn}>
+        <button disabled={pending} className={btnGhost}>
           {t("저장")}
         </button>
       </div>

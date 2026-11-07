@@ -55,7 +55,7 @@ export default async function AdminPage() {
   ]);
 
   return (
-    <div className="mx-auto max-w-3xl pb-6">
+    <div className="mx-auto max-w-3xl lg:ml-2 pb-6">
       <PageHead line="OPS · QUEUE" title={t("운영 큐")} desc={t("접수된 신고와 재심 요청을 오래된 순서로 보여 줘요.")} />
       {readOnly && (
         <p role="status" className="mx-4 mt-4 rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-900">

@@ -73,7 +73,7 @@ export default async function PolicyPage() {
     },
   ];
   return (
-    <div className="mx-auto max-w-3xl pb-8">
+    <div className="mx-auto max-w-3xl lg:ml-2 pb-8">
       <PageHead line="RULES · POLICY" title={t("운영 정책")} desc={t("가입할 때 동의하는 규칙이에요. 공개 정보, 신고와 재심, 탈퇴 후 데이터를 한곳에 모았어요.")} />
       <nav aria-label={t("운영 정책")} className="flex flex-wrap gap-1.5 px-4 pt-4">
         {sections.map((s) => (

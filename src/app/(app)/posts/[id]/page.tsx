@@ -22,7 +22,7 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
   // Country lounges are private to members of that nationality.
   if (post.space !== "global" && post.space !== user?.nationality) {
     return (
-      <div className="mx-auto max-w-3xl p-4 md:pt-8">
+      <div className="mx-auto max-w-3xl lg:ml-2 p-4 md:pt-8">
         <Notice label={t("접근 제한")} title={t("{country} 이웃만 볼 수 있는 라운지 글이에요", { country: countryName(post.space, lang) })}>
           <Link href="/feed" className="font-bold text-primary underline">
             {t("피드로 돌아가기")}

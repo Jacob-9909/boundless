@@ -17,7 +17,7 @@ export default async function EditPage(props: PageProps<"/posts/[id]/edit">) {
   if (!post || !post.mine) notFound();
   const lounge = post.space !== "global";
   return (
-    <div className="mx-auto max-w-3xl pb-6">
+    <div className="mx-auto max-w-3xl lg:ml-2 pb-6">
       <BackLink href={`/posts/${post.id}`} label={t("뒤로")} />
       <WriteForm
         action={updatePost.bind(null, post.id)}

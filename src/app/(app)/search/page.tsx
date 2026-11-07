@@ -27,7 +27,7 @@ export default async function SearchPage(props: PageProps<"/search">) {
   if (query) track("search", user?.id ?? null);
 
   return (
-    <div className="mx-auto max-w-3xl pb-6">
+    <div className="mx-auto max-w-3xl lg:ml-2 pb-6">
       <PageHead line="LINE 02 · SEARCH" title={t("검색")} desc={t("글 원문과, 한 번이라도 번역된 글의 번역문에서 찾아요.")} />
       <form className="space-y-3 px-4 py-4" role="search">
         {from && (

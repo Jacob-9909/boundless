@@ -3,7 +3,7 @@ import { LangMenu } from "@/components/LangMenu";
 import { deleteAccount, setReadLang, setRegion, signOut, unblockAll } from "@/app/actions";
 import { NationalityForm } from "@/components/forms";
 import { Icon } from "@/components/Icon";
-import { PageHead, btn, field } from "@/components/ui";
+import { PageHead, btn, btnGhost, field } from "@/components/ui";
 import { canViewQueue, getT, getUser } from "@/lib/auth";
 import { q } from "@/lib/db";
 import { langName, READ_LANGS, REGIONS, REPORT_REASONS, sortedCountries, timeAgo } from "@/lib/i18n";
@@ -28,14 +28,14 @@ export default async function SettingsPage() {
   const status: Record<string, string> = { received: t("접수됨"), actioned: t("조치 완료"), dismissed: t("문제 없음으로 종료") };
 
   return (
-    <div className="mx-auto max-w-3xl pb-6">
+    <div className="mx-auto max-w-3xl lg:ml-2 pb-6">
       <PageHead line="LINE 05 · SETTINGS" title={t("설정")} />
       <div className="space-y-6 px-4 py-4">
         <section>
           <h2 className="font-display text-lg font-extrabold">{t("환경 설정")}</h2>
           <div className="mt-1 border-l-4 border-primary/30 pl-3">
             <div className={row}>
-              <span className="font-bold text-primary">{t("화면 언어")}</span>
+              <span className="font-bold">{t("화면 언어")}</span>
               <LangMenu lang={lang} label={t("화면 언어 바꾸기")} note={t("한국어와 영어 밖의 언어는 기계 번역이라 어색한 문장이 있을 수 있어요. 검수하고 있어요.")} compact />
             </div>
             <details className="border-b border-ink/10 py-3">
@@ -74,7 +74,7 @@ export default async function SettingsPage() {
                         </option>
                       ))}
                     </select>
-                    <button className={btn}>{t("저장")}</button>
+                    <button className={btnGhost}>{t("저장")}</button>
                   </div>
                   <p className="text-xs opacity-70">{t("글쓰기 기본 지역이 되고, 피드에서 우리 지역 글을 바로 볼 수 있어요. 공개되지 않아요.")}</p>
                 </form>
@@ -94,7 +94,7 @@ export default async function SettingsPage() {
                         </option>
                       ))}
                     </select>
-                    <button className={btn}>{t("저장")}</button>
+                    <button className={btnGhost}>{t("저장")}</button>
                   </div>
                   <p className="text-xs opacity-70">{t("글과 댓글의 번역 버튼이 이 언어로 번역해요.")}</p>
                 </form>

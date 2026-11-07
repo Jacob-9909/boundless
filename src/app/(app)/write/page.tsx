@@ -23,7 +23,7 @@ export default async function WritePage(props: PageProps<"/write">) {
   // Step 1: pick where the post goes.
   if (!lounge && !isBoard(boardId)) {
     return (
-      <div className="mx-auto max-w-4xl pb-6">
+      <div className="mx-auto max-w-4xl lg:ml-2 pb-6">
         <BackLink href="/feed" label={t("뒤로")} />
         <PageHead line="WRITE · STEP 1" title={t("어디에 올릴까요?")} desc={t("이야기에 맞는 게시판을 고르면 말머리와 쓰는 방법을 안내해 드려요.")} />
         <div className="space-y-6 px-4 py-5">
@@ -83,7 +83,7 @@ export default async function WritePage(props: PageProps<"/write">) {
     lang: POST_LANGS.includes(guess) ? guess : "en",
   };
   return (
-    <div className="mx-auto max-w-3xl pb-6">
+    <div className="mx-auto max-w-3xl lg:ml-2 pb-6">
       <BackLink href={lounge ? "/lounge" : `/b/${board.id}`} label={t("뒤로")} />
       <WriteForm
         action={createPost}

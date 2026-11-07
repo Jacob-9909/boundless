@@ -17,10 +17,10 @@ export default async function MePage(props: PageProps<"/me">) {
   if (fresh.length) await q("UPDATE boundless.users SET seen_at = now() WHERE id = $1", [user.id]);
 
   const tabCls = (on: boolean) =>
-    `flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl text-sm font-bold transition ${on ? "bg-primary text-paper shadow-sm" : "text-ink/70"}`;
+    `flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl text-sm font-bold transition ${on ? "bg-white text-ink shadow-sm" : "text-ink/75 hover:text-ink"}`;
 
   return (
-    <div className="mx-auto max-w-3xl pb-6">
+    <div className="mx-auto max-w-3xl lg:ml-2 pb-6">
       <PageHead line="LINE 04 · MY POSTS" title={t("내 글")} desc={t("나만 볼 수 있는 목록이에요. 글을 열어 답변을 확인하세요.")} />
       <div className="space-y-4 px-4 py-4">
         {fresh.length > 0 && (
@@ -46,7 +46,7 @@ export default async function MePage(props: PageProps<"/me">) {
           </section>
         )}
 
-        <div className="flex gap-1 rounded-2xl bg-soft/70 p-1">
+        <div className="flex gap-1 rounded-2xl bg-ink/[.06] p-1">
           <Link href="/me" className={tabCls(tab === "mine")} aria-current={tab === "mine" ? "page" : undefined}>
             {t("내가 쓴 글")}
           </Link>

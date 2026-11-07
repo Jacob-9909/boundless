@@ -6,7 +6,7 @@ import { AccountSwitcher } from "@/components/Community";
 import { Icon } from "@/components/Icon";
 import { LangMenu } from "@/components/LangMenu";
 import { SideNav, type NavItem } from "@/components/SideNav";
-import { Avatar, Flag, Landmark, LevelBadge, Logo, btn } from "@/components/ui";
+import { Avatar, Flag, LevelBadge, Logo, btn } from "@/components/ui";
 import { canViewQueue, demoEnabled, getT, getUser } from "@/lib/auth";
 import { BOARDS, GROUPS } from "@/lib/boards";
 import { cultureOf, DEFAULT_CULTURE, themeVars } from "@/lib/cultures";
@@ -44,7 +44,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
       <div className="mx-auto flex max-w-[1360px]">
         {/* Desktop sidebar */}
         <div className="sticky top-0 hidden h-screen w-[264px] shrink-0 flex-col border-r border-ink/[.07] bg-white/75 backdrop-blur lg:flex">
-          <div className="flex-1 space-y-5 overflow-y-auto px-4 pt-5 pb-4">
+          <div className="flex-1 space-y-5 overflow-y-auto px-4 pt-5 pb-8 [mask-image:linear-gradient(to_bottom,black_calc(100%-40px),transparent)]">
             <Link href="/?intro=1" className="block px-2 text-ink" aria-label="Boundless">
               <Logo />
             </Link>
@@ -82,10 +82,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           <div className="space-y-2 border-t border-ink/[.07] p-3">
             {user ? (
               <div className="overflow-hidden rounded-2xl border border-ink/[.07] bg-white">
-                <div className="relative h-14 overflow-hidden bg-primary">
-                  <span className="bg-pattern absolute inset-0 opacity-40" aria-hidden="true" />
-                  <Landmark culture={culture} className="absolute right-0 bottom-0 h-12 w-auto opacity-90" />
-                </div>
+                <div className="bg-pattern h-1.5 bg-primary bg-[length:auto_24px]" aria-hidden="true" />
                 <div className="flex items-center gap-2.5 px-3 py-2.5">
                   <Avatar code={user.nationality} size={36} />
                   <div className="min-w-0">

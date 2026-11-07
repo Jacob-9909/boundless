@@ -43,7 +43,7 @@ export default async function Home(props: PageProps<"/feed">) {
                   {country}
                 </p>
                 <h1 className="mt-1.5 font-culture text-4xl leading-tight text-balance md:text-5xl">{t("{hello}, 이웃님", { hello: culture.hello })}</h1>
-                <p className="mt-2 text-sm opacity-90 md:text-[15px]">
+                <p className="mt-2 text-sm opacity-90 [text-shadow:0_1px_6px_rgb(0_0_0/.4)] md:text-[15px]">
                   {t("오늘 새 글 {today}개 · 답변을 기다리는 질문 {waiting}개", { today: stats.today, waiting: stats.waiting })}
                 </p>
               </>
@@ -81,11 +81,11 @@ export default async function Home(props: PageProps<"/feed">) {
               {t("전체 보기")}
             </Link>
           </div>
-          <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
+          <ul className="-mx-4 flex snap-x scroll-px-4 gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-4 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-6">
             {BOARDS.map((b) => {
               const c = counts.find((x) => x.topic === b.id);
               return (
-                <li key={b.id}>
+                <li key={b.id} className="w-[104px] shrink-0 snap-start sm:w-auto">
                   <Link href={`/b/${b.id}`} className={`${card} flex h-full flex-col items-start gap-2 p-3 transition hover:-translate-y-0.5 hover:shadow-md`}>
                     <span className="flex size-9 items-center justify-center rounded-xl text-white" style={{ background: b.color }}>
                       <Icon name={b.icon} size={18} />
