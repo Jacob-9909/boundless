@@ -1,12 +1,11 @@
 import Link from "next/link";
-import type { CSSProperties } from "react";
-import { RightRail } from "@/components/Community";
+import { WithRail } from "@/components/Community";
 import { FeedList, ListControls, listHref, parseSort } from "@/components/Feed";
 import { Icon } from "@/components/Icon";
 import { Avatar, Flag, Landmark, TagText, card } from "@/components/ui";
 import { getT, getUser } from "@/lib/auth";
 import { BOARDS } from "@/lib/boards";
-import { cultureOf, DEFAULT_CULTURE, themeVars } from "@/lib/cultures";
+import { cultureOf, DEFAULT_CULTURE } from "@/lib/cultures";
 import { countryName, timeAgo } from "@/lib/i18n";
 import { boardCounts, communityStats, listPosts } from "@/lib/posts";
 
@@ -28,10 +27,10 @@ export default async function Home(props: PageProps<"/feed">) {
   const country = user ? countryName(user.nationality, lang) : "";
 
   return (
-    <div className="grid gap-6 px-4 py-4 md:px-6 md:py-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+    <WithRail viewer={viewer} lang={lang} t={t}>
       <div className="min-w-0 space-y-5">
         {/* Welcome: in the member's language, on their culture's pattern and landmark */}
-        <section style={themeVars(culture) as CSSProperties} className="relative overflow-hidden rounded-3xl bg-primary p-6 text-paper md:p-8">
+        <section className="relative overflow-hidden rounded-3xl bg-primary p-6 text-paper md:p-8">
           <span className="bg-pattern absolute inset-0 opacity-30" aria-hidden="true" />
           <span className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/20 to-transparent" aria-hidden="true" />
           <Landmark culture={culture} className="absolute right-0 bottom-0 h-28 w-auto opacity-90 md:h-40" />
@@ -101,7 +100,7 @@ export default async function Home(props: PageProps<"/feed">) {
 
         {/* My country's lounge */}
         {user && (
-          <section style={themeVars(culture) as CSSProperties} className={`${card} overflow-hidden`}>
+          <section className={`${card} overflow-hidden`}>
             <div className="flex items-center gap-3 border-b border-ink/[.06] px-4 py-3">
               <Flag code={user.nationality} h={16} />
               <p className="flex-1 font-bold">{t("{country} 라운지", { country })}</p>
@@ -153,12 +152,6 @@ export default async function Home(props: PageProps<"/feed">) {
           />
         </section>
       </div>
-
-      <aside className="hidden xl:block">
-        <div className="sticky top-6">
-          <RightRail viewer={viewer} lang={lang} t={t} />
-        </div>
-      </aside>
-    </div>
+    </WithRail>
   );
 }

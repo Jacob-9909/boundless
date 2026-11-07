@@ -1,6 +1,7 @@
 // Culture themes. The login screen re-skins itself with the chosen culture,
 // and a signed-in member's own culture tints the app chrome.
 // Countries without a theme fall back to the neutral "Boundless" route-map theme.
+import type { CSSProperties } from "react";
 import { landmarkSvg } from "./landmarks";
 
 export type Palette = { primary: string; accent: string; ink: string; paper: string; soft: string; extra: string };
@@ -369,16 +370,22 @@ export function cultureFromLanguages(langs: readonly string[]): Culture | null {
   return null;
 }
 
-export function landmarkMarkup(c: Culture) {
-  return landmarkSvg(c.code, c.c);
-}
+// Both are pure per culture and rendered for every avatar and banner, so build them once.
+const once = <V,>(build: (c: Culture) => V) => {
+  const memo = new Map<string, V>();
+  return (c: Culture) => {
+    let v = memo.get(c.code);
+    if (v === undefined) memo.set(c.code, (v = build(c)));
+    return v;
+  };
+};
 
-export function patternUrl(c: Culture) {
-  return `url("data:image/svg+xml,${encodeURIComponent(c.pattern(c.c))}")`;
-}
+export const landmarkMarkup = once((c) => landmarkSvg(c.code, c.c));
+
+export const patternUrl = once((c) => `url("data:image/svg+xml,${encodeURIComponent(c.pattern(c.c))}")`);
 
 /** CSS custom properties for a culture, for a style attribute. */
-export function themeVars(c: Culture): Record<string, string> {
+export function themeVars(c: Culture): CSSProperties {
   return {
     "--c-primary": c.c.primary,
     "--c-accent": c.c.accent,
@@ -388,5 +395,5 @@ export function themeVars(c: Culture): Record<string, string> {
     "--c-extra": c.c.extra,
     "--c-pattern": patternUrl(c),
     "--c-font": `var(${c.font})`,
-  };
+  } as CSSProperties;
 }

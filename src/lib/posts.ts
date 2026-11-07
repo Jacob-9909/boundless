@@ -1,5 +1,5 @@
 import { ASKING_TAGS } from "@/lib/boards";
-import { q } from "@/lib/db";
+import { isId, q } from "@/lib/db";
 
 export type PostRow = {
   id: string;
@@ -44,8 +44,12 @@ export type CommentRow = {
   appeal: string | null; // received | restored | upheld, when the author asked for a second look
 };
 
-const POINTS = (alias: string) => `(SELECT mp.posts + 2 * mp.answers + 3 * mp.helped FROM boundless.member_points mp WHERE mp.user_id = ${alias})`;
+// Member points: post 1, answer on someone else's post 2, helpful vote received 3.
+const SCORE = (t = "") => `${t}posts + 2 * ${t}answers + 3 * ${t}helped`;
+const POINTS = (alias: string) => `(SELECT ${SCORE("mp.")} FROM boundless.member_points mp WHERE mp.user_id = ${alias})`;
 const ASKS = `p.kind = ANY('{${ASKING_TAGS.join(",")}}')`;
+// A question still waiting: not solved and no visible reply yet.
+const WAITING = `${ASKS} AND NOT p.solved AND NOT EXISTS (SELECT 1 FROM boundless.comments c WHERE c.post_id = p.id AND NOT c.hidden)`;
 
 // $1 is always the viewer's user id (or NULL for visitors).
 const POST_COLS = `p.id, p.topic, p.kind, p.space, p.lang, p.region, p.title, p.body, p.price, p.deal, p.place,
@@ -105,7 +109,7 @@ export function listPosts(
     );
   if (opts.nationality) add("u.nationality = ?", opts.nationality);
   if (opts.region) add("p.region = ?", opts.region);
-  if (opts.waiting) where.push(`${ASKS} AND NOT p.solved AND NOT EXISTS (SELECT 1 FROM boundless.comments c WHERE c.post_id = p.id AND NOT c.hidden)`);
+  if (opts.waiting) where.push(WAITING);
   // Cursor for "load more": created_at of the last post on the previous page.
   if (opts.before && !Number.isNaN(Date.parse(opts.before))) add("p.created_at < ?::timestamptz", opts.before);
   params.push(opts.limit ?? PAGE);
@@ -113,13 +117,14 @@ export function listPosts(
   return q<PostRow>(`SELECT ${POST_COLS} ${FROM} WHERE ${where.join(" AND ")} ORDER BY ${order} LIMIT $${params.length}`, params);
 }
 
-/** "HOT" board: most-liked public posts of the last week. */
+/** "HOT" board: most-liked public posts of the last week (the rail shows title and likes only). */
 export function hotPosts(viewer: string | null) {
   // ponytail: threshold of 2 likes suits a small community; raise it as traffic grows.
-  return q<PostRow>(
-    `SELECT * FROM (SELECT ${POST_COLS} ${FROM}
-       WHERE NOT p.hidden AND p.space = 'global' AND ${NOT_BLOCKED("p.user_id")} AND p.created_at > now() - interval '7 days') x
-     WHERE likes >= 2 ORDER BY likes DESC, created_at DESC LIMIT 4`,
+  return q<{ id: string; title: string; likes: number }>(
+    `SELECT p.id, p.title, l.likes FROM boundless.posts p
+     CROSS JOIN LATERAL (SELECT count(*)::int AS likes FROM boundless.post_likes pl WHERE pl.post_id = p.id) l
+     WHERE NOT p.hidden AND p.space = 'global' AND ${NOT_BLOCKED("p.user_id")} AND p.created_at > now() - interval '7 days' AND l.likes >= 2
+     ORDER BY l.likes DESC, p.created_at DESC LIMIT 4`,
     [viewer]
   );
 }
@@ -137,7 +142,7 @@ export function savedPosts(viewer: string) {
 }
 
 export async function getPost(viewer: string | null, id: string) {
-  if (!/^\d{1,18}$/.test(id)) return null;
+  if (!isId(id)) return null;
   const rows = await q<PostRow & { blocked: boolean; appeal: string | null }>(
     `SELECT ${POST_COLS}, (${NOT_BLOCKED("p.user_id")}) IS FALSE AS blocked,
        (SELECT a.status FROM boundless.appeals a WHERE a.post_id = p.id) AS appeal ${FROM} WHERE p.id = $2`,
@@ -159,26 +164,22 @@ export function getComments(viewer: string | null, postId: string) {
   );
 }
 
+// Replies by others ($1 = me) on my posts or under my comments, newer than $2.
+const REPLIES = `FROM boundless.comments c JOIN boundless.posts p ON p.id = c.post_id
+     LEFT JOIN boundless.comments parent ON parent.id = c.parent_id
+     WHERE c.user_id <> $1 AND NOT c.hidden AND c.created_at > $2 AND (p.user_id = $1 OR parent.user_id = $1)`;
+
 /** Replies by others on my posts or under my comments, newer than `since`. */
 export function newReplies(viewer: string, since: Date) {
   return q<{ id: string; post_id: string; title: string; body: string; anon_no: number; created_at: Date }>(
-    `SELECT c.id, c.post_id, p.title, left(c.body, 120) AS body, c.anon_no, c.created_at
-     FROM boundless.comments c JOIN boundless.posts p ON p.id = c.post_id
-     LEFT JOIN boundless.comments parent ON parent.id = c.parent_id
-     WHERE c.user_id <> $1 AND NOT c.hidden AND c.created_at > $2
-       AND (p.user_id = $1 OR parent.user_id = $1)
+    `SELECT c.id, c.post_id, p.title, left(c.body, 120) AS body, c.anon_no, c.created_at ${REPLIES}
      ORDER BY c.created_at DESC LIMIT 20`,
     [viewer, since]
   );
 }
 
 export async function unreadCount(viewer: string, since: Date) {
-  const r = await q<{ n: number }>(
-    `SELECT count(*)::int AS n FROM boundless.comments c JOIN boundless.posts p ON p.id = c.post_id
-     LEFT JOIN boundless.comments parent ON parent.id = c.parent_id
-     WHERE c.user_id <> $1 AND NOT c.hidden AND c.created_at > $2 AND (p.user_id = $1 OR parent.user_id = $1)`,
-    [viewer, since]
-  );
+  const r = await q<{ n: number }>(`SELECT count(*)::int AS n ${REPLIES}`, [viewer, since]);
   return r[0].n;
 }
 
@@ -189,8 +190,7 @@ export async function communityStats() {
             (SELECT count(*)::int FROM boundless.posts WHERE NOT hidden) AS posts,
             (SELECT count(*)::int FROM boundless.comments WHERE NOT hidden) AS answers,
             (SELECT count(*)::int FROM boundless.posts WHERE NOT hidden AND created_at > now() - interval '1 day') AS today,
-            (SELECT count(*)::int FROM boundless.posts p WHERE NOT p.hidden AND p.space = 'global' AND ${ASKS} AND NOT p.solved
-               AND NOT EXISTS (SELECT 1 FROM boundless.comments c WHERE c.post_id = p.id AND NOT c.hidden)) AS waiting`
+            (SELECT count(*)::int FROM boundless.posts p WHERE NOT p.hidden AND p.space = 'global' AND ${WAITING}) AS waiting`
   );
   return r[0];
 }
@@ -211,7 +211,7 @@ export async function loungeCount(space: string) {
 /** Members who helped the most: answers on others' posts and helpful votes received. */
 export function ranking(limit = 5) {
   return q<{ user_id: string; nationality: string; answers: number; helped: number; points: number }>(
-    `SELECT user_id, nationality, answers, helped, posts + 2 * answers + 3 * helped AS points
+    `SELECT user_id, nationality, answers, helped, ${SCORE()} AS points
      FROM boundless.member_points WHERE answers + helped > 0
      ORDER BY points DESC, helped DESC LIMIT $1`,
     [limit]
@@ -221,8 +221,7 @@ export function ranking(limit = 5) {
 export async function myPoints(userId: string) {
   const r = await q<{ posts: number; answers: number; helped: number; points: number; rank: number }>(
     `SELECT posts, answers, helped, points, rank FROM (
-       SELECT user_id, posts, answers, helped, posts + 2 * answers + 3 * helped AS points,
-              rank() OVER (ORDER BY posts + 2 * answers + 3 * helped DESC)::int AS rank
+       SELECT user_id, posts, answers, helped, ${SCORE()} AS points, rank() OVER (ORDER BY ${SCORE()} DESC)::int AS rank
        FROM boundless.member_points) x WHERE user_id = $1`,
     [userId]
   );
@@ -240,9 +239,8 @@ export function recentActivity(viewer: string | null, limit = 5) {
   );
 }
 
-/** Member count per nationality. */
-export function nationalityCounts() {
-  return q<{ nationality: string; n: number }>(
-    "SELECT nationality, count(*)::int AS n FROM boundless.users GROUP BY nationality ORDER BY n DESC, nationality"
-  );
+/** Members of one nationality (the lounge header). */
+export async function memberCount(nationality: string) {
+  const r = await q<{ n: number }>("SELECT count(*)::int AS n FROM boundless.users WHERE nationality = $1", [nationality]);
+  return r[0].n;
 }

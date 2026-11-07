@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useEffect, useRef, useState } from "react";
-import { appeal, reportContent, updateNationality, type Result } from "@/app/actions";
+import { appeal, reportContent, updateNationality, type PostState, type Result } from "@/app/actions";
 import type { Board } from "@/lib/boards";
 import { REGIONS, REPORT_REASONS } from "@/lib/i18n";
 import { Icon } from "./Icon";
@@ -18,8 +18,6 @@ function ErrorLine({ error }: { error?: string }) {
     </p>
   );
 }
-
-type PostState = Result & { values?: Record<string, string> };
 
 /** New post and edit share this form; the server action decides which. Fields adapt to the board. */
 export function WriteForm({

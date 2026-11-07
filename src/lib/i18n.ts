@@ -63,15 +63,29 @@ export const COUNTRIES =
 const COUNTRY_SET = new Set(COUNTRIES);
 export const isCountry = (code: string) => COUNTRY_SET.has(code);
 
+// Intl formatters are costly to build and every list renders dozens of names and times: keep one per locale.
+const displayNames = new Map<string, Intl.DisplayNames>();
+function displayName(code: string, locale: string, type: "region" | "language") {
+  const key = `${locale}|${type}`;
+  let d = displayNames.get(key);
+  if (!d) displayNames.set(key, (d = new Intl.DisplayNames([locale], { type })));
+  return d.of(code) ?? code;
+}
+
 export function countryName(code: string, lang: Lang) {
-  return new Intl.DisplayNames([lang], { type: "region" }).of(code) ?? code;
+  return displayName(code, lang, "region");
 }
 
+const sorted = new Map<Lang, { code: string; name: string }[]>();
 export function sortedCountries(lang: Lang) {
-  return COUNTRIES.map((code) => ({ code, name: countryName(code, lang) })).sort((a, b) => a.name.localeCompare(b.name, lang));
+  let list = sorted.get(lang);
+  if (!list) {
+    const { compare } = new Intl.Collator(lang);
+    sorted.set(lang, (list = COUNTRIES.map((code) => ({ code, name: countryName(code, lang) })).sort((a, b) => compare(a.name, b.name))));
+  }
+  return list;
 }
 
-// Topic "stations" on the home route map.
 // Provinces, for neighborhood-style filtering ("my area"). Rules like recycling differ by area.
 export const REGIONS = [
   { id: "seoul", ko: "서울" },
@@ -95,18 +109,18 @@ export const REGIONS = [
 export const isRegion = (v: string) => REGIONS.some((x) => x.id === v);
 export const regionLabel = (id: string | null, t: T) => (id ? t(REGIONS.find((x) => x.id === id)?.ko ?? "") : t("지역 무관"));
 
-// Languages a post can be written in. Content is never machine-translated; we label the original.
-export const POST_LANGS = ["ko", "en", "zh", "vi", "th", "uz", "mn", "fil", "ne", "id", "ja", "km", "kk", "ru", "fr", "hi", "es", "other"];
+// Languages a post can be written in: every interface language plus Spanish. The original is always labeled.
+export const POST_LANGS: string[] = [...LANGS, "es", "other"];
 /** The language's own name ("français"), for compact labels. */
 export function langAutonym(code: string, lang: Lang) {
   if (code === "other") return lang === "ko" ? "기타 언어" : "Other";
-  return new Intl.DisplayNames([code], { type: "language" }).of(code) ?? code;
+  return displayName(code, code, "language");
 }
 
 export function langName(code: string, lang: Lang) {
-  if (code === "other") return lang === "ko" ? "기타 언어" : "Other";
-  const own = new Intl.DisplayNames([code], { type: "language" }).of(code) ?? code;
-  const local = new Intl.DisplayNames([lang], { type: "language" }).of(code) ?? code;
+  const own = langAutonym(code, lang);
+  if (code === "other") return own;
+  const local = displayName(code, lang, "language");
   return own === local ? own : `${local} · ${own}`;
 }
 
@@ -126,9 +140,11 @@ export const REPORT_REASONS = [
   { id: "other", ko: "기타" },
 ] as const;
 
+const relative = new Map<Lang, Intl.RelativeTimeFormat>();
 export function timeAgo(d: Date | string, lang: Lang) {
   const sec = Math.round((new Date(d).getTime() - Date.now()) / 1000);
-  const rtf = new Intl.RelativeTimeFormat(lang, { numeric: "auto" });
+  let rtf = relative.get(lang);
+  if (!rtf) relative.set(lang, (rtf = new Intl.RelativeTimeFormat(lang, { numeric: "auto" })));
   const steps: [Intl.RelativeTimeFormatUnit, number][] = [
     ["second", 60],
     ["minute", 60],

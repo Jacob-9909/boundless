@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { RightRail } from "@/components/Community";
+import { WithRail } from "@/components/Community";
 import { FeedList, ListControls, listHref, parseSort } from "@/components/Feed";
 import { Icon } from "@/components/Icon";
 import { getT, getUser } from "@/lib/auth";
@@ -20,7 +20,7 @@ export default async function BoardPage(props: PageProps<"/b/[board]">) {
   const base = `/b/${id}`;
 
   return (
-    <div className="grid gap-6 px-4 py-4 md:px-6 md:py-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+    <WithRail viewer={user?.id ?? null} lang={lang} t={t}>
       <div className="min-w-0 space-y-4">
         <header className="relative overflow-hidden rounded-3xl p-6 text-white md:p-8" style={{ background: `color-mix(in oklab, ${board.color} 72%, black)` }}>
           <span className="absolute -right-6 -bottom-10 opacity-15" aria-hidden="true">
@@ -58,11 +58,6 @@ export default async function BoardPage(props: PageProps<"/b/[board]">) {
           moreHref={sort === "new" ? (b) => listHref(base, { tag, sort }, { before: b }) : undefined}
         />
       </div>
-      <aside className="hidden xl:block">
-        <div className="sticky top-6">
-          <RightRail viewer={user?.id ?? null} lang={lang} t={t} />
-        </div>
-      </aside>
-    </div>
+    </WithRail>
   );
 }

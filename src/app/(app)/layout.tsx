@@ -1,5 +1,4 @@
 import Link from "next/link";
-import type { CSSProperties } from "react";
 import { cultureFonts } from "@/app/login/fonts";
 import { BottomNav } from "@/components/BottomNav";
 import { AccountSwitcher } from "@/components/Community";
@@ -37,7 +36,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   ];
 
   return (
-    <div style={themeVars(culture) as CSSProperties} className={`${cultureFonts} min-h-screen bg-paper text-ink`}>
+    <div style={themeVars(culture)} className={`${cultureFonts} min-h-screen bg-paper text-ink`}>
       <a href="#main" className="skip-link rounded-xl bg-ink px-4 py-2 text-sm font-bold text-white">
         {t("본문으로 건너뛰기")}
       </a>

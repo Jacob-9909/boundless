@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { demoLogin } from "@/app/actions";
 import { levelOf, LEVELS } from "@/lib/boards";
 import { CULTURES, DEFAULT_CULTURE } from "@/lib/cultures";
@@ -10,6 +11,20 @@ import { Avatar, LevelBadge, card } from "./ui";
 
 const railTitle = "flex items-center gap-1.5 text-sm font-extrabold whitespace-nowrap";
 const MEDALS = ["#E8B23A", "#9AA4B2", "#C27A45"];
+
+/** Page body with the right rail beside it on wide screens (feed, lounge, boards). */
+export function WithRail({ viewer, lang, t, children }: { viewer: string | null; lang: Lang; t: T; children: ReactNode }) {
+  return (
+    <div className="grid gap-6 px-4 py-4 md:px-6 md:py-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+      {children}
+      <aside className="hidden xl:block">
+        <div className="sticky top-6">
+          <RightRail viewer={viewer} lang={lang} t={t} />
+        </div>
+      </aside>
+    </div>
+  );
+}
 
 /** Right-hand column: who helps the most, my level, what needs an answer, what is popular, what just happened. */
 export async function RightRail({ viewer, lang, t }: { viewer: string | null; lang: Lang; t: T }) {

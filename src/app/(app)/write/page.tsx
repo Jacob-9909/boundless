@@ -1,12 +1,11 @@
 import Link from "next/link";
-import type { CSSProperties } from "react";
 import { createPost } from "@/app/actions";
 import { WriteForm } from "@/components/forms";
 import { Icon } from "@/components/Icon";
 import { BackLink, Flag, Landmark, PageHead, SignInRequired } from "@/components/ui";
 import { getT, getUser } from "@/lib/auth";
 import { BOARDS, boardOf, GROUPS, isBoard, LOUNGE } from "@/lib/boards";
-import { cultureOf, themeVars } from "@/lib/cultures";
+import { cultureOf } from "@/lib/cultures";
 import { countryName, langName, POST_LANGS } from "@/lib/i18n";
 
 export const metadata = { title: "Write" };
@@ -29,7 +28,6 @@ export default async function WritePage(props: PageProps<"/write">) {
         <div className="space-y-6 px-4 py-5">
           <Link
             href="/write?space=lounge"
-            style={themeVars(culture) as CSSProperties}
             className="relative flex items-center gap-4 overflow-hidden rounded-2xl bg-primary p-5 text-paper transition hover:-translate-y-0.5 hover:shadow-lg"
           >
             <span className="bg-pattern absolute inset-0 opacity-25" aria-hidden="true" />

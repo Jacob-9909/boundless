@@ -19,7 +19,7 @@ import {
   startSession,
   verifiedEmail,
 } from "@/lib/auth";
-import { q, track } from "@/lib/db";
+import { isId, q, track } from "@/lib/db";
 import { boardOf, DEALS, isBoard, LOUNGE } from "@/lib/boards";
 import { isCountry, isLang, isRegion, POST_LANGS, READ_LANGS, readLangOf, REPORT_REASONS } from "@/lib/i18n";
 import { translateItem } from "@/lib/translate";
@@ -44,6 +44,16 @@ async function requireUser() {
   const user = await getUser();
   if (!user) redirect("/login");
   return user;
+}
+
+/** Find or create the member for an email; their nationality is kept if they already exist. */
+async function upsertUser(email: string, nationality: string) {
+  const rows = await q<{ id: string }>(
+    `INSERT INTO boundless.users (email, nationality) VALUES ($1, $2)
+     ON CONFLICT (email) DO UPDATE SET email = EXCLUDED.email RETURNING id`,
+    [email, nationality]
+  );
+  return rows[0].id;
 }
 
 /* ---------- sign in ---------- */
@@ -83,13 +93,9 @@ export async function completeSignup(nationality: string, agreed: boolean): Prom
   if (!isCountry(nationality)) return { error: "공개할 국적을 골라 주세요." };
   // ponytail: age floor fixed at 14 (Korean PIPA guardian-consent line) until the team confirms policy P01.
   if (!agreed) return { error: "만 14세 이상 확인과 커뮤니티 규칙 동의가 필요해요." };
-  const rows = await q<{ id: string }>(
-    `INSERT INTO boundless.users (email, nationality) VALUES ($1, $2)
-     ON CONFLICT (email) DO UPDATE SET email = EXCLUDED.email RETURNING id`,
-    [email, nationality]
-  );
-  await startSession(rows[0].id);
-  track("signup", rows[0].id);
+  const id = await upsertUser(email, nationality);
+  await startSession(id);
+  track("signup", id);
   return { ok: true };
 }
 
@@ -103,12 +109,7 @@ export async function demoLogin(code: string) {
   const nationality = mod ? "KR" : code === "XX" ? "CA" : code;
   if (!isCountry(nationality)) return;
   const email = mod ? DEMO_MODERATOR : `${nationality.toLowerCase()}@example.com`;
-  const rows = await q<{ id: string }>(
-    `INSERT INTO boundless.users (email, nationality) VALUES ($1, $2)
-     ON CONFLICT (email) DO UPDATE SET email = EXCLUDED.email RETURNING id`,
-    [email, nationality]
-  );
-  await startSession(rows[0].id);
+  await startSession(await upsertUser(email, nationality));
   // Switching sample neighbors shows each country in its own language.
   (await cookies()).delete("lang");
   redirect(mod ? "/admin" : "/feed");
@@ -126,7 +127,7 @@ export async function setLang(lang: string) {
 
 /* ---------- posts & comments ---------- */
 
-type PostState = Result & { values?: Record<string, string> };
+export type PostState = Result & { values?: Record<string, string> };
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -218,7 +219,7 @@ export async function addComment(postId: string, _: Result, f: FormData): Promis
      FROM boundless.posts p
      WHERE p.id = $1 AND NOT p.hidden AND (p.space = 'global' OR p.space = $5)
      RETURNING id`,
-    [postId, user.id, body, /^\d{1,18}$/.test(parent) ? parent : null, user.nationality]
+    [postId, user.id, body, isId(parent) ? parent : null, user.nationality]
   );
   if (!rows.length) return { error: "이 글에는 댓글을 달 수 없어요." };
   track("comment", user.id);
@@ -237,7 +238,7 @@ export async function setDeal(f: FormData) {
 
 /** Translate a post or comment into the viewer's reading language. */
 export async function translate(kind: "p" | "c", id: string): Promise<{ title?: string | null; body?: string; error?: string }> {
-  if (!/^\d{1,18}$/.test(id)) return { error: "번역할 글을 찾지 못했어요." };
+  if (!isId(id)) return { error: "번역할 글을 찾지 못했어요." };
   const [user, lang] = await Promise.all([getUser(), getLang()]);
   const to = readLangOf(user, lang);
   const rows = await q<{ title: string | null; body: string; lang: string; space: string; hidden: boolean }>(
@@ -260,15 +261,20 @@ export async function setReadLang(f: FormData) {
   refresh();
 }
 
+/** Remove the member's row if it exists, else add it (likes and saves). */
+async function toggleRow(table: "post_likes" | "comment_likes" | "saves", col: "post_id" | "comment_id", id: string, userId: string) {
+  const del = await q(`DELETE FROM boundless.${table} WHERE ${col} = $1 AND user_id = $2 RETURNING 1`, [id, userId]);
+  if (!del.length) await q(`INSERT INTO boundless.${table} (${col}, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`, [id, userId]);
+}
+
 /** 공감 / helpful toggle on a post or a comment. */
 export async function toggleLike(f: FormData) {
   const user = await requireUser();
-  const [table, col, id] = /^\d{1,18}$/.test(str(f, "comment"))
-    ? ["comment_likes", "comment_id", str(f, "comment")]
-    : ["post_likes", "post_id", str(f, "post")];
-  if (!/^\d{1,18}$/.test(id)) return;
-  const del = await q(`DELETE FROM boundless.${table} WHERE ${col} = $1 AND user_id = $2 RETURNING 1`, [id, user.id]);
-  if (!del.length) await q(`INSERT INTO boundless.${table} (${col}, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`, [id, user.id]);
+  const comment = str(f, "comment");
+  const post = str(f, "post");
+  if (isId(comment)) await toggleRow("comment_likes", "comment_id", comment, user.id);
+  else if (isId(post)) await toggleRow("post_likes", "post_id", post, user.id);
+  else return;
   refresh();
 }
 
@@ -276,9 +282,8 @@ export async function toggleLike(f: FormData) {
 export async function toggleSave(f: FormData) {
   const user = await requireUser();
   const id = str(f, "post");
-  if (!/^\d{1,18}$/.test(id)) return;
-  const del = await q("DELETE FROM boundless.saves WHERE post_id = $1 AND user_id = $2 RETURNING 1", [id, user.id]);
-  if (!del.length) await q("INSERT INTO boundless.saves (post_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING", [id, user.id]);
+  if (!isId(id)) return;
+  await toggleRow("saves", "post_id", id, user.id);
   refresh();
 }
 
@@ -294,7 +299,7 @@ export async function deleteOwn(f: FormData) {
   const user = await requireUser();
   const comment = str(f, "comment");
   const post = str(f, "post");
-  if (/^\d{1,18}$/.test(comment)) {
+  if (isId(comment)) {
     // Cached translations go with the text (the comment and its replies).
     await q(
       `DELETE FROM boundless.translations WHERE item IN (
@@ -306,7 +311,7 @@ export async function deleteOwn(f: FormData) {
     refresh();
     return;
   }
-  if (/^\d{1,18}$/.test(post)) {
+  if (isId(post)) {
     await q(
       `DELETE FROM boundless.translations WHERE item IN (
          SELECT 'p:' || id FROM boundless.posts WHERE id = $1 AND user_id = $2
@@ -320,18 +325,25 @@ export async function deleteOwn(f: FormData) {
 
 /* ---------- safety ---------- */
 
+/** The post or comment a safety form points at (a comment wins when both are sent), with its author. */
 async function targetOwner(f: FormData) {
   const post = str(f, "post");
   const comment = str(f, "comment");
-  if (/^\d{1,18}$/.test(comment)) {
-    const r = await q<{ user_id: string }>("SELECT user_id FROM boundless.comments WHERE id = $1", [comment]);
-    return r[0] ? { post: null, comment, owner: r[0].user_id } : null;
+  if (isId(comment)) {
+    const r = await q<{ user_id: string; hidden: boolean }>("SELECT user_id, hidden FROM boundless.comments WHERE id = $1", [comment]);
+    return r[0] ? { post: null, comment, owner: r[0].user_id, hidden: r[0].hidden } : null;
   }
-  if (/^\d{1,18}$/.test(post)) {
-    const r = await q<{ user_id: string }>("SELECT user_id FROM boundless.posts WHERE id = $1", [post]);
-    return r[0] ? { post, comment: null, owner: r[0].user_id } : null;
+  if (isId(post)) {
+    const r = await q<{ user_id: string; hidden: boolean }>("SELECT user_id, hidden FROM boundless.posts WHERE id = $1", [post]);
+    return r[0] ? { post, comment: null, owner: r[0].user_id, hidden: r[0].hidden } : null;
   }
   return null;
+}
+
+/** Moderation hides or restores one target: a comment when there is one, else the post. */
+async function setHidden(t: { post_id: string | null; comment_id: string | null }, hidden: boolean) {
+  if (t.comment_id) await q("UPDATE boundless.comments SET hidden = $2 WHERE id = $1", [t.comment_id, hidden]);
+  else await q("UPDATE boundless.posts SET hidden = $2 WHERE id = $1", [t.post_id, hidden]);
 }
 
 export async function reportContent(_: Result, f: FormData): Promise<Result> {
@@ -359,11 +371,7 @@ export async function appeal(_: Result, f: FormData): Promise<Result> {
   const reason = str(f, "reason");
   if (!target || target.owner !== user.id) return { error: "재심을 요청할 글을 찾지 못했어요." };
   if (reason.length < 10 || reason.length > 1000) return { error: "재심 사유를 10자 이상 적어 주세요." };
-  const hidden = await q<{ hidden: boolean }>(
-    target.comment ? "SELECT hidden FROM boundless.comments WHERE id = $1" : "SELECT hidden FROM boundless.posts WHERE id = $1",
-    [target.comment ?? target.post]
-  );
-  if (!hidden[0]?.hidden) return { error: "가려진 글만 재심을 요청할 수 있어요." };
+  if (!target.hidden) return { error: "가려진 글만 재심을 요청할 수 있어요." };
   await q("INSERT INTO boundless.appeals (user_id, post_id, comment_id, reason) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING", [
     user.id,
     target.post,
@@ -381,15 +389,12 @@ export async function resolveAppeal(f: FormData) {
   if (!isAdmin(user)) redirect("/feed");
   const id = str(f, "appeal");
   const action = str(f, "action");
-  if (!/^\d{1,18}$/.test(id) || (action !== "restore" && action !== "uphold")) return;
+  if (!isId(id) || (action !== "restore" && action !== "uphold")) return;
   const r = await q<{ post_id: string | null; comment_id: string | null }>(
     "UPDATE boundless.appeals SET status = $2, resolved_at = now() WHERE id = $1 AND status = 'received' RETURNING post_id, comment_id",
     [id, action === "restore" ? "restored" : "upheld"]
   );
-  if (r[0] && action === "restore") {
-    if (r[0].comment_id) await q("UPDATE boundless.comments SET hidden = false WHERE id = $1", [r[0].comment_id]);
-    else await q("UPDATE boundless.posts SET hidden = false WHERE id = $1", [r[0].post_id]);
-  }
+  if (r[0] && action === "restore") await setHidden(r[0], false);
   refresh();
 }
 
@@ -456,17 +461,14 @@ export async function moderate(f: FormData) {
   if (!isAdmin(user)) redirect("/feed");
   const id = str(f, "report");
   const action = str(f, "action");
-  if (!/^\d{1,18}$/.test(id) || (action !== "hide" && action !== "dismiss")) return;
+  if (!isId(id) || (action !== "hide" && action !== "dismiss")) return;
   const r = await q<{ post_id: string | null; comment_id: string | null }>(
     "SELECT post_id, comment_id FROM boundless.reports WHERE id = $1",
     [id]
   );
   if (!r[0]) return;
   const { post_id, comment_id } = r[0];
-  if (action === "hide") {
-    if (comment_id) await q("UPDATE boundless.comments SET hidden = true WHERE id = $1", [comment_id]);
-    else await q("UPDATE boundless.posts SET hidden = true WHERE id = $1", [post_id]);
-  }
+  if (action === "hide") await setHidden(r[0], true);
   // Resolve every open report on the same target together.
   await q(
     `UPDATE boundless.reports SET status = $1, resolved_at = now()

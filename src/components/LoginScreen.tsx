@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useTransition, type CSSProperties } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { completeSignup, demoLogin, sendCode, setLang, verifyCode } from "@/app/actions";
 import { CULTURES, DEFAULT_CULTURE, cultureOf, themeVars, type Culture } from "@/lib/cultures";
 import { LANG_NAMES, toLang, type Lang } from "@/lib/i18n";
@@ -94,7 +94,7 @@ export function LoginScreen({
     });
 
   return (
-    <main style={themeVars(culture) as CSSProperties} className="min-h-screen bg-paper text-ink lg:grid lg:grid-cols-[1.15fr_1fr]">
+    <main style={themeVars(culture)} className="min-h-screen bg-paper text-ink lg:grid lg:grid-cols-[1.15fr_1fr]">
       {/* Hero: re-skinned with the chosen culture's colors, pattern, script and greeting */}
       {/* z-10 + no overflow clip on the section, so the language menu can drop below the hero */}
       <section className="relative z-10 flex min-h-[46vh] flex-col bg-primary px-5 pt-4 pb-8 text-paper transition-colors duration-500 lg:min-h-screen lg:px-10">

@@ -6,12 +6,14 @@ import { q } from "@/lib/db";
 const CODES: Record<string, string> = { zh: "zh-CN", fil: "tl", other: "autodetect" };
 const api = (lang: string) => CODES[lang] ?? lang;
 
+const utf8 = new TextEncoder();
+
 /** Split into chunks under MyMemory's 500-byte request limit, on paragraph or sentence breaks. */
 function chunks(text: string, max = 400) {
   const out: string[] = [];
   for (const para of text.split(/\n/)) {
     let rest = para;
-    while (new TextEncoder().encode(rest).length > max) {
+    while (utf8.encode(rest).length > max) {
       const cut = Math.max(rest.lastIndexOf(". ", max / 2), rest.lastIndexOf("。", max / 3), rest.lastIndexOf(" ", max / 2), Math.floor(max / 3));
       out.push(rest.slice(0, cut + 1));
       rest = rest.slice(cut + 1);

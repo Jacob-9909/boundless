@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import type { CSSProperties } from "react";
 import { demoLogin } from "@/app/actions";
 import { LangMenu } from "@/components/LangMenu";
 import { cultureFonts } from "@/app/login/fonts";
@@ -52,6 +51,8 @@ const STOPS: { board: string; x: number; y: number; kind: "dot" | "cap-v" | "cap
   { board: "market", x: 522, y: 420, kind: "dot", lx: 522, ly: 446, anchor: "middle" },
 ];
 
+const sectionTitle = "mt-2 font-display text-3xl text-balance font-extrabold tracking-tight md:text-[40px]";
+
 export default async function Landing(props: PageProps<"/">) {
   const sp = await props.searchParams;
   const [{ lang, t }, user] = await Promise.all([getT(), getUser()]);
@@ -76,7 +77,7 @@ export default async function Landing(props: PageProps<"/">) {
   ];
 
   return (
-    <main className={`${cultureFonts} bg-[#F6F5F1] text-[#14161C]`} style={themeVars(DEFAULT_CULTURE) as CSSProperties}>
+    <main className={`${cultureFonts} bg-[#F6F5F1] text-[#14161C]`} style={themeVars(DEFAULT_CULTURE)}>
       {/* ---------- Hero ---------- */}
       <section className="relative overflow-hidden bg-[#0B1224] text-white">
         <div
@@ -304,7 +305,7 @@ export default async function Landing(props: PageProps<"/">) {
       {/* ---------- How it works ---------- */}
       <section id="how" className="mx-auto max-w-7xl scroll-mt-6 px-5 py-20 md:px-8">
         <p className="station-label text-[#0052A4]">{t("이용 방법")}</p>
-        <h2 className="mt-2 font-display text-3xl text-balance font-extrabold tracking-tight md:text-[40px]">{t("궁금한 게 생긴 순간, 세 정거장이면 충분해요")}</h2>
+        <h2 className={sectionTitle}>{t("궁금한 게 생긴 순간, 세 정거장이면 충분해요")}</h2>
         <ol className="relative mt-10 grid gap-5 md:grid-cols-3">
           <span
             className="absolute top-7 right-[16%] left-[16%] hidden h-1 rounded-full bg-gradient-to-r from-[#00A5DE] via-[#00A84D] to-[#EF7C1C] md:block"
@@ -361,7 +362,7 @@ export default async function Landing(props: PageProps<"/">) {
       {/* ---------- Boards and spaces ---------- */}
       <section className="mx-auto max-w-7xl px-5 pb-20 md:px-8">
         <p className="station-label text-[#C0105A]">{t("게시판")}</p>
-        <h2 className="mt-2 font-display text-3xl text-balance font-extrabold tracking-tight md:text-[40px]">{t("편의 정보만이 아니라, 한국 생활 그 자체")}</h2>
+        <h2 className={sectionTitle}>{t("편의 정보만이 아니라, 한국 생활 그 자체")}</h2>
         <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-black/75">
           {t("비자와 집 문제부터 성수동 팝업, 동네 맛집, 연애 고민, 이사하며 내놓는 중고 물건까지. 게시판마다 말머리가 있어 원하는 이야기를 바로 찾아요.")}
         </p>
@@ -393,7 +394,7 @@ export default async function Landing(props: PageProps<"/">) {
               </span>
             </div>
             <div className="relative overflow-hidden rounded-3xl p-6 text-white" style={{ background: "#A8242B" }}>
-              <span className="bg-pattern absolute inset-0 opacity-25" style={themeVars(CULTURES[1]) as CSSProperties} aria-hidden="true" />
+              <span className="bg-pattern absolute inset-0 opacity-25" style={themeVars(CULTURES[1])} aria-hidden="true" />
               <Landmark culture={CULTURES[1]} className="absolute right-0 bottom-0 h-20 w-auto opacity-80" />
               <p className="relative flex items-center gap-2 text-sm font-bold text-white/80">
                 <Flag code="VN" h={13} />
@@ -412,7 +413,7 @@ export default async function Landing(props: PageProps<"/">) {
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="station-label text-[#007A38]">{t("문화 테마")}</p>
-              <h2 className="mt-2 font-display text-3xl text-balance font-extrabold tracking-tight md:text-[40px]">{t("들어오는 순간, 당신의 문화로")}</h2>
+              <h2 className={sectionTitle}>{t("들어오는 순간, 당신의 문화로")}</h2>
               <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-black/75">
                 {t("로그인 화면이 고른 나라의 색과 전통 문양, 모국어 인사로 바뀌어요. 가입하면 앱 곳곳이 내 문화의 색으로 물들어요.")}
               </p>
@@ -427,7 +428,7 @@ export default async function Landing(props: PageProps<"/">) {
               <li key={c.code}>
                 <Link
                   href={`/login?culture=${c.code}`}
-                  style={themeVars(c) as CSSProperties}
+                  style={themeVars(c)}
                   className="group relative flex h-48 flex-col justify-end overflow-hidden rounded-2xl bg-primary p-3.5 text-white transition hover:-translate-y-1 hover:shadow-xl"
                 >
                   <span className="bg-pattern absolute inset-0 opacity-35 transition group-hover:opacity-55" aria-hidden="true" />
@@ -450,7 +451,7 @@ export default async function Landing(props: PageProps<"/">) {
       {demo && (
         <section id="demo" className="mx-auto max-w-7xl scroll-mt-6 px-5 py-20 md:px-8">
           <p className="station-label text-[#A84F08]">{t("샘플 계정")}</p>
-          <h2 className="mt-2 font-display text-3xl text-balance font-extrabold tracking-tight md:text-[40px]">{t("심사위원 · 체험용 샘플 계정")}</h2>
+          <h2 className={sectionTitle}>{t("심사위원 · 체험용 샘플 계정")}</h2>
           <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-black/75">
             {t("나라를 고르면 그 나라 이웃의 샘플 계정으로 바로 들어가요. 이메일 인증 없이 화면을 둘러볼 수 있어요. 모든 데이터는 가상이에요.")}
           </p>
@@ -461,7 +462,7 @@ export default async function Landing(props: PageProps<"/">) {
                 <li key={c.code}>
                   <form action={demoLogin.bind(null, c.code)}>
                     <button
-                      style={themeVars(c) as CSSProperties}
+                      style={themeVars(c)}
                       className="group flex w-full items-center gap-3 rounded-2xl bg-white p-3 text-left ring-1 ring-black/[.07] transition hover:-translate-y-0.5 hover:shadow-lg hover:ring-primary/40"
                     >
                       <Avatar code={code} size={48} />
@@ -504,7 +505,7 @@ export default async function Landing(props: PageProps<"/">) {
         <div className="mx-auto grid max-w-7xl gap-10 px-5 md:px-8 lg:grid-cols-2">
           <div>
             <p className="station-label text-[#7A4F8E]">{t("안전")}</p>
-            <h2 className="mt-2 font-display text-3xl text-balance font-extrabold tracking-tight md:text-[40px]">{t("익명이지만, 안전하게")}</h2>
+            <h2 className={sectionTitle}>{t("익명이지만, 안전하게")}</h2>
             <ul className="mt-8 grid gap-4 sm:grid-cols-2">
               {safety.map((s) => (
                 <li key={s.title} className="rounded-2xl bg-[#F6F5F1] p-5">
@@ -517,7 +518,7 @@ export default async function Landing(props: PageProps<"/">) {
           </div>
           <div>
             <p className="station-label text-[#C0105A]">{t("공식 안내")}</p>
-            <h2 className="mt-2 font-display text-3xl text-balance font-extrabold tracking-tight md:text-[40px]">{t("경험담과 공식 정보를 함께")}</h2>
+            <h2 className={sectionTitle}>{t("경험담과 공식 정보를 함께")}</h2>
             <ul className="mt-8 grid grid-cols-2 gap-3">
               {HOTLINES.slice(2, 6).map((h) => (
                 <li key={h.tel} className="rounded-2xl bg-[#0B1224] p-4 text-white">

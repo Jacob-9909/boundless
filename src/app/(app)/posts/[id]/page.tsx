@@ -8,15 +8,18 @@ import { RightRail } from "@/components/Community";
 import { Translatable } from "@/components/Translate";
 import { Avatar, BackLink, BoardBadge, EventLine, Flag, HelpItem, LevelBadge, MarketLine, NationalityChip, Notice, TagText, pill, tag } from "@/components/ui";
 import { getT, getUser } from "@/lib/auth";
-import { boardOf, DEALS } from "@/lib/boards";
+import { isId } from "@/lib/db";
+import { boardOf, DEALS, tagOf } from "@/lib/boards";
 import { helpFor } from "@/lib/guide";
 import { countryName, langName, readLangOf, regionLabel, timeAgo, type Lang, type T } from "@/lib/i18n";
 import { getComments, getPost, type CommentRow } from "@/lib/posts";
 
 export default async function PostPage(props: PageProps<"/posts/[id]">) {
   const { id } = await props.params;
+  if (!isId(id)) notFound();
   const [{ lang, t }, user] = await Promise.all([getT(), getUser()]);
-  const post = await getPost(user?.id ?? null, id);
+  // Comments load alongside the post; they are only rendered once the access checks below pass.
+  const [post, comments] = await Promise.all([getPost(user?.id ?? null, id), getComments(user?.id ?? null, id)]);
   if (!post) notFound();
 
   // Country lounges are private to members of that nationality.
@@ -45,9 +48,9 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
     );
   }
 
-  const comments = await getComments(user?.id ?? null, id);
   const top = comments.filter((c) => !c.parent_id);
-  const repliesOf = (cid: string) => comments.filter((c) => c.parent_id === cid);
+  const replies = Map.groupBy(comments.filter((c) => c.parent_id), (c) => c.parent_id!);
+  const repliesOf = (cid: string) => replies.get(cid) ?? [];
   const help = helpFor(post.topic);
   const reply = addComment.bind(null, post.id);
   const signIn = `/login?next=/posts/${post.id}`;
@@ -56,7 +59,7 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
   const readLang = readLangOf(user, lang);
   const target = langName(readLang, lang).split(" · ")[0];
   const canTranslate = post.lang !== readLang;
-  const asks = board.tags.find((x) => x.id === post.kind)?.asks;
+  const asks = tagOf(post.topic, post.kind).asks;
 
   return (
     <div className="grid gap-6 md:px-2 xl:grid-cols-[minmax(0,1fr)_320px] xl:px-6">

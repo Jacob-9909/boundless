@@ -232,7 +232,7 @@ export function Stat({ icon, n, label }: { icon: "helpful" | "comment"; n: numbe
 /** Feed card: who wrote it (anonymous + culture + level), where, what, and the best answer so far. */
 export function PostCard({ post, lang, t, showBoard = true }: { post: PostRow; lang: Lang; t: T; showBoard?: boolean }) {
   const board = boardOf(post.topic);
-  const asks = board.tags.find((x) => x.id === post.kind)?.asks;
+  const asks = tagOf(post.topic, post.kind).asks;
   const waiting = asks && post.comments === 0 && !post.solved;
   return (
     <Link href={`/posts/${post.id}`} className={`${card} group block p-4 transition hover:-translate-y-0.5 hover:shadow-[0_10px_30px_-12px_rgba(16,24,40,.25)] md:p-5`}>

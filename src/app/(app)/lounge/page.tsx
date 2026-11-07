@@ -1,14 +1,13 @@
 import Link from "next/link";
-import type { CSSProperties } from "react";
-import { RightRail } from "@/components/Community";
+import { WithRail } from "@/components/Community";
 import { FeedList, ListControls, listHref, parseSort } from "@/components/Feed";
 import { Icon } from "@/components/Icon";
 import { Flag, Landmark, SignInRequired } from "@/components/ui";
 import { getT, getUser } from "@/lib/auth";
 import { LOUNGE } from "@/lib/boards";
-import { cultureOf, themeVars } from "@/lib/cultures";
+import { cultureOf } from "@/lib/cultures";
 import { countryName } from "@/lib/i18n";
-import { listPosts, loungeCount, nationalityCounts } from "@/lib/posts";
+import { listPosts, loungeCount, memberCount } from "@/lib/posts";
 
 export const metadata = { title: "Lounge" };
 
@@ -33,14 +32,14 @@ export default async function LoungePage(props: PageProps<"/lounge">) {
   const [posts, total, members] = await Promise.all([
     listPosts(user.id, { space: user.nationality, tag, before, sort: sort === "likes" ? "likes" : "new", waiting: sort === "waiting" }),
     loungeCount(user.nationality),
-    nationalityCounts(),
+    memberCount(user.nationality),
   ]);
-  const neighbors = members.find((m) => m.nationality === user.nationality)?.n ?? 1;
+  const neighbors = members || 1;
 
   return (
-    <div className="grid gap-6 px-4 py-4 md:px-6 md:py-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+    <WithRail viewer={user.id} lang={lang} t={t}>
       <div className="min-w-0 space-y-4">
-        <header style={themeVars(culture) as CSSProperties} className="relative overflow-hidden rounded-3xl bg-primary p-6 text-paper md:p-8">
+        <header className="relative overflow-hidden rounded-3xl bg-primary p-6 text-paper md:p-8">
           <span className="bg-pattern absolute inset-0 opacity-30" aria-hidden="true" />
           <span className="absolute inset-0 bg-gradient-to-r from-black/50 via-black/20 to-transparent" aria-hidden="true" />
           <Landmark culture={culture} className="absolute right-0 bottom-0 h-28 w-auto opacity-90 md:h-36" />
@@ -82,11 +81,6 @@ export default async function LoungePage(props: PageProps<"/lounge">) {
           moreHref={sort === "new" ? (b) => listHref("/lounge", { tag, sort }, { before: b }) : undefined}
         />
       </div>
-      <aside className="hidden xl:block">
-        <div className="sticky top-6">
-          <RightRail viewer={user.id} lang={lang} t={t} />
-        </div>
-      </aside>
-    </div>
+    </WithRail>
   );
 }

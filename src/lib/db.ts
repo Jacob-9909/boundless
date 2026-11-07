@@ -13,6 +13,9 @@ export function db() {
   return pool;
 }
 
+/** Row ids are bigint serials; anything else from a form or URL is rejected before it reaches SQL. */
+export const isId = (s: string) => /^\d{1,18}$/.test(s);
+
 export async function q<T extends object>(sql: string, params: unknown[] = []) {
   return (await db().query<T>(sql, params)).rows;
 }
