@@ -2,8 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { translate } from "@/app/actions";
-import { translator, type Lang } from "@/lib/i18n";
 import { Icon } from "./Icon";
+import { useT } from "./I18n";
 
 /**
  * Shows a post body or comment in its original language, with a button that swaps in
@@ -13,7 +13,6 @@ export function Translatable({
   kind,
   id,
   body,
-  lang,
   target,
   className,
   small = false,
@@ -21,12 +20,11 @@ export function Translatable({
   kind: "p" | "c";
   id: string;
   body: string;
-  lang: Lang;
   target: string; // e.g. "Tiếng Việt", or null when the text is already in the reader's language
   className: string;
   small?: boolean;
 }) {
-  const t = translator(lang);
+  const t = useT();
   const [out, setOut] = useState<{ title?: string | null; body: string } | null>(null);
   const [showing, setShowing] = useState(false);
   const [error, setError] = useState<string | null>(null);

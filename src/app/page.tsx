@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { CSSProperties } from "react";
-import { demoLogin, setLang } from "@/app/actions";
+import { demoLogin } from "@/app/actions";
+import { LangMenu } from "@/components/LangMenu";
 import { cultureFonts } from "@/app/login/fonts";
 import { HelloRotator } from "@/components/HelloRotator";
 import { Icon, type IconName } from "@/components/Icon";
@@ -47,7 +48,6 @@ export default async function Landing(props: PageProps<"/">) {
   const [stats, latest, activity] = await Promise.all([communityStats(), listPosts(null, { limit: 3 }), recentActivity(null, 2)]);
   const demo = demoEnabled();
   const hellos = [DEFAULT_CULTURE, ...CULTURES].map((c) => ({ code: c.code, hello: c.hello, font: c.font, color: c.c.accent }));
-  const other = lang === "ko" ? "en" : "ko";
   const q = latest.find((p) => p.kind === "question") ?? latest[0];
   const a = activity[0];
 
@@ -92,15 +92,7 @@ export default async function Landing(props: PageProps<"/">) {
             </Link>
           </div>
           <div className="ml-auto flex items-center gap-2">
-            <form action={setLang.bind(null, other)}>
-              <button
-                className="inline-flex h-9 items-center gap-1 rounded-full px-3 text-[13px] font-bold text-white/80 ring-1 ring-white/20 hover:bg-white/10"
-                aria-label={t("화면 언어 바꾸기")}
-              >
-                <Icon name="globe" size={16} />
-                {lang.toUpperCase()}
-              </button>
-            </form>
+            <LangMenu lang={lang} label={t("화면 언어 바꾸기")} note={t("한국어와 영어 밖의 언어는 기계 번역이라 어색한 문장이 있을 수 있어요. 검수하고 있어요.")} tone="dark" compact />
             {user ? (
               <Link href="/feed" className="inline-flex h-9 items-center rounded-full bg-white px-4 text-[13px] font-bold text-[#0B1224]">
                 {t("피드로 가기")}
@@ -381,7 +373,7 @@ export default async function Landing(props: PageProps<"/">) {
                     <Flag code={c.code} h={11} />
                     {c.native}
                   </span>
-                  <span className="relative mt-0.5 line-clamp-1 text-[11px] opacity-70">{c.motif[lang]}</span>
+                  <span className="relative mt-0.5 line-clamp-1 text-[11px] opacity-70">{t(c.motif)}</span>
                 </Link>
               </li>
             ))}
@@ -468,7 +460,7 @@ export default async function Landing(props: PageProps<"/">) {
                     <Icon name="phone" size={18} />
                     {h.tel}
                   </span>
-                  <span className="mt-1 block text-sm font-bold">{h.name[lang]}</span>
+                  <span className="mt-1 block text-sm font-bold">{t(h.name)}</span>
                   <span className="block text-xs leading-relaxed text-white/60">{t(h.desc)}</span>
                 </li>
               ))}
@@ -482,7 +474,7 @@ export default async function Landing(props: PageProps<"/">) {
                     rel="noopener noreferrer"
                     className="inline-flex h-9 items-center gap-1.5 rounded-full bg-[#F6F5F1] px-3.5 text-[13px] font-bold hover:bg-black/5"
                   >
-                    {s.name[lang]}
+                    {t(s.name)}
                     <Icon name="external" size={13} />
                   </a>
                 </li>

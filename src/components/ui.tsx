@@ -239,14 +239,14 @@ export function PostCard({ post, lang, t, showBoard = true }: { post: PostRow; l
       <div className="flex gap-3">
         <Avatar code={post.nationality} size={42} />
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5 text-[13px]">
+          <div className="flex flex-wrap items-center gap-x-1.5 text-[13px]">
             <span className="font-bold whitespace-nowrap">{t("이웃")}</span>
             <LevelBadge points={post.points} t={t} />
             <span className="min-w-0 truncate opacity-60">
               · {countryName(post.nationality, lang)}
               {post.region && ` · ${regionLabel(post.region, t)}`}
             </span>
-            <span className="ml-auto shrink-0 opacity-50">{timeAgo(post.created_at, lang)}</span>
+            <span className="ml-auto shrink-0 whitespace-nowrap opacity-50">{timeAgo(post.created_at, lang)}</span>
           </div>
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
             {showBoard && <BoardBadge id={post.topic} t={t} />}
@@ -315,7 +315,7 @@ export function SignInRequired({ t, next, title, desc }: { t: T; next: string; t
 }
 
 /** One official hotline or website. External links open in a new tab. */
-export function HelpItem({ h, lang, t }: { h: Help; lang: Lang; t: T }) {
+export function HelpItem({ h, t }: { h: Help; t: T }) {
   const href = h.tel ? `tel:${h.tel}` : h.url;
   return (
     <a
@@ -330,7 +330,7 @@ export function HelpItem({ h, lang, t }: { h: Help; lang: Lang; t: T }) {
         {h.tel}
       </span>
       <span className="min-w-0">
-        <span className="block text-sm font-bold">{h.name[lang]}</span>
+        <span className="block text-sm font-bold">{t(h.name)}</span>
         <span className="mt-0.5 block text-xs leading-relaxed opacity-75">{t(h.desc)}</span>
         {h.url && <span className="mt-0.5 block truncate text-xs text-primary">{h.url.replace("https://", "")}</span>}
       </span>

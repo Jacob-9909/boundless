@@ -4,15 +4,17 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 import { reportContent, updateNationality, type Result } from "@/app/actions";
 import type { Board } from "@/lib/boards";
-import { REGIONS, REPORT_REASONS, translator, type Lang } from "@/lib/i18n";
+import { REGIONS, REPORT_REASONS } from "@/lib/i18n";
 import { Icon } from "./Icon";
+import { useT } from "./I18n";
 import { Flag, btn, btnGhost, field, labelCls } from "./ui";
 
-function ErrorLine({ error, lang }: { error?: string; lang: Lang }) {
+function ErrorLine({ error }: { error?: string }) {
+  const t = useT();
   if (!error) return null;
   return (
     <p role="alert" className="flex items-center gap-2 rounded-xl bg-red-50 px-3.5 py-2.5 text-sm font-semibold text-red-800">
-      {translator(lang)(error)}
+      {t(error)}
     </p>
   );
 }
@@ -27,7 +29,6 @@ export function WriteForm({
   space,
   changeHref,
   initial,
-  lang,
   langs,
   nationality,
   countryLabel,
@@ -38,12 +39,11 @@ export function WriteForm({
   space: "global" | "lounge";
   changeHref?: string;
   initial: Record<string, string>;
-  lang: Lang;
   langs: { code: string; name: string }[];
   nationality: string;
   countryLabel: string;
 }) {
-  const t = translator(lang);
+  const t = useT();
   const [state, action, pending] = useActionState(serverAction, {});
   const v: Record<string, string> = state.values ?? initial;
   const [tagId, setTagId] = useState(v.kind || board.tags[0].id);
@@ -193,7 +193,7 @@ export function WriteForm({
         <Icon name="lock" size={13} />
         {t("공개")}: <Flag code={nationality} h={11} /> {countryLabel} · {t("글쓴이")} — {t("이메일은 공개되지 않아요.")}
       </p>
-      <ErrorLine error={state.error} lang={lang} />
+      <ErrorLine error={state.error} />
       <button disabled={pending} className={`${btn} w-full`}>
         {pending ? t("올리는 중…") : submitLabel}
       </button>
@@ -201,8 +201,8 @@ export function WriteForm({
   );
 }
 
-export function CommentForm({ action: serverAction, lang, parent }: { action: (s: Result, f: FormData) => Promise<Result>; lang: Lang; parent?: string }) {
-  const t = translator(lang);
+export function CommentForm({ action: serverAction, parent }: { action: (s: Result, f: FormData) => Promise<Result>; parent?: string }) {
+  const t = useT();
   const [state, action, pending] = useActionState(serverAction, {});
   const id = parent ? `reply-${parent}` : "comment";
   return (
@@ -220,7 +220,7 @@ export function CommentForm({ action: serverAction, lang, parent }: { action: (s
         placeholder={parent ? t("이 댓글에 답글 달기") : t("겪어 본 상황과 조건을 함께 적어 주면 더 도움이 돼요.")}
         className={field}
       />
-      <ErrorLine error={state.error} lang={lang} />
+      <ErrorLine error={state.error} />
       <button disabled={pending} className={btn}>
         {pending ? t("등록 중…") : parent ? t("답글 달기") : t("댓글 달기")}
       </button>
@@ -228,8 +228,8 @@ export function CommentForm({ action: serverAction, lang, parent }: { action: (s
   );
 }
 
-export function ReportForm({ post, comment, lang }: { post?: string; comment?: string; lang: Lang }) {
-  const t = translator(lang);
+export function ReportForm({ post, comment }: { post?: string; comment?: string }) {
+  const t = useT();
   const [state, action, pending] = useActionState(reportContent, {});
   if (state.ok) {
     return (
@@ -267,7 +267,7 @@ export function ReportForm({ post, comment, lang }: { post?: string; comment?: s
         </label>
         <textarea id="details" name="details" rows={4} maxLength={1000} className={field} />
       </div>
-      <ErrorLine error={state.error} lang={lang} />
+      <ErrorLine error={state.error} />
       <div className="flex gap-2">
         <button disabled={pending} className={btn}>
           {t("신고 보내기")}
@@ -280,8 +280,8 @@ export function ReportForm({ post, comment, lang }: { post?: string; comment?: s
   );
 }
 
-export function NationalityForm({ lang, current, countries }: { lang: Lang; current: string; countries: { code: string; name: string }[] }) {
-  const t = translator(lang);
+export function NationalityForm({ current, countries }: { current: string; countries: { code: string; name: string }[] }) {
+  const t = useT();
   const [state, action, pending] = useActionState(updateNationality, {});
   return (
     <form action={action} className="space-y-2">
@@ -301,7 +301,7 @@ export function NationalityForm({ lang, current, countries }: { lang: Lang; curr
         </button>
       </div>
       <p className="text-xs opacity-70">{t("국적은 내 모든 글에 공개되고, 30일에 한 번 바꿀 수 있어요.")}</p>
-      <ErrorLine error={state.error} lang={lang} />
+      <ErrorLine error={state.error} />
       {state.ok && <p className="text-sm font-semibold text-primary">{t("저장했어요.")}</p>}
     </form>
   );

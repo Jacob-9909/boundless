@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition, type CSSProperties } from "react";
-import { completeSignup, demoLogin, sendCode, setLang, verifyCode } from "@/app/actions";
+import { completeSignup, demoLogin, sendCode, verifyCode } from "@/app/actions";
 import { CULTURES, DEFAULT_CULTURE, cultureOf, themeVars, type Culture } from "@/lib/cultures";
-import { translator, type Lang } from "@/lib/i18n";
+import type { Lang } from "@/lib/i18n";
+import { useT } from "./I18n";
 import { Icon } from "./Icon";
+import { LangMenu } from "./LangMenu";
 import { Flag, Landmark, Logo, NationalityChip, btn, field, labelCls } from "./ui";
 
 type Step = "email" | "code" | "profile";
@@ -30,7 +32,7 @@ export function LoginScreen({
   countries: { code: string; name: string }[];
   demo: boolean;
 }) {
-  const t = translator(lang);
+  const t = useT();
   const router = useRouter();
   const [culture, setCulture] = useState(() => cultureOf(initial));
   const [step, setStep] = useState<Step>("email");
@@ -94,23 +96,21 @@ export function LoginScreen({
   return (
     <div style={themeVars(culture) as CSSProperties} className="min-h-screen bg-paper text-ink lg:grid lg:grid-cols-[1.15fr_1fr]">
       {/* Hero: re-skinned with the chosen culture's colors, pattern, script and greeting */}
-      <section className="relative flex min-h-[46vh] flex-col overflow-hidden bg-primary px-5 pt-4 pb-8 text-paper transition-colors duration-500 lg:min-h-screen lg:px-10">
-        <div key={`p-${culture.code}`} className="bg-pattern animate-fade-in absolute inset-0 opacity-30" aria-hidden="true" />
-        <div key={`l-${culture.code}`} className="animate-fade-in absolute inset-x-0 bottom-0" aria-hidden="true">
-          <Landmark culture={culture} className="ml-auto h-40 w-auto opacity-80 lg:h-56" />
+      {/* z-10 + no overflow clip on the section, so the language menu can drop below the hero */}
+      <section className="relative z-10 flex min-h-[46vh] flex-col bg-primary px-5 pt-4 pb-8 text-paper transition-colors duration-500 lg:min-h-screen lg:px-10">
+        <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+          <div key={`p-${culture.code}`} className="bg-pattern animate-fade-in absolute inset-0 opacity-30" />
+          <div key={`l-${culture.code}`} className="animate-fade-in absolute inset-x-0 bottom-0">
+            <Landmark culture={culture} className="ml-auto h-40 w-auto opacity-80 lg:h-56" />
+          </div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/15 to-transparent" />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/15 to-transparent" aria-hidden="true" />
 
         <div className="relative flex items-center justify-between">
           <Link href="/" className="text-paper" aria-label="Boundless home">
             <Logo />
           </Link>
-          <form action={setLang.bind(null, lang === "ko" ? "en" : "ko")}>
-            <button className="inline-flex h-9 items-center gap-1 rounded-full bg-white/15 px-3 text-[13px] font-bold backdrop-blur hover:bg-white/25" aria-label={t("화면 언어 바꾸기")}>
-              <Icon name="globe" size={16} />
-              {lang.toUpperCase()}
-            </button>
-          </form>
+          <LangMenu lang={lang} label={t("화면 언어 바꾸기")} note={t("한국어와 영어 밖의 언어는 기계 번역이라 어색한 문장이 있을 수 있어요. 검수하고 있어요.")} tone="glass" compact />
         </div>
 
         <div key={`h-${culture.code}`} className="animate-fade-in relative mt-auto pt-10">
@@ -124,7 +124,7 @@ export function LoginScreen({
           <p className="mt-5 max-w-md text-sm opacity-85">{t("Boundless는 한국에 사는 모든 외국인이 생활 정보를 찾고, 익명으로 묻고, 경험을 나누는 곳이에요.")}</p>
           <p className="mt-4 inline-flex items-center gap-2 rounded-full bg-black/25 px-3 py-1 text-xs backdrop-blur">
             <span className="size-2 rounded-full bg-accent" aria-hidden="true" />
-            {culture.motif[lang]}
+            {t(culture.motif)}
           </p>
         </div>
       </section>

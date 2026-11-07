@@ -29,6 +29,27 @@
   word-break: keep-all;
 }
 
+/* Asta Sans covers Latin and Hangul only. Other interface languages swap in a body face for
+   their script; Latin letters stay in Asta Sans where the script face would replace them. */
+html {
+  --font-latin: var(--font-body);
+}
+:is(:lang(vi), :lang(uz), :lang(mn), :lang(kk), :lang(ru), :lang(hi), :lang(ne)) body {
+  --font-body: var(--font-noto);
+}
+:lang(th) body {
+  --font-body: var(--font-latin), var(--font-thai);
+}
+:lang(km) body {
+  --font-body: var(--font-latin), var(--font-khmer);
+}
+:lang(ja) body {
+  --font-body: var(--font-latin), "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", Meiryo, "Noto Sans JP";
+}
+:lang(zh) body {
+  --font-body: var(--font-latin), "PingFang SC", "Microsoft YaHei", "Noto Sans SC";
+}
+
 body {
   background: var(--c-paper);
   color: var(--c-ink);

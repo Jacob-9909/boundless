@@ -1,10 +1,10 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
-import { setLang } from "@/app/actions";
 import { cultureFonts } from "@/app/login/fonts";
 import { BottomNav } from "@/components/BottomNav";
 import { AccountSwitcher } from "@/components/Community";
 import { Icon } from "@/components/Icon";
+import { LangMenu } from "@/components/LangMenu";
 import { SideNav, type NavItem } from "@/components/SideNav";
 import { Avatar, Flag, Landmark, LevelBadge, Logo, btn } from "@/components/ui";
 import { canViewQueue, demoEnabled, getT, getUser } from "@/lib/auth";
@@ -23,7 +23,6 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
     user ? myPoints(user.id) : Promise.resolve(null),
   ]);
   const demoUser = !!user && demoEnabled() && user.email.endsWith("@example.com");
-  const other = lang === "ko" ? "en" : "ko";
 
   const nav: NavItem[] = [
     { href: "/feed", icon: "home", label: t("홈") },
@@ -63,11 +62,11 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
                     const c = counts.find((x) => x.topic === b.id);
                     return (
                       <li key={b.id}>
-                        <Link href={`/b/${b.id}`} className="flex h-9 items-center gap-2.5 rounded-xl px-3 text-sm whitespace-nowrap text-ink/80 hover:bg-ink/[.05]">
+                        <Link href={`/b/${b.id}`} title={t(b.ko)} className="flex h-9 items-center gap-2.5 rounded-xl px-3 text-sm whitespace-nowrap text-ink/80 hover:bg-ink/[.05]">
                           <span className="flex size-6 items-center justify-center rounded-lg text-white" style={{ background: b.color }}>
                             <Icon name={b.icon} size={13} />
                           </span>
-                          {t(b.ko)}
+                          <span className="min-w-0 truncate">{t(b.ko)}</span>
                           {!!c?.today && <span className="size-1.5 rounded-full bg-extra" aria-label={t("오늘 새 글")} />}
                           <span className="ml-auto text-xs opacity-45">{c?.n ?? 0}</span>
                         </Link>
@@ -111,12 +110,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
               </div>
             )}
             {demoUser && user && <AccountSwitcher t={t} lang={lang} current={user.nationality} />}
-            <form action={setLang.bind(null, other)}>
-              <button className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl text-[13px] font-bold text-ink/70 hover:bg-ink/[.05]" aria-label={t("화면 언어 바꾸기")}>
-                <Icon name="globe" size={16} />
-                {lang === "ko" ? "한국어 → English" : "English → 한국어"}
-              </button>
-            </form>
+            <LangMenu lang={lang} label={t("화면 언어 바꾸기")} note={t("한국어와 영어 밖의 언어는 기계 번역이라 어색한 문장이 있을 수 있어요. 검수하고 있어요.")} align="left" up />
           </div>
         </aside>
 
@@ -127,12 +121,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
               <Link href="/feed" className="mr-auto text-ink" aria-label="Boundless">
                 <Logo size={26} />
               </Link>
-              <form action={setLang.bind(null, other)}>
-                <button className="inline-flex h-9 items-center gap-1 rounded-full border border-ink/15 bg-white px-3 text-[13px] font-bold" aria-label={t("화면 언어 바꾸기")}>
-                  <Icon name="globe" size={16} />
-                  {lang.toUpperCase()}
-                </button>
-              </form>
+              <LangMenu lang={lang} label={t("화면 언어 바꾸기")} note={t("한국어와 영어 밖의 언어는 기계 번역이라 어색한 문장이 있을 수 있어요. 검수하고 있어요.")} compact />
               {user ? (
                 <Link href="/settings" className="inline-flex h-9 items-center rounded-full bg-soft px-1.5" title={t("내 공개 국적")} aria-label={t("내 공개 국적")}>
                   <Avatar code={user.nationality} size={26} />

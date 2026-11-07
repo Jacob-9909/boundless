@@ -13,7 +13,7 @@ export type Culture = {
   line: string; // "you are not alone in Korea" in the local language
   langs: string[]; // browser language prefixes that suggest this culture
   font: string; // CSS variable set by the login page fonts
-  motif: { ko: string; en: string }; // what the pattern and colors reference
+  motif: string; // what the pattern and colors reference
   c: Palette;
   pattern: (c: Palette) => string; // SVG tile, inline
 };
@@ -45,7 +45,7 @@ export const DEFAULT_CULTURE: Culture = {
   line: "어디서 왔든, 여기선 모두 이웃이에요.",
   langs: [],
   font: "--font-brand",
-  motif: { ko: "국경 없이 이어지는 노선도", en: "A route map with no borders" },
+  motif: "국경 없이 이어지는 노선도",
   c: { primary: "#1B3A6B", accent: "#4FA3E0", ink: "#0E1B33", paper: "#F3F6FB", soft: "#D6E8F8", extra: "#E4572E" },
   pattern: (c) =>
     svg(
@@ -68,7 +68,7 @@ export const CULTURES: Culture[] = [
     line: "在韩国，你并不孤单。",
     langs: ["zh-cn", "zh-hans"],
     font: "--font-cn",
-    motif: { ko: "회문(回纹) 창살 무늬 · 주홍과 금빛", en: "Huiwen fret lattice · vermilion and gold" },
+    motif: "회문(回纹) 창살 무늬 · 주홍과 금빛",
     c: { primary: "#B3122B", accent: "#E8B33A", ink: "#3A0D0D", paper: "#FFF7EE", soft: "#F9DCCB", extra: "#7A0C1C" },
     pattern: (c) =>
       svg(40, 40, `<path d='M4 36 V4 H36 V28 H12 V12 H28 V20 H20' fill='none' stroke='${c.accent}' stroke-width='3'/>`),
@@ -81,7 +81,7 @@ export const CULTURES: Culture[] = [
     line: "Ở Hàn Quốc, bạn không hề đơn độc.",
     langs: ["vi"],
     font: "--font-vn",
-    motif: { ko: "연꽃 · 옻칠(sơn mài) 붉은색", en: "Lotus · sơn mài lacquer red" },
+    motif: "연꽃 · 옻칠(sơn mài) 붉은색",
     c: { primary: "#A8242B", accent: "#F2A7B5", ink: "#2E1A14", paper: "#FFF8F0", soft: "#FAE1DD", extra: "#3E7C4A" },
     pattern: (c) =>
       svg(
@@ -102,7 +102,7 @@ export const CULTURES: Culture[] = [
     line: "ที่เกาหลี คุณไม่ได้อยู่คนเดียว",
     langs: ["th"],
     font: "--font-th",
-    motif: { ko: "쁘라짬얌(Prajam Yam) 네 잎 무늬 · 타이 실크의 보라와 금", en: "Prajam Yam four-petal motif · Thai silk purple and gold" },
+    motif: "쁘라짬얌(Prajam Yam) 네 잎 무늬 · 타이 실크의 보라와 금",
     c: { primary: "#4B2A82", accent: "#D9A520", ink: "#22113D", paper: "#FBF7EE", soft: "#E9E0F5", extra: "#8E6FC1" },
     pattern: (c) =>
       svg(
@@ -121,7 +121,7 @@ export const CULTURES: Culture[] = [
     line: "Far from home, never alone.",
     langs: ["en-us"],
     font: "--font-us",
-    motif: { ko: "고속도로 표지판 서체 · 별과 줄무늬", en: "Highway-sign lettering · stars and stripes" },
+    motif: "고속도로 표지판 서체 · 별과 줄무늬",
     c: { primary: "#1F3A93", accent: "#E03C4A", ink: "#0D1A3A", paper: "#F7F7F2", soft: "#DDE4F5", extra: "#FFFFFF" },
     pattern: (c) =>
       svg(
@@ -138,7 +138,7 @@ export const CULTURES: Culture[] = [
     line: "Koreyada siz yolgʻiz emassiz.",
     langs: ["uz"],
     font: "--font-uz",
-    motif: { ko: "마르길란 아드라스 이캇 직물 · 레기스탄", en: "Margilan adras ikat silk · Registan" },
+    motif: "마르길란 아드라스 이캇 직물 · 레기스탄",
     c: { primary: "#0B6E73", accent: "#7FD3CF", ink: "#0B2A3C", paper: "#F4FAF9", soft: "#CDEDEB", extra: "#E8B23A" },
     pattern: (c) =>
       svg(
@@ -162,7 +162,7 @@ export const CULTURES: Culture[] = [
     line: "Солонгост та ганцаараа биш.",
     langs: ["mn"],
     font: "--font-mn",
-    motif: { ko: "울지(Ölzii) 매듭 · 초원의 하늘색", en: "Ölzii endless knot · steppe-sky blue" },
+    motif: "울지(Ölzii) 매듭 · 초원의 하늘색",
     c: { primary: "#0B5CAD", accent: "#F2B705", ink: "#0A2240", paper: "#F4F8FC", soft: "#D5E6F6", extra: "#C4272F" },
     pattern: (c) =>
       svg(
@@ -180,7 +180,7 @@ export const CULTURES: Culture[] = [
     line: "Sa Korea, hindi ka nag-iisa.",
     langs: ["fil", "tl"],
     font: "--font-ph",
-    motif: { ko: "여덟 줄기 태양과 세 개의 별 · 지프니 간판 서체", en: "Eight-ray sun and three stars · jeepney sign lettering" },
+    motif: "여덟 줄기 태양과 세 개의 별 · 지프니 간판 서체",
     c: { primary: "#0038A8", accent: "#FCD116", ink: "#0A1E4A", paper: "#FFFDF3", soft: "#FFF1B8", extra: "#CE1126" },
     pattern: (c) =>
       svg(
@@ -202,7 +202,7 @@ export const CULTURES: Culture[] = [
     line: "कोरियामा तपाईं एक्लो हुनुहुन्न।",
     langs: ["ne"],
     font: "--font-np",
-    motif: { ko: "다카(Dhaka) 직물 문양 · 크림슨과 감청", en: "Dhaka handwoven textile · crimson and blue" },
+    motif: "다카(Dhaka) 직물 문양 · 크림슨과 감청",
     c: { primary: "#B0122B", accent: "#F4C542", ink: "#2A0A10", paper: "#FFF8F5", soft: "#F7D9DC", extra: "#1B2A5C" },
     pattern: (c) =>
       svg(
@@ -223,7 +223,7 @@ export const CULTURES: Culture[] = [
     line: "Di Korea, kamu tidak sendirian.",
     langs: ["id", "in"],
     font: "--font-id",
-    motif: { ko: "바틱 카웅(Kawung) · 소간 갈색", en: "Batik kawung · sogan brown" },
+    motif: "바틱 카웅(Kawung) · 소간 갈색",
     c: { primary: "#6E4123", accent: "#E9C99A", ink: "#2B1A10", paper: "#FBF5EC", soft: "#EEDFC9", extra: "#CE1126" },
     pattern: (c) =>
       svg(
@@ -244,7 +244,7 @@ export const CULTURES: Culture[] = [
     line: "韓国でも、ひとりじゃない。",
     langs: ["ja"],
     font: "--font-jp",
-    motif: { ko: "세이가이하(青海波) 물결 · 쪽빛과 주홍", en: "Seigaiha waves · ai indigo and shu vermilion" },
+    motif: "세이가이하(青海波) 물결 · 쪽빛과 주홍",
     c: { primary: "#1F3A5F", accent: "#9DB4CF", ink: "#121C2B", paper: "#F8F5EE", soft: "#DCE3EC", extra: "#D9381E" },
     pattern: (c) => {
       const scale = (cx: number, cy: number) =>
@@ -260,7 +260,7 @@ export const CULTURES: Culture[] = [
     line: "នៅប្រទេសកូរ៉េ អ្នកមិននៅម្នាក់ឯងទេ។",
     langs: ["km"],
     font: "--font-kh",
-    motif: { ko: "파랑·흰색 크로마 체크 · 앙코르와트", en: "Blue-and-white krama check · Angkor Wat" },
+    motif: "파랑·흰색 크로마 체크 · 앙코르와트",
     c: { primary: "#1D3F8F", accent: "#E9EEF8", ink: "#16213D", paper: "#F6F6F1", soft: "#DCE4F4", extra: "#D9B485" },
     pattern: (c) =>
       svg(
@@ -279,7 +279,7 @@ export const CULTURES: Culture[] = [
     line: "Кореяда сіз жалғыз емессіз.",
     langs: ["kk"],
     font: "--font-kz",
-    motif: { ko: "코쉬카르 무이즈(숫양 뿔) 문양 · 하늘색과 태양 금빛", en: "Qoshqar müiz ram-horn ornament · sky blue and sun gold" },
+    motif: "코쉬카르 무이즈(숫양 뿔) 문양 · 하늘색과 태양 금빛",
     c: { primary: "#00799A", accent: "#F2C200", ink: "#063645", paper: "#F2FBFD", soft: "#CBEFF6", extra: "#7FDCEB" },
     pattern: (c) =>
       svg(
@@ -298,7 +298,7 @@ export const CULTURES: Culture[] = [
     line: "В Корее вы не одни.",
     langs: ["ru"],
     font: "--font-ru",
-    motif: { ko: "그젤(Gzhel) 도자기의 코발트 꽃 · 흰 바탕에 파랑", en: "Gzhel porcelain florals · cobalt on white" },
+    motif: "그젤(Gzhel) 도자기의 코발트 꽃 · 흰 바탕에 파랑",
     c: { primary: "#1E4BA0", accent: "#D6E4F8", ink: "#0F1F3D", paper: "#F7F9FD", soft: "#DCE7F7", extra: "#FFFFFF" },
     pattern: (c) =>
       svg(
@@ -319,7 +319,7 @@ export const CULTURES: Culture[] = [
     line: "En Corée, vous n’êtes pas seuls.",
     langs: ["fr"],
     font: "--font-fr",
-    motif: { ko: "비스트로 차양 줄무늬 · 블뢰와 루주", en: "Bistro awning stripes · bleu and rouge" },
+    motif: "비스트로 차양 줄무늬 · 블뢰와 루주",
     c: { primary: "#1D3C8F", accent: "#F4F1EA", ink: "#121A33", paper: "#FAF8F4", soft: "#DCE2F2", extra: "#D72631" },
     pattern: (c) =>
       svg(
@@ -339,7 +339,7 @@ export const CULTURES: Culture[] = [
     line: "कोरिया में आप अकेले नहीं हैं।",
     langs: ["hi"],
     font: "--font-in",
-    motif: { ko: "페이즐리(부타) · 공작빛 · 타지마할", en: "Paisley (buta) · peacock hues · Taj Mahal" },
+    motif: "페이즐리(부타) · 공작빛 · 타지마할",
     c: { primary: "#9E3D12", accent: "#FFD39A", ink: "#2D1606", paper: "#FFF8EF", soft: "#FBE0C8", extra: "#0E7C7B" },
     pattern: (c) =>
       svg(

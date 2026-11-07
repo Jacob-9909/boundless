@@ -81,7 +81,7 @@ export async function RightRail({ viewer, lang, t }: { viewer: string | null; la
                   <span className="flex items-center gap-1.5">
                     <span className="truncate text-[13px] font-bold">{t("{country} 이웃", { country: countryName(r.nationality, lang) })}</span>
                   </span>
-                  <span className="flex items-center gap-1.5 text-[11px] opacity-70">
+                  <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] opacity-70">
                     <LevelBadge points={r.points} t={t} />
                     {t("답변 {a} · 도움 {h}", { a: r.answers, h: r.helped })}
                   </span>
@@ -191,7 +191,7 @@ export async function RightRail({ viewer, lang, t }: { viewer: string | null; la
             <li key={h.tel}>
               <a href={`tel:${h.tel}`} className="block rounded-xl bg-paper px-2.5 py-2 hover:bg-soft">
                 <span className="block font-display text-sm font-extrabold text-primary">{h.tel}</span>
-                <span className="block truncate text-[11px] opacity-70">{h.name[lang]}</span>
+                <span className="block truncate text-[11px] opacity-70">{t(h.name)}</span>
               </a>
             </li>
           ))}

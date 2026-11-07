@@ -92,7 +92,6 @@ export default async function WritePage(props: PageProps<"/write">) {
         space={lounge ? "lounge" : "global"}
         changeHref="/write"
         initial={initial}
-        lang={lang}
         langs={POST_LANGS.map((code) => ({ code, name: langName(code, lang) }))}
         nationality={user.nationality}
         countryLabel={country}

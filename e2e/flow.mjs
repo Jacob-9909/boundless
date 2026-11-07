@@ -3,6 +3,7 @@
 //   BASE_URL=http://localhost:3100 CHROME_PATH=/path/to/chrome node e2e/flow.mjs
 // Needs ADMIN_EMAILS to include admin@example.com on the server.
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { chromium } from "playwright-core";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3000";
@@ -13,6 +14,8 @@ const pageErrors = [];
 
 async function newUser() {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, locale: "en-US" });
+  // Members see their culture's language by default; these flows pick English explicitly.
+  await ctx.addCookies([{ name: "lang", value: "en", url: BASE }]);
   const page = await ctx.newPage();
   page.on("pageerror", (e) => pageErrors.push(e.message));
   return page;
@@ -157,15 +160,23 @@ const judge = await newUser();
 await judge.goto(BASE + "/#demo");
 await judge.locator("#demo form button", { hasText: "Vietnam" }).first().click();
 await judge.waitForURL(BASE + "/feed");
-await judge.getByText("Xin chào, neighbor").waitFor();
+// Switching to a sample neighbor shows the app in that country's language.
+const VI = JSON.parse(readFileSync("src/lib/locales/vi.json", "utf8"));
+assert.equal(await judge.locator("html").getAttribute("lang"), "vi");
+await judge.getByText(VI["{hello}, 이웃님"].replace("{hello}", "Xin chào")).waitFor();
 
 // Country lounges: the Vietnam lounge is visible to the Vietnamese sample neighbor, not to A (Japan).
 await judge.goto(BASE + "/lounge");
 const loungeUrl = BASE + (await judge.locator("a[href^='/posts/']").first().getAttribute("href"));
 await judge.goto(loungeUrl);
-await judge.getByText("Vietnam lounge").last().waitFor();
+await judge.getByText(VI["{country} 라운지"].replace("{country}", new Intl.DisplayNames(["vi"], { type: "region" }).of("VN"))).last().waitFor();
 await a.goto(loungeUrl);
 await a.getByText("only for neighbors from Vietnam").waitFor();
+
+// The language menu switches the interface for this browser.
+await judge.locator("header summary").click();
+await judge.getByRole("button", { name: "한국어", exact: true }).click();
+await judge.waitForFunction(() => document.documentElement.lang === "ko");
 
 assert.deepEqual(pageErrors, [], "no uncaught page errors");
 await browser.close();

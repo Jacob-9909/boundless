@@ -5,7 +5,7 @@ import { APPS, HOTLINES, SITES } from "@/lib/guide";
 export const metadata = { title: "Official help" };
 
 export default async function GuidePage() {
-  const { lang, t } = await getT();
+  const { t } = await getT();
   return (
     <div className="mx-auto max-w-3xl pb-6">
       <PageHead line="LINE 06 · GUIDE" title={t("공식 안내")} desc={t("커뮤니티 답변과 함께 정부·공공기관 안내를 꼭 확인하세요.")} />
@@ -16,7 +16,7 @@ export default async function GuidePage() {
           <ul className="mt-2 grid gap-2 sm:grid-cols-2">
             {HOTLINES.map((h) => (
               <li key={h.tel}>
-                <HelpItem h={h} lang={lang} t={t} />
+                <HelpItem h={h} t={t} />
               </li>
             ))}
           </ul>
@@ -27,7 +27,7 @@ export default async function GuidePage() {
           <ul className="mt-2 grid gap-2">
             {SITES.map((h) => (
               <li key={h.url}>
-                <HelpItem h={h} lang={lang} t={t} />
+                <HelpItem h={h} t={t} />
               </li>
             ))}
           </ul>
@@ -37,8 +37,8 @@ export default async function GuidePage() {
           <h2 className="font-display text-lg font-extrabold">{t("앱")}</h2>
           <ul className="mt-2 space-y-1 text-sm">
             {APPS.map((a) => (
-              <li key={a.name.en}>
-                <b>{a.name[lang]}</b> · {t(a.desc)}
+              <li key={a.name}>
+                <b>{t(a.name)}</b> · {t(a.desc)}
               </li>
             ))}
           </ul>

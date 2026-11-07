@@ -2,7 +2,9 @@ import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
 import { cookies, headers } from "next/headers";
 import { cache } from "react";
 import { q } from "@/lib/db";
-import { translator, type Lang } from "@/lib/i18n";
+import { CULTURES } from "@/lib/cultures";
+import { isLang, pickLang, toLang, type Lang } from "@/lib/i18n";
+import { translator } from "@/lib/messages";
 
 const SESSION = "bl_session";
 const VERIFIED = "bl_verified"; // email proven by code, profile not created yet
@@ -126,12 +128,13 @@ export async function consumeCode(email: string, code: string) {
   return true;
 }
 
+/** Interface language: the member's explicit pick, else their culture's language, else the browser's. */
 export async function getLang(): Promise<Lang> {
   const v = (await cookies()).get("lang")?.value;
-  if (v === "ko" || v === "en") return v;
-  // ponytail: most members are not Korean speakers, so English unless the browser asks for Korean.
-  const accept = (await headers()).get("accept-language") ?? "";
-  return accept.toLowerCase().startsWith("ko") ? "ko" : "en";
+  if (isLang(v)) return v;
+  const user = await getUser();
+  const own = user && toLang(CULTURES.find((c) => c.code === user.nationality)?.langs[0]);
+  return own || pickLang((await headers()).get("accept-language") ?? "");
 }
 
 export async function getT() {

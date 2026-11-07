@@ -35,7 +35,6 @@ export default async function EditPage(props: PageProps<"/posts/[id]/edit">) {
           starts_on: post.starts_on ?? "",
           ends_on: post.ends_on ?? "",
         }}
-        lang={lang}
         langs={POST_LANGS.map((code) => ({ code, name: langName(code, lang) }))}
         nationality={user.nationality}
         countryLabel={countryName(user.nationality, lang)}

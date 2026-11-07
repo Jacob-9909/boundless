@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { deleteAccount, setLang, setReadLang, setRegion, signOut, unblockAll } from "@/app/actions";
+import { LangMenu } from "@/components/LangMenu";
+import { deleteAccount, setReadLang, setRegion, signOut, unblockAll } from "@/app/actions";
 import { NationalityForm } from "@/components/forms";
 import { Icon } from "@/components/Icon";
 import { PageHead, btn, field } from "@/components/ui";
 import { canViewQueue, getT, getUser } from "@/lib/auth";
 import { q } from "@/lib/db";
-import { langName, READ_LANGS, readLangOf, REGIONS, REPORT_REASONS, sortedCountries, timeAgo } from "@/lib/i18n";
+import { langName, READ_LANGS, REGIONS, REPORT_REASONS, sortedCountries, timeAgo } from "@/lib/i18n";
 
 export const metadata = { title: "Settings" };
 
@@ -35,18 +36,7 @@ export default async function SettingsPage() {
           <div className="mt-1 border-l-4 border-primary/30 pl-3">
             <div className={row}>
               <span className="font-bold text-primary">{t("화면 언어")}</span>
-              <div className="flex gap-1">
-                {(["ko", "en"] as const).map((l) => (
-                  <form key={l} action={setLang.bind(null, l)}>
-                    <button
-                      aria-pressed={lang === l}
-                      className={`h-9 rounded-full px-3.5 text-[13px] font-bold ${lang === l ? "bg-primary text-paper" : "bg-white"}`}
-                    >
-                      {l === "ko" ? "한국어" : "English"}
-                    </button>
-                  </form>
-                ))}
-              </div>
+              <LangMenu lang={lang} label={t("화면 언어 바꾸기")} note={t("한국어와 영어 밖의 언어는 기계 번역이라 어색한 문장이 있을 수 있어요. 검수하고 있어요.")} compact />
             </div>
             <details className="border-b border-ink/10 py-3">
               <summary className="cursor-pointer font-bold">{t("커뮤니티 규칙과 안전")}</summary>
@@ -66,7 +56,7 @@ export default async function SettingsPage() {
               <h2 className="font-display text-lg font-extrabold">{t("계정")}</h2>
               <div className="mt-1 space-y-1 border-l-4 border-primary/30 pl-3">
                 <div className="py-3">
-                  <NationalityForm lang={lang} current={user.nationality} countries={sortedCountries(lang)} />
+                  <NationalityForm current={user.nationality} countries={sortedCountries(lang)} />
                 </div>
                 <form action={setRegion} className="space-y-1 border-b border-ink/10 py-3">
                   <label htmlFor="my-region" className="block text-sm font-bold">
@@ -97,7 +87,7 @@ export default async function SettingsPage() {
                   </label>
                   <div className="flex gap-2">
                     <select id="read-lang" name="read_lang" defaultValue={user.read_lang ?? ""} className={field}>
-                      <option value="">{t("국적에 맞춰 자동 ({lang})", { lang: langName(readLangOf({ nationality: user.nationality }, lang), lang) })}</option>
+                      <option value="">{t("화면 언어와 같게 ({lang})", { lang: langName(lang, lang) })}</option>
                       {READ_LANGS.map((l) => (
                         <option key={l} value={l}>
                           {langName(l, lang)}

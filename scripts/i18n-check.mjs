@@ -1,4 +1,5 @@
 // Fails when a Korean UI key used in src/ has no English line in src/lib/en.ts.
+// Also lists lines a machine translation in src/lib/locales/ still lacks (those fall back to English).
 // Usage: node scripts/i18n-check.mjs
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
@@ -17,7 +18,7 @@ const used = new Set();
 for (const f of files) {
   const src = readFileSync(f, "utf8");
   // t("..."), tr(lang, "..."), { ko: "..." }, and Korean error strings returned from actions
-  for (const re of [/\bt\(\s*"([^"]+)"/g, /\btr\(\s*\w+\s*,\s*"([^"]+)"/g, /\bid:\s*"[^"]+",\s*ko:\s*"([^"]+)"/g, /(?:error|fail)\(?\s*[:=]?\s*"([^"]+)"/g, /\bdesc:\s*"([^"]+)"/g, /\b(?:titleHint|bodyHint):\s*"([^"]+)"/g, /\bmin:\s*\d+,\s*ko:\s*"([^"]+)"/g]) {
+  for (const re of [/\bt\(\s*"([^"]+)"/g, /\btr\(\s*\w+\s*,\s*"([^"]+)"/g, /\bid:\s*"[^"]+",\s*ko:\s*"([^"]+)"/g, /(?:error|fail)\(?\s*[:=]?\s*"([^"]+)"/g, /\bdesc:\s*"([^"]+)"/g, /\b(?:titleHint|bodyHint):\s*"([^"]+)"/g, /\bmin:\s*\d+,\s*ko:\s*"([^"]+)"/g, /\b(?:name|motif):\s*"([^"]+)"/g]) {
     for (const m of src.matchAll(re)) if (hangul.test(m[1])) used.add(m[1]);
   }
 }
@@ -30,5 +31,10 @@ if (unused.length) console.log(`unused (${unused.length}):\n` + unused.map((k) =
 if (missing.length) {
   console.log(`missing (${missing.length}):\n` + missing.map((k) => `  ${JSON.stringify(k)}: "",`).join("\n"));
   process.exit(1);
+}
+for (const f of readdirSync("src/lib/locales")) {
+  const loc = JSON.parse(readFileSync(join("src/lib/locales", f), "utf8"));
+  const gap = [...keys].filter((k) => !loc[k]);
+  if (gap.length) console.log(`${f}: ${gap.length} lines fall back to English (run node scripts/i18n-translate.mjs)`);
 }
 console.log(`i18n ok: ${used.size} keys`);

@@ -1,11 +1,17 @@
 import type { Metadata, Viewport } from "next";
-import { Asta_Sans, Bricolage_Grotesque } from "next/font/google";
+import { Asta_Sans, Bricolage_Grotesque, Noto_Sans, Noto_Sans_Khmer, Noto_Sans_Thai } from "next/font/google";
+import { I18n } from "@/components/I18n";
 import { getLang } from "@/lib/auth";
+import { dictOf } from "@/lib/messages";
 import "./globals.css";
 
 // Display: Bricolage Grotesque for Latin; Asta Sans carries Hangul and body text (picked with the design skill's font data).
-const brand = Bricolage_Grotesque({ variable: "--font-brand", subsets: ["latin"] });
+const brand = Bricolage_Grotesque({ variable: "--font-brand", subsets: ["latin", "latin-ext", "vietnamese"] });
 const body = Asta_Sans({ variable: "--font-body", subsets: ["latin"] });
+// Body faces for scripts Asta Sans lacks. preload: false, so they download only when that language is on screen.
+const noto = Noto_Sans({ variable: "--font-noto", subsets: ["latin", "latin-ext", "vietnamese", "cyrillic", "cyrillic-ext", "devanagari"], preload: false });
+const thai = Noto_Sans_Thai({ variable: "--font-thai", subsets: ["thai"], preload: false });
+const khmer = Noto_Sans_Khmer({ variable: "--font-khmer", subsets: ["khmer"], preload: false });
 
 export const metadata: Metadata = {
   title: { default: "Boundless", template: "%s · Boundless" },
@@ -17,8 +23,10 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1 };
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const lang = await getLang();
   return (
-    <html lang={lang} className={`${brand.variable} ${body.variable} h-full antialiased`}>
-      <body className="min-h-full font-sans">{children}</body>
+    <html lang={lang} className={`${brand.variable} ${body.variable} ${noto.variable} ${thai.variable} ${khmer.variable} h-full antialiased`}>
+      <body className="min-h-full font-sans">
+        <I18n dict={dictOf(lang)}>{children}</I18n>
+      </body>
     </html>
   );
 }

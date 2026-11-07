@@ -1,19 +1,60 @@
 // Client-safe i18n helpers. The Korean sentence is the dictionary key:
 // wrap UI text as t(<Korean sentence>) and add the English line to ./en.ts.
-// `node scripts/i18n-check.mjs` fails when a key is missing.
-import { cultureOf } from "./cultures";
-import { EN } from "./en";
+// Other languages live in ./locales/<lang>.json, machine-translated from English by
+// `node scripts/i18n-translate.mjs`. `node scripts/i18n-check.mjs` fails when an English line is missing.
 
-export type Lang = "ko" | "en";
+/** Interface languages: Korean, English, and the language of every culture theme. */
+export const LANGS = ["ko", "en", "zh", "vi", "th", "uz", "mn", "fil", "ne", "id", "ja", "km", "kk", "ru", "fr", "hi"] as const;
+export type Lang = (typeof LANGS)[number];
+export const isLang = (v: unknown): v is Lang => LANGS.includes(v as Lang);
+/** Own-language names, static so server and browser render the same text. */
+export const LANG_NAMES: Record<Lang, string> = {
+  ko: "한국어",
+  en: "English",
+  zh: "中文",
+  vi: "Tiếng Việt",
+  th: "ไทย",
+  uz: "Oʻzbekcha",
+  mn: "Монгол",
+  fil: "Filipino",
+  ne: "नेपाली",
+  id: "Bahasa Indonesia",
+  ja: "日本語",
+  km: "ខ្មែរ",
+  kk: "Қазақша",
+  ru: "Русский",
+  fr: "Français",
+  hi: "हिन्दी",
+};
+/** Languages whose lines come from machine translation and still need a native speaker's review. */
+export const MACHINE_LANGS: readonly Lang[] = LANGS.filter((l) => l !== "ko" && l !== "en");
+
+/** Browser language codes that differ from ours. */
+const ALIASES: Record<string, Lang> = { tl: "fil", in: "id" };
+export const toLang = (code: string | undefined): Lang | null => {
+  const c = code?.toLowerCase().split("-")[0] ?? "";
+  const l = ALIASES[c] ?? c;
+  return isLang(l) ? l : null;
+};
+/** First supported language in an Accept-Language header, else English. */
+export const pickLang = (accept: string): Lang => {
+  for (const part of accept.split(",")) {
+    const l = toLang(part.split(";")[0].trim());
+    if (l) return l;
+  }
+  return "en";
+};
+
 export type T = (ko: string, vars?: Record<string, string | number>) => string;
+export type Dict = Record<string, string>;
 
-export function tr(lang: Lang, ko: string, vars?: Record<string, string | number>) {
-  let s = lang === "en" ? (EN[ko] ?? ko) : ko;
-  if (vars) for (const [k, v] of Object.entries(vars)) s = s.replaceAll(`{${k}}`, String(v));
-  return s;
-}
-
-export const translator = (lang: Lang): T => (ko, vars) => tr(lang, ko, vars);
+export const translatorOf =
+  (dict: Dict): T =>
+  (ko, vars) => {
+    let s = dict[ko] ?? ko;
+    if (vars) for (const [k, v] of Object.entries(vars)) s = s.replaceAll(`{${k}}`, String(v));
+    return s;
+  };
 
 export const COUNTRIES =
   "AD AE AF AG AI AL AM AO AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GT GU GW GY HK HN HR HT HU ID IE IL IM IN IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG US UY UZ VA VC VE VG VI VN VU WF WS YE YT ZA ZM ZW".split(
@@ -72,11 +113,9 @@ export function langName(code: string, lang: Lang) {
 /** Languages a member can read translations in. */
 export const READ_LANGS = POST_LANGS.filter((l) => l !== "other");
 
-/** Translation target: the member's choice, else their culture's language, else the UI language. */
-export function readLangOf(user: { nationality: string; read_lang?: string | null } | null, ui: Lang) {
-  if (user?.read_lang && READ_LANGS.includes(user.read_lang)) return user.read_lang;
-  const guess = user ? (cultureOf(user.nationality).langs[0]?.split("-")[0] ?? "") : "";
-  return READ_LANGS.includes(guess) ? guess : ui;
+/** Translation target: the member's choice, else the interface language (which defaults to their culture's). */
+export function readLangOf(user: { read_lang?: string | null } | null, ui: Lang) {
+  return user?.read_lang && READ_LANGS.includes(user.read_lang) ? user.read_lang : ui;
 }
 
 export const REPORT_REASONS = [

@@ -21,7 +21,7 @@ import {
 } from "@/lib/auth";
 import { q, track } from "@/lib/db";
 import { boardOf, DEALS, isBoard, LOUNGE } from "@/lib/boards";
-import { isCountry, isRegion, POST_LANGS, READ_LANGS, readLangOf, REPORT_REASONS } from "@/lib/i18n";
+import { isCountry, isLang, isRegion, POST_LANGS, READ_LANGS, readLangOf, REPORT_REASONS } from "@/lib/i18n";
 import { translateItem } from "@/lib/translate";
 import { sendCodeMail } from "@/lib/mail";
 
@@ -109,6 +109,8 @@ export async function demoLogin(code: string) {
     [email, nationality]
   );
   await startSession(rows[0].id);
+  // Switching sample neighbors shows each country in its own language.
+  (await cookies()).delete("lang");
   redirect(mod ? "/admin" : "/feed");
 }
 
@@ -118,7 +120,7 @@ export async function signOut() {
 }
 
 export async function setLang(lang: string) {
-  if (lang !== "ko" && lang !== "en") return;
+  if (!isLang(lang)) return;
   (await cookies()).set("lang", lang, { path: "/", maxAge: 365 * 86400, sameSite: "lax" });
 }
 

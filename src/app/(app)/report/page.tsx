@@ -9,7 +9,7 @@ export default async function ReportPage(props: PageProps<"/report">) {
   const sp = await props.searchParams;
   const post = typeof sp.post === "string" ? sp.post : undefined;
   const comment = typeof sp.comment === "string" ? sp.comment : undefined;
-  const [{ lang, t }, user] = await Promise.all([getT(), getUser()]);
+  const [{ t }, user] = await Promise.all([getT(), getUser()]);
   if (!user) return <SignInRequired t={t} next={`/report?${new URLSearchParams(sp as Record<string, string>)}`} />;
 
   return (
@@ -17,7 +17,7 @@ export default async function ReportPage(props: PageProps<"/report">) {
       <BackLink href={post ? `/posts/${post}` : "/"} label={t("뒤로")} />
       <PageHead line="LINE 08 · REPORT" title={comment ? t("댓글 신고") : t("글 신고")} desc={t("신고 내용은 공개되지 않아요. 운영자가 검토해요.")} />
       <div className="space-y-4 p-4">
-        <ReportForm post={post} comment={comment} lang={lang} />
+        <ReportForm post={post} comment={comment} />
         <form action={blockAuthor} className="rounded-2xl bg-soft/60 p-5">
           {post && <input type="hidden" name="post" value={post} />}
           {comment && <input type="hidden" name="comment" value={comment} />}

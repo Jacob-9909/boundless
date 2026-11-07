@@ -11,7 +11,8 @@
 
 - **게시판 12개**, 게시판마다 말머리: 생활 정보(교통 · 비자·행정 · 집·주거 · 병원·건강 · 일자리·알바) / 한국 즐기기(맛집·음식 · 팝업·이벤트 · 여행·나들이 · 한국어) / 이야기(노가리 · 연애·관계 · 장터). 장터는 가격과 거래 상태(판매중·예약중·거래완료, 나눔), 팝업은 기간과 장소
 - **공간 2개**: 모든 외국인이 함께 보는 *모두의 광장*과, 같은 국적만 들어오는 *우리나라 라운지*(`/lounge`)
-- **번역**: 글·댓글마다 내 언어로 번역 버튼(국적 기준 자동, 설정에서 변경). MyMemory 무료 API + DB 캐시
+- **화면 언어 16개**: 한국어·영어와 문화 테마 14개국 언어. 가입하면 국적 언어가 기본이고, 언어 메뉴에서 바꾸면 `lang` 쿠키로 기억한다. 14개 언어는 기계 번역(`src/lib/locales/*.json`)이라 원어민 검수 전이다
+- **번역**: 글·댓글마다 내 언어로 번역 버튼(화면 언어 기준, 설정에서 변경). MyMemory 무료 API + DB 캐시
 - **랭킹과 레벨**: 글 1점 · 다른 이웃 글 답변 2점 · 도움돼요 받으면 3점. 새싹 이웃 → 반가운 이웃 → 든든한 이웃 → 동네 반장 → 명예 주민. 오른쪽 패널에 도움왕 랭킹과 내 레벨
 - 익명 호칭(글쓴이 / 이웃 1, 2…), 도움돼요, 저장, 대댓글, 해결됨, 새 답변 알림, 글 수정·삭제
 - 신고 · 차단 · 탈퇴 · 운영 큐(`/admin`), 글/댓글/로그인 코드 횟수 제한, 공식 안내(`/guide`)
@@ -65,7 +66,8 @@ npm run dev
 
 ```bash
 npm run lint
-npm run i18n                      # t("한국어") 키마다 src/lib/en.ts 영어 문구가 있는지
+npm run i18n                      # t("한국어") 키마다 src/lib/en.ts 영어 문구가 있는지, 언어별 빠진 줄 수
+node scripts/i18n-translate.mjs   # en.ts 에 새로 생긴 줄만 14개 언어로 기계 번역해 locales/*.json 에 추가
 BASE_URL=http://localhost:3000 npm run e2e   # dev 서버 대상: 가입→글→익명 호칭→공감·저장·대댓글→새 답변 알림→해결·수정→검색→신고→차단→운영자 가리기→탈퇴
 ```
 
@@ -76,7 +78,7 @@ CI(`.github/workflows/ci-cd.yml`)는 Postgres 서비스 위에서 lint, i18n, bu
 - `src/app/(app)/` 피드 · 검색 · 글쓰기/수정 · 글 · 신고 · 내 글(저장한 글) · 공식 안내 · 설정 · 운영 큐 (`/admin`, `ADMIN_EMAILS`만)
 - `src/app/login/` 문화별 로그인 (이메일 6자리 코드 → 공개 국적 선택)
 - `src/app/actions.ts` 모든 쓰기 동작 (Server Actions)
-- `src/lib/` `auth.ts` 세션·코드, `posts.ts` 조회, `cultures.ts` 테마, `guide.ts` 공식 안내, `i18n.ts` + `en.ts` 한/영 UI
+- `src/lib/` `auth.ts` 세션·코드, `posts.ts` 조회, `cultures.ts` 테마, `guide.ts` 공식 안내, `i18n.ts` + `en.ts` + `locales/` UI 문구, `messages.ts` 언어별 사전
 - `src/components/Icon.tsx` SVG 아이콘(이모지 대신), `public/flags/` SVG 국기(country-flag-icons, MIT — Windows는 이모지 국기를 글자로 보여 줌)
 - `db/schema.sql` 스키마 `boundless` (재실행 안전), `db/seed.sql` 가상 데이터
 

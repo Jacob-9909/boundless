@@ -9,7 +9,7 @@ import { Avatar, BackLink, BoardBadge, EventLine, Flag, HelpItem, LevelBadge, Ma
 import { getT, getUser } from "@/lib/auth";
 import { boardOf, DEALS } from "@/lib/boards";
 import { helpFor } from "@/lib/guide";
-import { countryName, langName, readLangOf, regionLabel, timeAgo, type T } from "@/lib/i18n";
+import { countryName, langName, readLangOf, regionLabel, timeAgo, type Lang, type T } from "@/lib/i18n";
 import { getComments, getPost, type CommentRow } from "@/lib/posts";
 
 export default async function PostPage(props: PageProps<"/posts/[id]">) {
@@ -111,7 +111,7 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
             {t("원문")} · {langName(post.lang, lang)}
           </p>
           {canTranslate ? (
-            <Translatable kind="p" id={post.id} body={post.body} lang={lang} target={target} className="text-base leading-[1.75] whitespace-pre-wrap [overflow-wrap:anywhere]" />
+            <Translatable kind="p" id={post.id} body={post.body} target={target} className="text-base leading-[1.75] whitespace-pre-wrap [overflow-wrap:anywhere]" />
           ) : (
             <div className="text-base leading-[1.75] whitespace-pre-wrap [overflow-wrap:anywhere]">{post.body}</div>
           )}
@@ -190,7 +190,7 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
             <ul className="mt-2 space-y-2">
               {help.map((h) => (
                 <li key={h.tel ?? h.url}>
-                  <HelpItem h={h} lang={lang} t={t} />
+                  <HelpItem h={h} t={t} />
                 </li>
               ))}
             </ul>
@@ -215,7 +215,7 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
                           {t("답글")}
                         </summary>
                         <div className="mt-2">
-                          <CommentForm action={reply} lang={lang} parent={c.id} />
+                          <CommentForm action={reply} parent={c.id} />
                         </div>
                       </details>
                     )}
@@ -228,7 +228,7 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
 
           <div className="mt-5">
             {user ? (
-              <CommentForm action={reply} lang={lang} />
+              <CommentForm action={reply} />
             ) : (
               <Link href={signIn} className="text-sm font-bold text-primary underline">
                 {t("로그인하고 댓글 달기")}
@@ -246,7 +246,7 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
   );
 }
 
-function Comment({ c, postId, t, lang, signedIn, target }: { c: CommentRow; postId: string; t: T; lang: "ko" | "en"; signedIn: boolean; target: string }) {
+function Comment({ c, postId, t, lang, signedIn, target }: { c: CommentRow; postId: string; t: T; lang: Lang; signedIn: boolean; target: string }) {
   if (c.hidden) return <p className="rounded-xl bg-white p-3.5 text-sm italic opacity-60">{t("운영 정책에 따라 가려진 댓글이에요")}</p>;
   return (
     <div
@@ -264,7 +264,7 @@ function Comment({ c, postId, t, lang, signedIn, target }: { c: CommentRow; post
           <span className="opacity-60">{timeAgo(c.created_at, lang)}</span>
         </div>
         <div className="mt-1.5">
-          <Translatable kind="c" id={c.id} body={c.body} lang={lang} target={target} small className="text-[15px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere]" />
+          <Translatable kind="c" id={c.id} body={c.body} target={target} small className="text-[15px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere]" />
         </div>
         <div className="mt-1.5 flex items-center gap-3 text-xs">
           {signedIn ? (
