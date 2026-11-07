@@ -42,7 +42,7 @@ export default async function Home(props: PageProps<"/feed">) {
                   <Flag code={user.nationality} h={13} />
                   {country}
                 </p>
-                <h1 className="mt-1.5 font-culture text-4xl leading-tight md:text-5xl">{t("{hello}, 이웃님", { hello: culture.hello })}</h1>
+                <h1 className="mt-1.5 font-culture text-4xl leading-tight text-balance md:text-5xl">{t("{hello}, 이웃님", { hello: culture.hello })}</h1>
                 <p className="mt-2 text-sm opacity-90 md:text-[15px]">
                   {t("오늘 새 글 {today}개 · 답변을 기다리는 질문 {waiting}개", { today: stats.today, waiting: stats.waiting })}
                 </p>
