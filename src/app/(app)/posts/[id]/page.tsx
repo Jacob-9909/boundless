@@ -167,7 +167,7 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
             <span className="ml-auto flex items-center gap-3 text-xs">
               {post.mine && (
                 <>
-                  <Link href={`/posts/${post.id}/edit`} className="inline-flex items-center gap-1 font-semibold opacity-60 hover:underline">
+                  <Link href={`/posts/${post.id}/edit`} className="inline-flex h-8 items-center gap-1 font-semibold opacity-70 hover:underline">
                     <Icon name="edit" size={14} />
                     {t("수정")}
                   </Link>
@@ -175,7 +175,7 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
                 </>
               )}
               {user && !post.mine && (
-                <Link href={`/report?post=${post.id}`} className="inline-flex items-center gap-1 font-semibold opacity-60 hover:underline">
+                <Link href={`/report?post=${post.id}`} className="inline-flex h-8 items-center gap-1 font-semibold opacity-70 hover:underline">
                   <Icon name="flag" size={14} />
                   {t("신고")}
                 </Link>
@@ -185,7 +185,7 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
         </div>
 
         {help.length > 0 && (
-          <aside className="mx-4 rounded-2xl bg-soft/50 p-4">
+          <section className="mx-4 rounded-2xl bg-soft/50 p-4">
             <p className="text-sm font-bold">{t("공식 안내도 함께 확인하세요")}</p>
             <ul className="mt-2 space-y-2">
               {help.map((h) => (
@@ -194,7 +194,7 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
                 </li>
               ))}
             </ul>
-          </aside>
+          </section>
         )}
 
         <section className="mt-2 border-t border-ink/10 px-4 py-5">
@@ -247,7 +247,7 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
 }
 
 function Comment({ c, postId, t, lang, signedIn, target }: { c: CommentRow; postId: string; t: T; lang: Lang; signedIn: boolean; target: string }) {
-  if (c.hidden) return <p className="rounded-xl bg-white p-3.5 text-sm italic opacity-60">{t("운영 정책에 따라 가려진 댓글이에요")}</p>;
+  if (c.hidden) return <p className="rounded-xl bg-white p-3.5 text-sm italic opacity-70">{t("운영 정책에 따라 가려진 댓글이에요")}</p>;
   return (
     <div
       data-comment
@@ -261,7 +261,7 @@ function Comment({ c, postId, t, lang, signedIn, target }: { c: CommentRow; post
           </span>
           <NationalityChip code={c.nationality} lang={lang} />
           <LevelBadge points={c.points} t={t} />
-          <span className="opacity-60">{timeAgo(c.created_at, lang)}</span>
+          <span className="opacity-70">{timeAgo(c.created_at, lang)}</span>
         </div>
         <div className="mt-1.5">
           <Translatable kind="c" id={c.id} body={c.body} target={target} small className="text-[15px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere]" />
@@ -273,14 +273,14 @@ function Comment({ c, postId, t, lang, signedIn, target }: { c: CommentRow; post
               <button
                 aria-pressed={c.liked}
                 aria-label={`${t("도움돼요")} ${c.likes}`}
-                className={`-ml-1 inline-flex h-8 items-center gap-1 rounded-full px-1.5 font-semibold ${c.liked ? "text-primary" : "opacity-60"}`}
+                className={`-ml-1 inline-flex h-8 items-center gap-1 rounded-full px-1.5 font-semibold ${c.liked ? "text-primary" : "opacity-70"}`}
               >
                 <Icon name="helpful" size={15} filled={c.liked} />
                 {c.likes}
               </button>
             </form>
           ) : (
-            <span className="inline-flex h-8 items-center gap-1 opacity-60">
+            <span className="inline-flex h-8 items-center gap-1 opacity-70">
               <Icon name="helpful" size={15} />
               {c.likes}
             </span>
@@ -290,7 +290,7 @@ function Comment({ c, postId, t, lang, signedIn, target }: { c: CommentRow; post
               <DeleteOwn name="comment" id={c.id} label={t("삭제")} confirm={t("이 댓글을 삭제할까요?")} yes={t("삭제")} />
             ) : (
               signedIn && (
-                <Link href={`/report?comment=${c.id}&post=${postId}`} className="inline-flex items-center gap-1 opacity-50 hover:underline">
+                <Link href={`/report?comment=${c.id}&post=${postId}`} className="inline-flex h-8 items-center gap-1 opacity-70 hover:underline">
                   <Icon name="flag" size={13} />
                   {t("신고")}
                 </Link>
@@ -307,7 +307,7 @@ function Comment({ c, postId, t, lang, signedIn, target }: { c: CommentRow; post
 function DeleteOwn({ name, id, label, confirm, yes }: { name: "post" | "comment"; id: string; label: string; confirm: string; yes: string }) {
   return (
     <details className="inline-block text-xs">
-      <summary className="inline-flex cursor-pointer list-none items-center gap-1 font-semibold opacity-60 hover:underline">
+      <summary className="inline-flex h-8 cursor-pointer list-none items-center gap-1 font-semibold opacity-70 hover:underline">
         <Icon name="trash" size={14} />
         {label}
       </summary>

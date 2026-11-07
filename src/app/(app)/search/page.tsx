@@ -109,7 +109,7 @@ export default async function SearchPage(props: PageProps<"/search">) {
         ) : (
           <Notice label={t("결과 없음")} title={t("검색 결과가 없어요")}>
             <p>{t("검색어를 바꾸거나 주제 필터를 해제해 보세요. 그래도 없다면 직접 물어보세요.")}</p>
-            <Link href={`/write?${new URLSearchParams({ title: query, board: topic })}`} className="mt-3 inline-block font-bold text-primary underline">
+            <Link href={`/write?${new URLSearchParams({ title: query, board: topic })}`} className="mt-3 inline-flex h-10 items-center font-bold text-primary underline">
               {t("질문 올리기")}
             </Link>
           </Notice>

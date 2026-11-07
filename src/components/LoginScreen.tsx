@@ -94,7 +94,7 @@ export function LoginScreen({
     });
 
   return (
-    <div style={themeVars(culture) as CSSProperties} className="min-h-screen bg-paper text-ink lg:grid lg:grid-cols-[1.15fr_1fr]">
+    <main style={themeVars(culture) as CSSProperties} className="min-h-screen bg-paper text-ink lg:grid lg:grid-cols-[1.15fr_1fr]">
       {/* Hero: re-skinned with the chosen culture's colors, pattern, script and greeting */}
       {/* z-10 + no overflow clip on the section, so the language menu can drop below the hero */}
       <section className="relative z-10 flex min-h-[46vh] flex-col bg-primary px-5 pt-4 pb-8 text-paper transition-colors duration-500 lg:min-h-screen lg:px-10">
@@ -136,7 +136,7 @@ export function LoginScreen({
           {PICKER.map((c) => {
             const on = c.code === culture.code;
             return (
-              <li key={c.code} className="w-[76px] shrink-0 lg:w-auto">
+              <li key={c.code} role="none" className="w-[76px] shrink-0 lg:w-auto">
                 <button
                   type="button"
                   role="radio"
@@ -174,8 +174,8 @@ export function LoginScreen({
               <button disabled={pending} className={`${btn} w-full`}>
                 {pending ? t("보내는 중…") : t("로그인 코드 받기")}
               </button>
-              <p className="text-center text-xs opacity-60">
-                <Link href="/feed" className="underline">
+              <p className="text-center text-xs opacity-70">
+                <Link href="/feed" className="inline-block py-2 underline">
                   {t("가입하지 않고 둘러보기")}
                 </Link>
               </p>
@@ -272,7 +272,7 @@ export function LoginScreen({
                 </div>
               )}
               <label className="flex items-start gap-2 text-sm">
-                <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mt-1" />
+                <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mt-0.5 size-5 shrink-0 accent-[var(--c-primary)]" />
                 <span>{t("만 14세 이상이며, 개인정보를 올리지 않는 커뮤니티 규칙에 동의해요.")}</span>
               </label>
               <ErrorBox error={error} t={t} />
@@ -298,7 +298,7 @@ export function LoginScreen({
           </div>
         )}
       </section>
-    </div>
+    </main>
   );
 }
 

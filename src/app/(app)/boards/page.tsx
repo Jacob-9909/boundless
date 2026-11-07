@@ -23,7 +23,7 @@ export default async function BoardsPage() {
         </Link>
         {GROUPS.map((gr) => (
           <section key={gr.id}>
-            <h2 className="mb-2 text-sm font-extrabold opacity-60">{t(gr.ko)}</h2>
+            <h2 className="mb-2 text-sm font-extrabold opacity-70">{t(gr.ko)}</h2>
             <ul className="grid gap-2.5 sm:grid-cols-2">
               {BOARDS.filter((b) => b.group === gr.id).map((b) => {
                 const c = counts.find((x) => x.topic === b.id);
@@ -36,11 +36,11 @@ export default async function BoardsPage() {
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-2 font-bold">
                           {t(b.ko)}
-                          {!!c?.today && <span className="rounded-full bg-extra px-1.5 text-[11px] text-white">{t("새 글 {n}", { n: c.today })}</span>}
+                          {!!c?.today && <span className="rounded-full bg-alert px-1.5 text-[11px] text-white">{t("새 글 {n}", { n: c.today })}</span>}
                         </span>
-                        <span className="mt-0.5 block text-xs leading-relaxed opacity-60">{t(b.desc)}</span>
+                        <span className="mt-0.5 block text-xs leading-relaxed opacity-70">{t(b.desc)}</span>
                       </span>
-                      <span className="text-xs opacity-50">{c?.n ?? 0}</span>
+                      <span className="text-xs opacity-70">{c?.n ?? 0}</span>
                     </Link>
                   </li>
                 );
@@ -48,7 +48,7 @@ export default async function BoardsPage() {
             </ul>
           </section>
         ))}
-        <Link href="/guide" className="flex items-center gap-2 text-sm font-bold text-primary">
+        <Link href="/guide" className="flex min-h-10 items-center gap-2 text-sm font-bold text-primary">
           <Icon name="info" size={16} />
           {t("공식 안내 (비자·의료·긴급 전화)")}
         </Link>

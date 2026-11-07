@@ -17,6 +17,8 @@ export function HelloRotator({ items, label }: { items: Hello[]; label: string }
   const span = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
+    // Auto-rotating text stays still for people who ask for reduced motion.
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const id = setInterval(() => setI((x) => (x + 1) % items.length), 2200);
     return () => clearInterval(id);
   }, [items.length]);

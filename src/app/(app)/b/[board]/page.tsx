@@ -22,13 +22,13 @@ export default async function BoardPage(props: PageProps<"/b/[board]">) {
   return (
     <div className="grid gap-6 px-4 py-4 md:px-6 md:py-6 xl:grid-cols-[minmax(0,1fr)_320px]">
       <div className="min-w-0 space-y-4">
-        <header className="relative overflow-hidden rounded-3xl p-6 text-white md:p-8" style={{ background: board.color }}>
+        <header className="relative overflow-hidden rounded-3xl p-6 text-white md:p-8" style={{ background: `color-mix(in oklab, ${board.color} 72%, black)` }}>
           <span className="absolute -right-6 -bottom-10 opacity-15" aria-hidden="true">
             <Icon name={board.icon} size={200} />
           </span>
           <div className="relative flex flex-wrap items-end justify-between gap-4">
             <div className="max-w-xl">
-              <p className="station-label opacity-80">BOARD · {t(board.ko)}</p>
+              <p className="station-label opacity-90">BOARD · {t(board.ko)}</p>
               <h1 className="mt-1.5 flex items-center gap-3 font-display text-3xl font-extrabold md:text-4xl">
                 <span className="flex size-11 items-center justify-center rounded-2xl bg-white/20">
                   <Icon name={board.icon} size={24} />
@@ -40,7 +40,7 @@ export default async function BoardPage(props: PageProps<"/b/[board]">) {
             <Link
               href={`/write?board=${id}${tag ? `&kind=${tag}` : ""}`}
               className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-white px-5 text-[15px] font-bold whitespace-nowrap shadow-sm hover:bg-white/90"
-              style={{ color: board.color }}
+              style={{ color: `color-mix(in oklab, ${board.color} 72%, black)` }}
             >
               <Icon name="edit" size={17} />
               {t("이 게시판에 쓰기")}

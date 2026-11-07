@@ -87,7 +87,7 @@ export function Avatar({ code, size = 40 }: { code: string; size?: number }) {
 export function LevelBadge({ points, t }: { points: number; t: T }) {
   const l = levelOf(points);
   return (
-    <span className="inline-flex items-center gap-1 rounded-full px-1.5 py-px text-[11px] font-bold whitespace-nowrap" style={{ background: l.color + "1A", color: l.color }}>
+    <span className="inline-flex items-center gap-1 rounded-full px-1.5 py-px text-[11px] font-bold whitespace-nowrap" style={{ background: l.color + "1A", color: `color-mix(in oklab, ${l.color} 40%, black)` }}>
       <Icon name="sparkles" size={11} />
       {t(l.ko)}
     </span>
@@ -105,7 +105,7 @@ export function BoardBadge({ id, t, href }: { id: string; t: T; href?: string })
       {t(b.ko)}
     </>
   );
-  const cls = "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-ink/[.05] py-0.5 pr-2.5 pl-0.5 text-xs font-semibold";
+  const cls = "inline-flex min-h-6 items-center gap-1.5 whitespace-nowrap rounded-full bg-ink/[.05] py-0.5 pr-2.5 pl-0.5 text-xs font-semibold";
   return href ? (
     <Link href={href} className={`${cls} hover:bg-ink/10`}>
       {inner}
@@ -128,7 +128,7 @@ export function MarketLine({ post, t }: { post: Pick<PostRow, "price" | "deal" |
   return (
     <span className="inline-flex items-center gap-2">
       <span className="font-display text-base font-extrabold whitespace-nowrap">{post.kind === "free" ? t("나눔") : `${post.price.toLocaleString("ko-KR")}${t("원")}`}</span>
-      <span className={`${tag} ${deal.id === "done" ? "bg-ink/10 text-ink/60" : deal.id === "reserved" ? "bg-amber-100 text-amber-900" : "bg-emerald-100 text-emerald-900"}`}>{t(label)}</span>
+      <span className={`${tag} ${deal.id === "done" ? "bg-ink/10 text-ink/75" : deal.id === "reserved" ? "bg-amber-100 text-amber-900" : "bg-emerald-100 text-emerald-900"}`}>{t(label)}</span>
     </span>
   );
 }
@@ -215,7 +215,7 @@ export function Notice({ tone = "info", label, title, children }: { tone?: "info
     <div className={`rounded-2xl border border-dashed p-5 ${err ? "border-red-300 bg-red-50 text-red-950" : "border-ink/25 bg-white/70"}`} role={err ? "alert" : undefined}>
       {label && <StationLabel className={`mb-1.5 ${err ? "text-red-700" : "text-primary"}`}>{label}</StationLabel>}
       <p className="font-display text-lg font-bold">{title}</p>
-      {children && <div className="mt-1 text-sm leading-relaxed opacity-80">{children}</div>}
+      {children && <div className="mt-1 text-sm leading-relaxed">{children}</div>}
     </div>
   );
 }
@@ -242,11 +242,11 @@ export function PostCard({ post, lang, t, showBoard = true }: { post: PostRow; l
           <div className="flex flex-wrap items-center gap-x-1.5 text-[13px]">
             <span className="font-bold whitespace-nowrap">{t("이웃")}</span>
             <LevelBadge points={post.points} t={t} />
-            <span className="min-w-0 truncate opacity-60">
+            <span className="min-w-0 truncate opacity-70">
               · {countryName(post.nationality, lang)}
               {post.region && ` · ${regionLabel(post.region, t)}`}
             </span>
-            <span className="ml-auto shrink-0 whitespace-nowrap opacity-50">{timeAgo(post.created_at, lang)}</span>
+            <span className="ml-auto shrink-0 whitespace-nowrap opacity-70">{timeAgo(post.created_at, lang)}</span>
           </div>
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
             {showBoard && <BoardBadge id={post.topic} t={t} />}
@@ -260,12 +260,12 @@ export function PostCard({ post, lang, t, showBoard = true }: { post: PostRow; l
                 {t("해결됨")}
               </span>
             )}
-            {waiting && <span className={`${tag} border border-extra/40 text-extra`}>{t("답변을 기다려요")}</span>}
+            {waiting && <span className={`${tag} border border-alert/40 text-alert`}>{t("답변을 기다려요")}</span>}
           </div>
-          <h3 className="mt-2.5 font-display text-[17px] leading-snug font-bold [overflow-wrap:anywhere] group-hover:underline md:text-lg">
+          <h2 className="mt-2.5 font-display text-[17px] leading-snug font-bold [overflow-wrap:anywhere] group-hover:underline md:text-lg">
             <TagText board={post.topic} tagId={post.kind} t={t} />
             {post.title}
-          </h3>
+          </h2>
           {(board.extra === "market" || board.extra === "event") && (
             <div className="mt-1.5">{board.extra === "market" ? <MarketLine post={post} t={t} /> : <EventLine post={post} t={t} />}</div>
           )}
@@ -282,7 +282,7 @@ export function PostCard({ post, lang, t, showBoard = true }: { post: PostRow; l
           )}
 
           <div className="mt-3 flex items-center gap-4 text-[13px]">
-            <span className="flex items-center gap-4 opacity-60">
+            <span className="flex items-center gap-4 opacity-70">
               <Stat icon="helpful" n={post.likes} label={t("도움돼요")} />
               <Stat icon="comment" n={post.comments} label={t("댓글")} />
             </span>

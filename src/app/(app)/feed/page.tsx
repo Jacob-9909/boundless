@@ -42,7 +42,7 @@ export default async function Home(props: PageProps<"/feed">) {
                   <Flag code={user.nationality} h={13} />
                   {country}
                 </p>
-                <p className="mt-1.5 font-culture text-4xl leading-tight md:text-5xl">{t("{hello}, 이웃님", { hello: culture.hello })}</p>
+                <h1 className="mt-1.5 font-culture text-4xl leading-tight md:text-5xl">{t("{hello}, 이웃님", { hello: culture.hello })}</h1>
                 <p className="mt-2 text-sm opacity-90 md:text-[15px]">
                   {t("오늘 새 글 {today}개 · 답변을 기다리는 질문 {waiting}개", { today: stats.today, waiting: stats.waiting })}
                 </p>
@@ -77,7 +77,7 @@ export default async function Home(props: PageProps<"/feed">) {
         <section>
           <div className="mb-2.5 flex items-baseline justify-between">
             <h2 className="font-display text-xl font-extrabold tracking-tight">{t("게시판")}</h2>
-            <Link href="/boards" className="text-[13px] opacity-60 hover:underline">
+            <Link href="/boards" className="inline-flex h-8 items-center text-[13px] opacity-70 hover:underline">
               {t("전체 보기")}
             </Link>
           </div>
@@ -91,7 +91,7 @@ export default async function Home(props: PageProps<"/feed">) {
                       <Icon name={b.icon} size={18} />
                     </span>
                     <span className="text-[13px] leading-tight font-bold">{t(b.ko)}</span>
-                    <span className="text-[11px] opacity-50">{c?.today ? t("새 글 {n}", { n: c.today }) : t("글 {n}개", { n: c?.n ?? 0 })}</span>
+                    <span className="text-[11px] opacity-70">{c?.today ? t("새 글 {n}", { n: c.today }) : t("글 {n}개", { n: c?.n ?? 0 })}</span>
                   </Link>
                 </li>
               );
@@ -105,11 +105,11 @@ export default async function Home(props: PageProps<"/feed">) {
             <div className="flex items-center gap-3 border-b border-ink/[.06] px-4 py-3">
               <Flag code={user.nationality} h={16} />
               <p className="flex-1 font-bold">{t("{country} 라운지", { country })}</p>
-              <span className="inline-flex items-center gap-1 text-xs opacity-60">
+              <span className="inline-flex items-center gap-1 text-xs opacity-70">
                 <Icon name="lock" size={13} />
                 {t("같은 국적만")}
               </span>
-              <Link href="/lounge" className="text-[13px] font-bold whitespace-nowrap text-primary hover:underline">
+              <Link href="/lounge" className="inline-flex h-8 items-center text-[13px] font-bold whitespace-nowrap text-primary hover:underline">
                 {t("들어가기")} →
               </Link>
             </div>
@@ -123,7 +123,7 @@ export default async function Home(props: PageProps<"/feed">) {
                         <TagText board={p.topic} tagId={p.kind} t={t} />
                         {p.title}
                       </span>
-                      <span className="shrink-0 text-xs opacity-50">{timeAgo(p.created_at, lang)}</span>
+                      <span className="shrink-0 text-xs opacity-70">{timeAgo(p.created_at, lang)}</span>
                     </Link>
                   </li>
                 ))}
@@ -140,7 +140,7 @@ export default async function Home(props: PageProps<"/feed">) {
         <section className="space-y-3">
           <div>
             <h2 className="font-display text-xl font-extrabold tracking-tight">{t("모두의 광장")}</h2>
-            <p className="text-[13px] opacity-60">{t("모든 나라 이웃이 함께 보는 최신 글")}</p>
+            <p className="text-[13px] opacity-70">{t("모든 나라 이웃이 함께 보는 최신 글")}</p>
           </div>
           <ListControls base="/feed" tag="" sort={sort} t={t} />
           <FeedList

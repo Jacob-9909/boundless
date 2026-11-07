@@ -8,7 +8,7 @@ import { HelloRotator } from "@/components/HelloRotator";
 import { Icon, type IconName } from "@/components/Icon";
 import { Avatar, BoardBadge, Flag, Landmark, LINES, Logo, NationalityChip } from "@/components/ui";
 import { demoEnabled, getT, getUser } from "@/lib/auth";
-import { BOARDS } from "@/lib/boards";
+import { boardOf, BOARDS } from "@/lib/boards";
 import { CULTURES, DEFAULT_CULTURE, themeVars } from "@/lib/cultures";
 import { HOTLINES, SITES } from "@/lib/guide";
 import { countryName, timeAgo } from "@/lib/i18n";
@@ -16,28 +16,40 @@ import { communityStats, listPosts, recentActivity } from "@/lib/posts";
 
 export const metadata = { title: { absolute: "Boundless · 국경 없이, 한국 생활을 함께" } };
 
-// Hero route map: colored lines from many countries run through one hub (Korea). viewBox 640x560.
+// Hero route map, Seoul-metro style: six lines from many countries meet at one transfer hub (Korea).
+// viewBox 640x560. Parallel lines keep ~13px apart; flags sit where the two floating cards
+// (top-right, bottom-left) never cover them.
 const ROUTES = [
-  { d: "M-20 120 H170 L330 280 H660", color: LINES[0] },
-  { d: "M-20 300 H660", color: LINES[1] },
-  { d: "M-20 470 H160 L340 290 L500 130 H660", color: LINES[2] },
-  { d: "M200 -20 V140 L350 290 V580", color: LINES[3] },
-  { d: "M520 -20 V90 L320 290 L170 440 V580", color: LINES[4] },
-  { d: "M660 420 H480 L350 290 L230 170 H-20", color: LINES[5] },
-];
+  { d: "M-20 120 H198 L358 280 H660", color: LINES[0], n: 1, badge: [22, 120] },
+  { d: "M-20 300 H660", color: LINES[1], n: 2, badge: [22, 300] },
+  { d: "M-20 470 H160 L500 130 H660", color: LINES[2], n: 3, badge: null },
+  { d: "M200 -20 V158 L350 308 V580", color: LINES[3], n: 4, badge: [200, 22] },
+  { d: "M520 -20 V90 L170 440 V580", color: LINES[4], n: 5, badge: null },
+  { d: "M660 420 H480 L230 170 H-20", color: LINES[5], n: 6, badge: [22, 170] },
+] as const;
 const STATIONS: [string, number, number, string][] = [
-  ["VN", 92, 120, LINES[0]],
-  ["PH", 70, 300, LINES[1]],
-  ["NP", 96, 470, LINES[2]],
-  ["CN", 200, 74, LINES[3]],
-  ["UZ", 520, 44, LINES[4]],
-  ["TH", 590, 420, LINES[5]],
-  ["US", 590, 130, LINES[2]],
-  ["JP", 470, 300, LINES[1]],
-  ["MN", 350, 520, LINES[3]],
-  ["ID", 170, 520, LINES[4]],
-  ["FR", 64, 170, LINES[5]],
-  ["KZ", 600, 280, LINES[0]],
+  ["VN", 74, 120, LINES[0]],
+  ["FR", 74, 170, LINES[5]],
+  ["PH", 74, 300, LINES[1]],
+  ["CN", 200, 72, LINES[3]],
+  ["KZ", 502, 280, LINES[0]],
+  ["JP", 600, 300, LINES[1]],
+  ["TH", 594, 420, LINES[5]],
+  ["MN", 350, 524, LINES[3]],
+  ["ID", 350, 432, LINES[3]],
+  ["US", 445, 185, LINES[2]],
+  ["NP", 232, 398, LINES[2]],
+  ["UZ", 275, 335, LINES[4]],
+];
+// Life stations named after boards. kind: dot (one line), cap (transfer across parallel lines).
+const STOPS: { board: string; x: number; y: number; kind: "dot" | "cap-v" | "cap-d"; lx: number; ly: number; anchor: "start" | "middle" | "end" }[] = [
+  { board: "transit", x: 200, y: 120, kind: "dot", lx: 214, ly: 104, anchor: "start" },
+  { board: "visa", x: 280, y: 220, kind: "cap-d", lx: 262, ly: 252, anchor: "end" },
+  { board: "housing", x: 180, y: 300, kind: "dot", lx: 180, ly: 324, anchor: "middle" },
+  { board: "food", x: 430, y: 290, kind: "cap-v", lx: 430, ly: 262, anchor: "middle" },
+  { board: "health", x: 350, y: 372, kind: "dot", lx: 364, ly: 376, anchor: "start" },
+  { board: "popup", x: 415, y: 355, kind: "dot", lx: 428, ly: 350, anchor: "start" },
+  { board: "market", x: 522, y: 420, kind: "dot", lx: 522, ly: 446, anchor: "middle" },
 ];
 
 export default async function Landing(props: PageProps<"/">) {
@@ -64,7 +76,7 @@ export default async function Landing(props: PageProps<"/">) {
   ];
 
   return (
-    <div className={`${cultureFonts} bg-[#F6F5F1] text-[#14161C]`} style={themeVars(DEFAULT_CULTURE) as CSSProperties}>
+    <main className={`${cultureFonts} bg-[#F6F5F1] text-[#14161C]`} style={themeVars(DEFAULT_CULTURE) as CSSProperties}>
       {/* ---------- Hero ---------- */}
       <section className="relative overflow-hidden bg-[#0B1224] text-white">
         <div
@@ -76,18 +88,18 @@ export default async function Landing(props: PageProps<"/">) {
             <Logo />
           </Link>
           <div className="hidden items-center gap-6 text-sm text-white/70 md:flex">
-            <a href="#how" className="hover:text-white">
+            <a href="#how" className="inline-flex h-9 items-center hover:text-white">
               {t("이용 방법")}
             </a>
-            <a href="#cultures" className="hover:text-white">
+            <a href="#cultures" className="inline-flex h-9 items-center hover:text-white">
               {t("문화 테마")}
             </a>
             {demo && (
-              <a href="#demo" className="hover:text-white">
+              <a href="#demo" className="inline-flex h-9 items-center hover:text-white">
                 {t("샘플 계정")}
               </a>
             )}
-            <Link href="/guide" className="hover:text-white">
+            <Link href="/guide" className="inline-flex h-9 items-center hover:text-white">
               {t("공식 안내")}
             </Link>
           </div>
@@ -166,38 +178,91 @@ export default async function Landing(props: PageProps<"/">) {
                 <clipPath id="flagclip" clipPathUnits="objectBoundingBox">
                   <rect width="1" height="1" rx=".14" ry=".2" />
                 </clipPath>
+                <pattern id="mapgrid" width="32" height="32" patternUnits="userSpaceOnUse">
+                  <path d="M32 0H0V32" fill="none" stroke="#fff" strokeOpacity=".05" />
+                </pattern>
+                <radialGradient id="hubglow">
+                  <stop offset="0" stopColor="#4FA3E0" stopOpacity=".35" />
+                  <stop offset="1" stopColor="#4FA3E0" stopOpacity="0" />
+                </radialGradient>
               </defs>
+              {/* Ground: grid, fare-zone rings, the Han River */}
+              <rect x="-20" y="-20" width="680" height="600" fill="url(#mapgrid)" />
+              <circle cx="340" cy="290" r="150" fill="url(#hubglow)" />
+              {[120, 200, 280].map((r) => (
+                <circle key={r} cx="340" cy="290" r={r} fill="none" stroke="#fff" strokeOpacity=".07" strokeDasharray="2 7" />
+              ))}
+              <path d="M-20 392 C90 372 170 430 290 410 S470 350 660 372" fill="none" stroke="#1E4A7A" strokeOpacity=".55" strokeWidth="30" strokeLinecap="round" />
+              <path d="M-20 392 C90 372 170 430 290 410 S470 350 660 372" fill="none" stroke="#5FA8E8" strokeOpacity=".18" strokeWidth="2" strokeDasharray="10 14" />
+              <text x="560" y="394" className="fill-[#8CC4F2] text-[11px] font-semibold italic tracking-wide opacity-70 max-sm:hidden">
+                {t("한강")}
+              </text>
+              {/* Lines: dark casing keeps parallel lines apart, then the color */}
               {ROUTES.map((r, i) => (
-                <path
-                  key={i}
-                  d={r.d}
-                  pathLength={1}
-                  fill="none"
-                  stroke={r.color}
-                  strokeWidth="9"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="route-draw"
-                  style={{ animationDelay: `${i * 0.15}s` }}
-                />
+                <path key={`c${i}`} d={r.d} pathLength={1} fill="none" stroke="#0B1224" strokeWidth="15" strokeLinecap="round" strokeLinejoin="round" className="route-draw" style={{ animationDelay: `${i * 0.15}s` }} />
               ))}
               {ROUTES.map((r, i) => (
-                <circle key={`t${i}`} r="5" fill="#fff" className="train" opacity=".9">
-                  <animateMotion dur={`${7 + i}s`} repeatCount="indefinite" path={r.d} />
-                </circle>
+                <path key={i} d={r.d} pathLength={1} fill="none" stroke={r.color} strokeWidth="9" strokeLinecap="round" strokeLinejoin="round" className="route-draw" style={{ animationDelay: `${i * 0.15}s` }} />
               ))}
+              {/* Line-number badges at the visible ends */}
+              {ROUTES.map((r) =>
+                r.badge ? (
+                  <g key={`b${r.n}`} transform={`translate(${r.badge[0]} ${r.badge[1]})`}>
+                    <circle r="11" fill={r.color} stroke="#0B1224" strokeWidth="3" />
+                    <text y="4" textAnchor="middle" className="fill-white text-[12px] font-extrabold">
+                      {r.n}
+                    </text>
+                  </g>
+                ) : null
+              )}
+              {/* Life stations: white with a dark ring, capsules where lines run side by side */}
+              {STOPS.map((s) => (
+                <g key={s.board}>
+                  {s.kind === "dot" && <circle cx={s.x} cy={s.y} r="6.5" fill="#fff" stroke="#0B1224" strokeWidth="3" />}
+                  {s.kind === "cap-v" && <rect x={s.x - 8} y={s.y - 19} width="16" height="38" rx="8" fill="#fff" stroke="#0B1224" strokeWidth="3" />}
+                  {s.kind === "cap-d" && <rect x="-22" y="-8" width="44" height="16" rx="8" fill="#fff" stroke="#0B1224" strokeWidth="3" transform={`translate(${s.x} ${s.y}) rotate(-45)`} />}
+                  <text
+                    x={s.lx}
+                    y={s.ly}
+                    textAnchor={s.anchor}
+                    stroke="#0B1224"
+                    strokeWidth="4"
+                    paintOrder="stroke"
+                    strokeLinejoin="round"
+                    className="fill-white/90 text-[12px] font-bold max-sm:hidden"
+                  >
+                    {t(boardOf(s.board).ko)}
+                  </text>
+                </g>
+              ))}
+              {/* Country stations */}
               {STATIONS.map(([code, x, y, color]) => (
                 <g key={code} transform={`translate(${x - 19} ${y - 14})`}>
                   <rect width="38" height="28" rx="7" fill="#fff" stroke={color} strokeWidth="3" />
                   <image href={`/flags/${code}.svg`} x="5" y="5" width="28" height="18" preserveAspectRatio="xMidYMid slice" clipPath="url(#flagclip)" />
                 </g>
               ))}
+              {/* Trains: small cars in each line's color, turning with the track */}
+              {ROUTES.map((r, i) => (
+                <rect key={`t${i}`} x="-9" y="-4.5" width="18" height="9" rx="4.5" fill="#fff" stroke={r.color} strokeWidth="2.5" className="train">
+                  <animateMotion dur={`${9 + i * 1.5}s`} repeatCount="indefinite" rotate="auto" path={r.d} begin={`${i * -1.7}s`} />
+                </rect>
+              ))}
+              {/* Transfer hub */}
               <g transform="translate(340 290)">
-                <circle r="54" fill="#0B1224" stroke="#fff" strokeWidth="5" />
-                <circle r="44" fill="#fff" />
-                <image href="/flags/KR.svg" x="-21" y="-28" width="42" height="28" preserveAspectRatio="xMidYMid slice" clipPath="url(#flagclip)" />
-                <text y="20" textAnchor="middle" className="fill-[#0B1224] text-[13px] font-extrabold">
+                <circle r="54" fill="none" stroke="#fff" strokeWidth="2" className="train" opacity="0">
+                  <animate attributeName="r" values="56;84" dur="2.8s" repeatCount="indefinite" />
+                  <animate attributeName="opacity" values=".45;0" dur="2.8s" repeatCount="indefinite" />
+                </circle>
+                <circle r="56" fill="#0B1224" stroke="#fff" strokeWidth="5" />
+                <circle r="45" fill="#fff" />
+                <circle r="45" fill="none" stroke="#0B1224" strokeOpacity=".12" strokeWidth="6" />
+                <image href="/flags/KR.svg" x="-20" y="-27" width="40" height="27" preserveAspectRatio="xMidYMid slice" clipPath="url(#flagclip)" />
+                <text y="17" textAnchor="middle" className="fill-[#0B1224] text-[13px] font-extrabold">
                   {t("한국")}
+                </text>
+                <text y="31" textAnchor="middle" className="fill-[#0B1224]/60 text-[8px] font-bold tracking-[.18em]">
+                  TRANSFER
                 </text>
               </g>
             </svg>
@@ -205,13 +270,13 @@ export default async function Landing(props: PageProps<"/">) {
             {q && (
               <Link
                 href={`/posts/${q.id}`}
-                className="animate-fade-in absolute -bottom-4 left-0 w-[260px] rounded-2xl bg-white p-3.5 text-[#14161C] shadow-2xl shadow-black/40 ring-1 ring-black/5 transition hover:-translate-y-1 md:-left-6"
+                className="animate-fade-in relative mt-3 block w-full rounded-2xl bg-white p-3.5 text-[#14161C] shadow-2xl shadow-black/40 ring-1 ring-black/5 transition hover:-translate-y-1 sm:absolute sm:-bottom-4 sm:left-0 sm:mt-0 sm:w-[260px] md:-left-6"
                 style={{ animationDelay: ".8s" }}
               >
                 <span className="flex items-center gap-2 text-xs">
                   <Avatar code={q.nationality} size={26} />
                   <span className="font-bold">{t("방금 올라온 질문")}</span>
-                  <span className="ml-auto opacity-50">{timeAgo(q.created_at, lang)}</span>
+                  <span className="ml-auto opacity-70">{timeAgo(q.created_at, lang)}</span>
                 </span>
                 <span className="mt-2 line-clamp-2 block text-[13px] leading-snug font-bold">{q.title}</span>
                 <span className="mt-2 block">
@@ -239,7 +304,7 @@ export default async function Landing(props: PageProps<"/">) {
       {/* ---------- How it works ---------- */}
       <section id="how" className="mx-auto max-w-7xl scroll-mt-6 px-5 py-20 md:px-8">
         <p className="station-label text-[#0052A4]">{t("이용 방법")}</p>
-        <h2 className="mt-2 font-display text-3xl font-extrabold tracking-tight md:text-[40px]">{t("궁금한 게 생긴 순간, 세 정거장이면 충분해요")}</h2>
+        <h2 className="mt-2 font-display text-3xl text-balance font-extrabold tracking-tight md:text-[40px]">{t("궁금한 게 생긴 순간, 세 정거장이면 충분해요")}</h2>
         <ol className="relative mt-10 grid gap-5 md:grid-cols-3">
           <span
             className="absolute top-7 right-[16%] left-[16%] hidden h-1 rounded-full bg-gradient-to-r from-[#00A5DE] via-[#00A84D] to-[#EF7C1C] md:block"
@@ -257,20 +322,20 @@ export default async function Landing(props: PageProps<"/">) {
                 </span>
               </span>
               <h3 className="mt-5 text-xl font-extrabold">{s.title}</h3>
-              <p className="mt-2 text-[15px] leading-relaxed text-black/65">{s.body}</p>
+              <p className="mt-2 text-[15px] leading-relaxed text-black/75">{s.body}</p>
               <div className="mt-5 rounded-2xl bg-[#F6F5F1] p-3">
                 {i === 0 && (
                   <span className="flex h-10 items-center gap-2 rounded-full bg-white px-3 text-sm ring-1 ring-black/10">
-                    <Icon name="search" size={16} className="opacity-50" />
+                    <Icon name="search" size={16} className="opacity-70" />
                     <span className="font-semibold">{t("분리수거 요일")}</span>
-                    <span className="ml-auto text-xs opacity-50">{t("서울")}</span>
+                    <span className="ml-auto text-xs opacity-70">{t("서울")}</span>
                   </span>
                 )}
                 {i === 1 && (
                   <span className="flex flex-wrap items-center gap-2 text-sm">
                     <span className="font-bold">{t("글쓴이")}</span>
                     <NationalityChip code="VN" lang={lang} />
-                    <span className="inline-flex items-center gap-1 text-xs opacity-60">
+                    <span className="inline-flex items-center gap-1 text-xs opacity-70">
                       <Icon name="lock" size={13} />
                       {t("이메일 비공개")}
                     </span>
@@ -295,9 +360,9 @@ export default async function Landing(props: PageProps<"/">) {
 
       {/* ---------- Boards and spaces ---------- */}
       <section className="mx-auto max-w-7xl px-5 pb-20 md:px-8">
-        <p className="station-label text-[#E6186C]">{t("게시판")}</p>
-        <h2 className="mt-2 font-display text-3xl font-extrabold tracking-tight md:text-[40px]">{t("편의 정보만이 아니라, 한국 생활 그 자체")}</h2>
-        <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-black/65">
+        <p className="station-label text-[#C0105A]">{t("게시판")}</p>
+        <h2 className="mt-2 font-display text-3xl text-balance font-extrabold tracking-tight md:text-[40px]">{t("편의 정보만이 아니라, 한국 생활 그 자체")}</h2>
+        <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-black/75">
           {t("비자와 집 문제부터 성수동 팝업, 동네 맛집, 연애 고민, 이사하며 내놓는 중고 물건까지. 게시판마다 말머리가 있어 원하는 이야기를 바로 찾아요.")}
         </p>
         <div className="mt-8 grid gap-4 lg:grid-cols-[1.4fr_1fr]">
@@ -309,7 +374,7 @@ export default async function Landing(props: PageProps<"/">) {
                     <Icon name={b.icon} size={18} />
                   </span>
                   <span className="text-sm font-bold">{t(b.ko)}</span>
-                  <span className="line-clamp-2 text-[11px] leading-snug text-black/55">{t(b.desc)}</span>
+                  <span className="line-clamp-2 text-[11px] leading-snug text-black/75">{t(b.desc)}</span>
                 </Link>
               </li>
             ))}
@@ -346,9 +411,9 @@ export default async function Landing(props: PageProps<"/">) {
         <div className="mx-auto max-w-7xl px-5 md:px-8">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="station-label text-[#00A84D]">{t("문화 테마")}</p>
-              <h2 className="mt-2 font-display text-3xl font-extrabold tracking-tight md:text-[40px]">{t("들어오는 순간, 당신의 문화로")}</h2>
-              <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-black/65">
+              <p className="station-label text-[#007A38]">{t("문화 테마")}</p>
+              <h2 className="mt-2 font-display text-3xl text-balance font-extrabold tracking-tight md:text-[40px]">{t("들어오는 순간, 당신의 문화로")}</h2>
+              <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-black/75">
                 {t("로그인 화면이 고른 나라의 색과 전통 문양, 모국어 인사로 바뀌어요. 가입하면 앱 곳곳이 내 문화의 색으로 물들어요.")}
               </p>
             </div>
@@ -384,9 +449,9 @@ export default async function Landing(props: PageProps<"/">) {
       {/* ---------- Sample accounts for judges ---------- */}
       {demo && (
         <section id="demo" className="mx-auto max-w-7xl scroll-mt-6 px-5 py-20 md:px-8">
-          <p className="station-label text-[#EF7C1C]">{t("샘플 계정")}</p>
-          <h2 className="mt-2 font-display text-3xl font-extrabold tracking-tight md:text-[40px]">{t("심사위원 · 체험용 샘플 계정")}</h2>
-          <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-black/65">
+          <p className="station-label text-[#A84F08]">{t("샘플 계정")}</p>
+          <h2 className="mt-2 font-display text-3xl text-balance font-extrabold tracking-tight md:text-[40px]">{t("심사위원 · 체험용 샘플 계정")}</h2>
+          <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-black/75">
             {t("나라를 고르면 그 나라 이웃의 샘플 계정으로 바로 들어가요. 이메일 인증 없이 화면을 둘러볼 수 있어요. 모든 데이터는 가상이에요.")}
           </p>
           <ul className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -402,7 +467,7 @@ export default async function Landing(props: PageProps<"/">) {
                       <Avatar code={code} size={48} />
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-[15px] font-extrabold">{countryName(code, lang)}</span>
-                        <span className="block truncate text-xs opacity-60">
+                        <span className="block truncate text-xs opacity-70">
                           {c.code === "XX" ? t("그 밖의 나라 · 기본 테마") : `${c.native} · ${c.hello}`}
                         </span>
                       </span>
@@ -438,21 +503,21 @@ export default async function Landing(props: PageProps<"/">) {
       <section className="bg-white py-20">
         <div className="mx-auto grid max-w-7xl gap-10 px-5 md:px-8 lg:grid-cols-2">
           <div>
-            <p className="station-label text-[#996CAC]">{t("안전")}</p>
-            <h2 className="mt-2 font-display text-3xl font-extrabold tracking-tight md:text-[40px]">{t("익명이지만, 안전하게")}</h2>
+            <p className="station-label text-[#7A4F8E]">{t("안전")}</p>
+            <h2 className="mt-2 font-display text-3xl text-balance font-extrabold tracking-tight md:text-[40px]">{t("익명이지만, 안전하게")}</h2>
             <ul className="mt-8 grid gap-4 sm:grid-cols-2">
               {safety.map((s) => (
                 <li key={s.title} className="rounded-2xl bg-[#F6F5F1] p-5">
                   <Icon name={s.icon} size={22} className="text-[#996CAC]" />
                   <p className="mt-3 font-extrabold">{s.title}</p>
-                  <p className="mt-1 text-sm leading-relaxed text-black/65">{s.body}</p>
+                  <p className="mt-1 text-sm leading-relaxed text-black/75">{s.body}</p>
                 </li>
               ))}
             </ul>
           </div>
           <div>
-            <p className="station-label text-[#E6186C]">{t("공식 안내")}</p>
-            <h2 className="mt-2 font-display text-3xl font-extrabold tracking-tight md:text-[40px]">{t("경험담과 공식 정보를 함께")}</h2>
+            <p className="station-label text-[#C0105A]">{t("공식 안내")}</p>
+            <h2 className="mt-2 font-display text-3xl text-balance font-extrabold tracking-tight md:text-[40px]">{t("경험담과 공식 정보를 함께")}</h2>
             <ul className="mt-8 grid grid-cols-2 gap-3">
               {HOTLINES.slice(2, 6).map((h) => (
                 <li key={h.tel} className="rounded-2xl bg-[#0B1224] p-4 text-white">
@@ -492,7 +557,7 @@ export default async function Landing(props: PageProps<"/">) {
           ))}
         </div>
         <div className="relative mx-auto max-w-3xl px-5 text-center">
-          <h2 className="font-display text-3xl font-extrabold tracking-tight md:text-5xl">{t("오늘도 누군가 같은 고민을 하고 있어요")}</h2>
+          <h2 className="font-display text-3xl text-balance font-extrabold tracking-tight md:text-5xl">{t("오늘도 누군가 같은 고민을 하고 있어요")}</h2>
           <p className="mt-4 text-white/75">{t("먼저 둘러보고, 준비되면 질문하세요.")}</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link href="/feed" className="inline-flex h-12 items-center gap-2 rounded-xl bg-white px-6 text-[15px] font-bold text-[#0B1224]">
@@ -506,11 +571,11 @@ export default async function Landing(props: PageProps<"/">) {
         </div>
       </section>
 
-      <footer className="mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-5 py-10 text-sm text-black/55 md:px-8">
+      <footer className="mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-5 py-10 text-sm text-black/75 md:px-8">
         <Logo className="text-[#14161C]" size={24} />
         <span>{t("국경 없이 어우러지는 한국 생활 커뮤니티")}</span>
         <span className="ml-auto text-xs">{t("시연 버전 · 모든 글과 계정은 가상 데이터예요.")}</span>
       </footer>
-    </div>
+    </main>
   );
 }

@@ -24,12 +24,12 @@ export function BottomNav({ labels, unread = 0 }: { labels: Record<(typeof ITEMS
               <Link
                 href={it.href}
                 aria-current={active ? "page" : undefined}
-                className={`relative flex flex-col items-center gap-0.5 rounded-xl py-1.5 text-[11px] leading-tight ${active ? "bg-soft font-bold text-primary" : "opacity-65"}`}
+                className={`relative flex flex-col items-center gap-0.5 rounded-xl py-1.5 text-[11px] leading-tight ${active ? "bg-soft font-bold text-primary" : "opacity-70"}`}
               >
                 <Icon name={it.icon} size={21} />
                 {labels[it.key]}
                 {it.key === "me" && unread > 0 && (
-                  <span className="absolute top-0.5 right-[calc(50%-20px)] min-w-4 rounded-full bg-extra px-1 text-[11px] leading-4 font-bold text-white" aria-label={`${unread}`}>
+                  <span className="absolute top-0.5 right-[calc(50%-20px)] min-w-4 rounded-full bg-alert px-1 text-[11px] leading-4 font-bold text-white" aria-label={`${unread}`}>
                     {unread > 9 ? "9+" : unread}
                   </span>
                 )}

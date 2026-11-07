@@ -7,10 +7,10 @@ import { Icon, type IconName } from "./Icon";
 export type NavItem = { href: string; icon: IconName; label: string; badge?: number };
 
 /** Desktop sidebar navigation with the active page highlighted. */
-export function SideNav({ items }: { items: NavItem[] }) {
+export function SideNav({ items, label }: { items: NavItem[]; label: string }) {
   const path = usePathname();
   return (
-    <nav aria-label="Main">
+    <nav aria-label={label}>
       <ul className="space-y-0.5">
         {items.map((it) => {
           const active = path === it.href || path.startsWith(it.href + "/");
@@ -24,7 +24,7 @@ export function SideNav({ items }: { items: NavItem[] }) {
                 <Icon name={it.icon} size={20} />
                 {it.label}
                 {!!it.badge && (
-                  <span className="ml-auto min-w-5 rounded-full bg-extra px-1.5 text-center text-xs leading-5 font-bold text-white">{it.badge > 9 ? "9+" : it.badge}</span>
+                  <span className="ml-auto min-w-5 rounded-full bg-alert px-1.5 text-center text-xs leading-5 font-bold text-white">{it.badge > 9 ? "9+" : it.badge}</span>
                 )}
               </Link>
             </li>

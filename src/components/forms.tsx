@@ -58,11 +58,11 @@ export function WriteForm({
           <Icon name={board.icon} size={22} />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="font-bold">{space === "lounge" ? t("{country} 라운지", { country: countryLabel }) : t(board.ko)}</p>
-          <p className="truncate text-xs opacity-60">{t(board.desc)}</p>
+          <h1 className="font-bold">{space === "lounge" ? t("{country} 라운지", { country: countryLabel }) : t(board.ko)}</h1>
+          <p className="truncate text-xs opacity-70">{t(board.desc)}</p>
         </div>
         {changeHref && (
-          <Link href={changeHref} className="shrink-0 text-xs font-bold whitespace-nowrap text-primary hover:underline">
+          <Link href={changeHref} className="inline-flex h-9 shrink-0 items-center rounded-lg px-2 text-xs font-bold whitespace-nowrap text-primary hover:bg-soft">
             {t("게시판 바꾸기")}
           </Link>
         )}
@@ -99,7 +99,7 @@ export function WriteForm({
               </label>
               <div className="relative">
                 <input id="price" name="price" inputMode="numeric" required defaultValue={v.price} placeholder="30000" className={`${field} pr-10`} />
-                <span className="absolute top-1/2 right-3.5 -translate-y-1/2 text-sm opacity-60">{t("원")}</span>
+                <span className="absolute top-1/2 right-3.5 -translate-y-1/2 text-sm opacity-70">{t("원")}</span>
               </div>
             </div>
           )}
@@ -151,14 +151,14 @@ export function WriteForm({
           onChange={(e) => setLen(e.target.value.length)}
           className={field}
         />
-        <p className="mt-1 flex justify-between text-xs opacity-60">
+        <p className="mt-1 flex justify-between text-xs opacity-70">
           <span>{t("이름, 연락처, 상세 주소는 적지 마세요.")}</span>
           <span className="tabular-nums">{len} / 5000</span>
         </p>
       </div>
 
       <details className="rounded-2xl bg-white p-4 ring-1 ring-ink/[.07]" open={!!state.error}>
-        <summary className="cursor-pointer text-sm font-bold">{t("지역 · 원문 언어")}</summary>
+        <summary className="-my-1 cursor-pointer py-2 text-sm font-bold">{t("지역 · 원문 언어")}</summary>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <div>
             <label htmlFor="region" className={labelCls}>

@@ -42,7 +42,7 @@ export default async function WritePage(props: PageProps<"/write">) {
           </Link>
           {GROUPS.map((gr) => (
             <section key={gr.id}>
-              <h2 className="mb-2 text-sm font-extrabold opacity-60">{t(gr.ko)}</h2>
+              <h2 className="mb-2 text-sm font-extrabold opacity-70">{t(gr.ko)}</h2>
               <ul className="grid gap-2.5 sm:grid-cols-2">
                 {BOARDS.filter((b) => b.group === gr.id).map((b) => (
                   <li key={b.id}>
@@ -52,7 +52,7 @@ export default async function WritePage(props: PageProps<"/write">) {
                       </span>
                       <span className="min-w-0">
                         <span className="block font-bold">{t(b.ko)}</span>
-                        <span className="mt-0.5 block text-xs leading-relaxed opacity-60">{t(b.desc)}</span>
+                        <span className="mt-0.5 block text-xs leading-relaxed opacity-70">{t(b.desc)}</span>
                         <span className="mt-1.5 flex flex-wrap gap-1">
                           {b.tags.map((tg) => (
                             <span key={tg.id} className="rounded-md bg-ink/[.05] px-1.5 py-0.5 text-[11px] font-semibold whitespace-nowrap">

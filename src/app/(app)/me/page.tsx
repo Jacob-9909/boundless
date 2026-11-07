@@ -24,9 +24,9 @@ export default async function MePage(props: PageProps<"/me">) {
       <PageHead line="LINE 04 · MY POSTS" title={t("내 글")} desc={t("나만 볼 수 있는 목록이에요. 글을 열어 답변을 확인하세요.")} />
       <div className="space-y-4 px-4 py-4">
         {fresh.length > 0 && (
-          <section className="rounded-2xl border-l-4 border-extra bg-white p-4">
+          <section className="rounded-2xl border-l-4 border-alert bg-white p-4">
             <p className="flex items-center gap-1.5 text-sm font-bold">
-              <Icon name="bell" size={16} className="text-extra" />
+              <Icon name="bell" size={16} className="text-alert" />
               {t("새 답변 {n}개", { n: fresh.length })}
             </p>
             <ul className="mt-2 space-y-2">
@@ -34,7 +34,7 @@ export default async function MePage(props: PageProps<"/me">) {
                 <li key={r.id}>
                   <Link href={`/posts/${r.post_id}`} className="block text-sm hover:underline">
                     <span className="font-semibold">{r.anon_no === 0 ? t("글쓴이") : t("이웃 {n}", { n: r.anon_no })}</span>
-                    <span className="opacity-60">
+                    <span className="opacity-70">
                       {" "}
                       · {r.title} · {timeAgo(r.created_at, lang)}
                     </span>
@@ -65,7 +65,7 @@ export default async function MePage(props: PageProps<"/me">) {
         {posts.length ? (
           <ul className="space-y-3">
             {posts.map((p) => (
-              <li key={p.id} className={p.hidden ? "opacity-50" : ""}>
+              <li key={p.id} className={p.hidden ? "opacity-70" : ""}>
                 <PostCard post={p} lang={lang} t={t} />
                 {p.hidden && <p className="mt-1 text-xs font-semibold text-red-700">{t("운영 정책에 따라 가려진 글이에요")}</p>}
               </li>

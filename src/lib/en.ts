@@ -2,6 +2,9 @@
 export const EN: Record<string, string> = {
   // shell
   "화면 언어 바꾸기": "Change interface language",
+  "주요 메뉴": "Main menu",
+  "한강": "Han River",
+  "더 보기": "More",
   "한국어와 영어 밖의 언어는 기계 번역이라 어색한 문장이 있을 수 있어요. 검수하고 있어요.": "Languages other than Korean and English are machine-translated and still under review, so some lines may read oddly.",
   "화면 언어와 같게 ({lang})": "Same as the interface language ({lang})",
   "내 공개 국적": "My public nationality",

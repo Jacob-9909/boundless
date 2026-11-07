@@ -25,8 +25,10 @@ export async function RightRail({ viewer, lang, t }: { viewer: string | null; la
     <div className="space-y-4">
       {mine && lv && (
         <section className={`${card} overflow-hidden`}>
-          <div className="bg-pattern relative bg-primary px-4 py-3 text-paper">
-            <span className="absolute inset-0 bg-gradient-to-r from-black/55 to-black/10" aria-hidden="true" />
+          <div className="relative bg-primary px-4 py-3 text-paper">
+            {/* Pattern dimmed under the text; busy ones (US stars) sat on top of the level name */}
+            <span className="bg-pattern absolute inset-0 opacity-30" aria-hidden="true" />
+            <span className="absolute inset-0 bg-gradient-to-r from-black/45 to-black/10" aria-hidden="true" />
             <p className="relative text-xs opacity-90">{t("내 이웃 레벨")}</p>
             <p className="relative flex items-baseline gap-2">
               <span className="font-display text-xl font-extrabold">{t(lv.ko)}</span>
@@ -36,7 +38,7 @@ export async function RightRail({ viewer, lang, t }: { viewer: string | null; la
           <div className="p-4">
             {lv.next ? (
               <>
-                <div className="h-2 overflow-hidden rounded-full bg-ink/10" role="progressbar" aria-valuemin={lv.min} aria-valuemax={lv.next.min} aria-valuenow={mine.points}>
+                <div className="h-2 overflow-hidden rounded-full bg-ink/10" role="progressbar" aria-label={t("내 이웃 레벨")} aria-valuemin={lv.min} aria-valuemax={lv.next.min} aria-valuenow={mine.points}>
                   <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, ((mine.points - lv.min) / (lv.next.min - lv.min)) * 100)}%` }} />
                 </div>
                 <p className="mt-1.5 text-xs opacity-70">{t("{next}까지 {n}점 남았어요", { next: t(lv.next.ko), n: lv.next.min - mine.points })}</p>
@@ -52,7 +54,7 @@ export async function RightRail({ viewer, lang, t }: { viewer: string | null; la
               ].map(([n, label]) => (
                 <div key={String(label)} className="rounded-xl bg-paper py-2">
                   <dd className="font-display text-lg font-extrabold">{n}</dd>
-                  <dt className="text-[11px] opacity-60">{label}</dt>
+                  <dt className="text-[11px] opacity-70">{label}</dt>
                 </div>
               ))}
             </dl>
@@ -66,7 +68,7 @@ export async function RightRail({ viewer, lang, t }: { viewer: string | null; la
             <Icon name="trophy" size={16} className="text-[#E8B23A]" />
             {t("도움왕 랭킹")}
           </p>
-          <p className="mt-0.5 text-xs opacity-60">{t("답변을 많이 하고 도움돼요를 많이 받은 이웃")}</p>
+          <p className="mt-0.5 text-xs opacity-70">{t("답변을 많이 하고 도움돼요를 많이 받은 이웃")}</p>
           <ol className="mt-3 space-y-2.5">
             {top.map((r, i) => (
               <li key={r.user_id} className="flex items-center gap-2.5">
@@ -91,13 +93,13 @@ export async function RightRail({ viewer, lang, t }: { viewer: string | null; la
             ))}
           </ol>
           <details className="mt-3 text-xs">
-            <summary className="cursor-pointer font-bold opacity-60">{t("레벨은 어떻게 오르나요?")}</summary>
+            <summary className="cursor-pointer py-1.5 font-bold opacity-70">{t("레벨은 어떻게 오르나요?")}</summary>
             <p className="mt-1.5 leading-relaxed opacity-70">{t("글 1점, 다른 이웃 글에 답변 2점, 도움돼요를 받으면 3점이에요.")}</p>
             <ul className="mt-1.5 flex flex-wrap gap-1">
               {LEVELS.map((l) => (
                 <li key={l.ko}>
                   <LevelBadge points={l.min} t={t} />
-                  <span className="ml-0.5 opacity-50">{l.min}+</span>
+                  <span className="ml-0.5 opacity-70">{l.min}+</span>
                 </li>
               ))}
             </ul>
@@ -108,7 +110,7 @@ export async function RightRail({ viewer, lang, t }: { viewer: string | null; la
       {waiting.length > 0 && (
         <section className={`${card} p-4`}>
           <p className={railTitle}>
-            <Icon name="comment" size={16} className="text-extra" />
+            <Icon name="comment" size={16} className="text-alert" />
             {t("답변을 기다리는 질문")}
           </p>
           <ul className="mt-2 divide-y divide-ink/[.06]">
@@ -130,16 +132,16 @@ export async function RightRail({ viewer, lang, t }: { viewer: string | null; la
       {hot.length > 0 && (
         <section className={`${card} p-4`}>
           <p className={railTitle}>
-            <Icon name="flame" size={16} className="text-extra" />
+            <Icon name="flame" size={16} className="text-alert" />
             {t("이번 주 인기 글")}
           </p>
           <ol className="mt-2 space-y-2">
             {hot.map((p, i) => (
               <li key={p.id}>
                 <Link href={`/posts/${p.id}`} className="flex items-center gap-2.5 hover:opacity-80">
-                  <span className="w-4 font-display text-base font-extrabold text-extra">{i + 1}</span>
+                  <span className="w-4 font-display text-base font-extrabold text-alert">{i + 1}</span>
                   <span className="min-w-0 flex-1 truncate text-[13px] font-bold">{p.title}</span>
-                  <span className="flex shrink-0 items-center gap-1 text-xs opacity-60">
+                  <span className="flex shrink-0 items-center gap-1 text-xs opacity-70">
                     <Icon name="helpful" size={13} />
                     {p.likes}
                   </span>
@@ -166,7 +168,7 @@ export async function RightRail({ viewer, lang, t }: { viewer: string | null; la
                   <Avatar code={a.nationality} size={26} />
                   <span className="min-w-0 text-xs leading-relaxed">
                     <span className="font-bold">{t("{country} 이웃이 답했어요", { country: countryName(a.nationality, lang) })}</span>
-                    <span className="opacity-50"> · {timeAgo(a.created_at, lang)}</span>
+                    <span className="opacity-70"> · {timeAgo(a.created_at, lang)}</span>
                     <span className="block truncate opacity-70">“{a.body}”</span>
                   </span>
                 </Link>
@@ -182,7 +184,7 @@ export async function RightRail({ viewer, lang, t }: { viewer: string | null; la
             <Icon name="phone" size={16} className="text-primary" />
             {t("공식 안내")}
           </p>
-          <Link href="/guide" className="text-xs opacity-60 hover:underline">
+          <Link href="/guide" className="inline-flex h-8 items-center text-xs opacity-70 hover:underline">
             {t("전체 보기")}
           </Link>
         </div>
@@ -212,7 +214,7 @@ export function AccountSwitcher({ t, lang, current, up = true }: { t: T; lang: L
         <Icon name="down" size={16} className="ml-auto transition group-open:rotate-180" />
       </summary>
       <div className={`absolute left-0 z-40 w-[300px] rounded-2xl bg-white p-2 shadow-2xl ring-1 ring-black/10 ${up ? "bottom-full mb-2" : "top-full mt-2"}`}>
-        <p className="px-2 pt-1 pb-2 text-xs opacity-60">{t("나라를 누르면 그 나라 샘플 이웃으로 바로 바뀌어요.")}</p>
+        <p className="px-2 pt-1 pb-2 text-xs opacity-70">{t("나라를 누르면 그 나라 샘플 이웃으로 바로 바뀌어요.")}</p>
         <ul className="max-h-[60vh] space-y-0.5 overflow-y-auto">
           {items.map(({ c, code }) => {
             const on = code === current;

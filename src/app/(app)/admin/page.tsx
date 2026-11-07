@@ -67,7 +67,7 @@ export default async function AdminPage() {
                 <span>{r.is_comment ? t("댓글") : t("글")}</span>
                 <NationalityChip code={r.nationality} lang={lang} />
                 {r.same > 1 && <span className="font-bold">×{r.same}</span>}
-                <span className="ml-auto opacity-60">{timeAgo(r.created_at, lang)}</span>
+                <span className="ml-auto opacity-70">{timeAgo(r.created_at, lang)}</span>
               </div>
               <p className="mt-2 whitespace-pre-wrap">{r.excerpt}</p>
               {r.details && <p className="mt-1 text-xs opacity-70">“{r.details}”</p>}

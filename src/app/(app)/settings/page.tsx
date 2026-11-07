@@ -112,7 +112,7 @@ export default async function SettingsPage() {
                       <li key={r.id} className="flex items-center gap-2">
                         <span className="rounded bg-soft px-2 py-0.5 text-xs font-bold">{status[r.status]}</span>
                         <span className="truncate">{t(REPORT_REASONS.find((x) => x.id === r.reason)?.ko ?? "기타")}</span>
-                        <span className="ml-auto shrink-0 text-xs opacity-60">{timeAgo(r.created_at, lang)}</span>
+                        <span className="ml-auto shrink-0 text-xs opacity-70">{timeAgo(r.created_at, lang)}</span>
                         {r.post_id && (
                           <Link href={`/posts/${r.post_id}`} className="shrink-0 text-xs text-primary underline">
                             {t("보기")}
@@ -143,7 +143,7 @@ export default async function SettingsPage() {
                   <form action={deleteAccount} className="mt-2 space-y-2 text-sm">
                     <p className="opacity-80">{t("탈퇴하면 내 글, 댓글, 신고 기록이 모두 삭제되고 되돌릴 수 없어요.")}</p>
                     <label className="flex items-center gap-2">
-                      <input type="checkbox" name="confirm" required /> {t("모두 삭제되는 것을 이해했어요")}
+                      <input type="checkbox" name="confirm" required className="size-5 shrink-0 align-middle accent-red-700" /> {t("모두 삭제되는 것을 이해했어요")}
                     </label>
                     <button className="h-11 rounded-xl bg-red-700 px-5 text-[15px] font-bold text-white">{t("탈퇴")}</button>
                   </form>

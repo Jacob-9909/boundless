@@ -43,12 +43,12 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
       </a>
       <div className="mx-auto flex max-w-[1360px]">
         {/* Desktop sidebar */}
-        <aside className="sticky top-0 hidden h-screen w-[264px] shrink-0 flex-col border-r border-ink/[.07] bg-white/75 backdrop-blur lg:flex">
+        <div className="sticky top-0 hidden h-screen w-[264px] shrink-0 flex-col border-r border-ink/[.07] bg-white/75 backdrop-blur lg:flex">
           <div className="flex-1 space-y-5 overflow-y-auto px-4 pt-5 pb-4">
             <Link href="/?intro=1" className="block px-2 text-ink" aria-label="Boundless">
               <Logo />
             </Link>
-            <SideNav items={nav} />
+            <SideNav items={nav} label={t("주요 메뉴")} />
             <Link href="/write" className={`${btn} w-full`}>
               <Icon name="plus" size={18} />
               {t("글쓰기")}
@@ -56,7 +56,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
 
             {GROUPS.map((gr) => (
               <div key={gr.id}>
-                <p className="mb-1 px-3 text-xs font-bold tracking-wide opacity-45">{t(gr.ko)}</p>
+                <p className="mb-1 px-3 text-xs font-bold tracking-wide opacity-70">{t(gr.ko)}</p>
                 <ul>
                   {BOARDS.filter((b) => b.group === gr.id).map((b) => {
                     const c = counts.find((x) => x.topic === b.id);
@@ -67,8 +67,8 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
                             <Icon name={b.icon} size={13} />
                           </span>
                           <span className="min-w-0 truncate">{t(b.ko)}</span>
-                          {!!c?.today && <span className="size-1.5 rounded-full bg-extra" aria-label={t("오늘 새 글")} />}
-                          <span className="ml-auto text-xs opacity-45">{c?.n ?? 0}</span>
+                          {!!c?.today && <span className="size-1.5 rounded-full bg-alert" aria-label={t("오늘 새 글")} />}
+                          <span className="ml-auto text-xs opacity-70">{c?.n ?? 0}</span>
                         </Link>
                       </li>
                     );
@@ -76,7 +76,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
                 </ul>
               </div>
             ))}
-            <SideNav items={navEnd} />
+            <SideNav items={navEnd} label={t("더 보기")} />
           </div>
 
           <div className="space-y-2 border-t border-ink/[.07] p-3">
@@ -100,7 +100,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
             ) : (
               <div className="rounded-2xl border border-ink/[.07] bg-white p-3">
                 <p className="text-sm font-bold">{t("로그인하고 이야기해 보세요")}</p>
-                <p className="mt-0.5 text-xs opacity-60">{t("국적 하나만 공개돼요. 이메일은 비공개.")}</p>
+                <p className="mt-0.5 text-xs opacity-70">{t("국적 하나만 공개돼요. 이메일은 비공개.")}</p>
                 <Link href="/login" className={`${btn} mt-3 h-10 w-full text-sm`}>
                   {t("로그인")}
                 </Link>
@@ -112,7 +112,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
             {demoUser && user && <AccountSwitcher t={t} lang={lang} current={user.nationality} />}
             <LangMenu lang={lang} label={t("화면 언어 바꾸기")} note={t("한국어와 영어 밖의 언어는 기계 번역이라 어색한 문장이 있을 수 있어요. 검수하고 있어요.")} align="left" up />
           </div>
-        </aside>
+        </div>
 
         <div className="min-w-0 flex-1 pb-24 lg:pb-12">
           {/* Phone / tablet header */}

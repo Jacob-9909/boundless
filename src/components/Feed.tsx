@@ -52,7 +52,7 @@ export function ListControls({ base, tags, tag, sort, t }: { base: string; tags?
             href={listHref(base, { tag, sort }, { sort: k })}
             role="tab"
             aria-selected={sort === k}
-            className={`inline-flex h-8 items-center rounded-full px-3 text-[13px] font-bold whitespace-nowrap transition ${sort === k ? "bg-white text-ink shadow-sm" : "text-ink/60 hover:text-ink"}`}
+            className={`inline-flex h-8 items-center rounded-full px-3 text-[13px] font-bold whitespace-nowrap transition ${sort === k ? "bg-white text-ink shadow-sm" : "text-ink/75 hover:text-ink"}`}
           >
             {label}
           </Link>

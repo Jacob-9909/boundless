@@ -280,7 +280,7 @@ export const CULTURES: Culture[] = [
     langs: ["kk"],
     font: "--font-kz",
     motif: "코쉬카르 무이즈(숫양 뿔) 문양 · 하늘색과 태양 금빛",
-    c: { primary: "#00799A", accent: "#F2C200", ink: "#063645", paper: "#F2FBFD", soft: "#CBEFF6", extra: "#7FDCEB" },
+    c: { primary: "#00799A", accent: "#F2C200", ink: "#063645", paper: "#F2FBFD", soft: "#E6F8FB", extra: "#7FDCEB" },
     pattern: (c) =>
       svg(
         56,
