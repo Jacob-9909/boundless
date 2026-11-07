@@ -77,6 +77,51 @@ export async function RightRail({ viewer, lang, t }: { viewer: string | null; la
         </section>
       )}
 
+      {waiting.length > 0 && (
+        <section className="rounded-2xl bg-soft/70 p-4 ring-1 ring-primary/10">
+          <p className={railTitle}>
+            <Icon name="comment" size={16} className="text-alert" />
+            {t("답변을 기다리는 질문")}
+          </p>
+          <ul className="mt-2.5 space-y-2">
+            {waiting.map((p) => (
+              <li key={p.id}>
+                <Link href={`/posts/${p.id}`} className="flex items-start gap-2.5 rounded-xl bg-white p-2.5 shadow-[0_1px_2px_rgba(16,24,40,.05)] transition hover:shadow-md">
+                  <Avatar code={p.nationality} size={26} />
+                  <span className="min-w-0">
+                    <span className="line-clamp-2 text-[13px] leading-snug font-bold">{p.title}</span>
+                    <span className="text-xs font-bold text-primary">{t("답변하고 +2점")} →</span>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {hot.length > 0 && (
+        <section className={`${card} p-4`}>
+          <p className={railTitle}>
+            <Icon name="flame" size={16} className="text-alert" />
+            {t("이번 주 인기 글")}
+          </p>
+          <ol className="mt-2 space-y-2">
+            {hot.map((p, i) => (
+              <li key={p.id}>
+                <Link href={`/posts/${p.id}`} className="flex items-center gap-2.5 hover:opacity-80">
+                  <span className="w-4 font-display text-base font-extrabold text-alert">{i + 1}</span>
+                  <span className="min-w-0 flex-1 truncate text-[13px] font-bold">{p.title}</span>
+                  <span className="flex shrink-0 items-center gap-1 text-xs opacity-70">
+                    <Icon name="helpful" size={13} />
+                    {p.likes}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
+
       {top.length > 0 && (
         <section className={`${card} p-4`}>
           <p className={railTitle}>
@@ -122,51 +167,6 @@ export async function RightRail({ viewer, lang, t }: { viewer: string | null; la
         </section>
       )}
 
-      {waiting.length > 0 && (
-        <section className={`${card} p-4`}>
-          <p className={railTitle}>
-            <Icon name="comment" size={16} className="text-alert" />
-            {t("답변을 기다리는 질문")}
-          </p>
-          <ul className="mt-2 divide-y divide-ink/[.06]">
-            {waiting.map((p) => (
-              <li key={p.id}>
-                <Link href={`/posts/${p.id}`} className="flex items-start gap-2.5 py-2.5 hover:opacity-80">
-                  <Avatar code={p.nationality} size={26} />
-                  <span className="min-w-0">
-                    <span className="line-clamp-2 text-[13px] leading-snug font-bold">{p.title}</span>
-                    <span className="text-xs text-primary">{t("답변하고 +2점")} →</span>
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {hot.length > 0 && (
-        <section className={`${card} p-4`}>
-          <p className={railTitle}>
-            <Icon name="flame" size={16} className="text-alert" />
-            {t("이번 주 인기 글")}
-          </p>
-          <ol className="mt-2 space-y-2">
-            {hot.map((p, i) => (
-              <li key={p.id}>
-                <Link href={`/posts/${p.id}`} className="flex items-center gap-2.5 hover:opacity-80">
-                  <span className="w-4 font-display text-base font-extrabold text-alert">{i + 1}</span>
-                  <span className="min-w-0 flex-1 truncate text-[13px] font-bold">{p.title}</span>
-                  <span className="flex shrink-0 items-center gap-1 text-xs opacity-70">
-                    <Icon name="helpful" size={13} />
-                    {p.likes}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ol>
-        </section>
-      )}
-
       {activity.length > 0 && (
         <section className={`${card} p-4`}>
           <p className={railTitle}>
@@ -176,9 +176,9 @@ export async function RightRail({ viewer, lang, t }: { viewer: string | null; la
             </span>
             {t("최근 활동")}
           </p>
-          <ul className="mt-2 space-y-3">
+          <ul className="relative mt-3 space-y-3 before:absolute before:top-3 before:bottom-3 before:left-[12px] before:w-px before:bg-ink/10">
             {activity.map((a) => (
-              <li key={a.id}>
+              <li key={a.id} className="relative">
                 <Link href={`/posts/${a.post_id}`} className="flex gap-2.5 hover:opacity-80">
                   <Avatar code={a.nationality} size={26} />
                   <span className="min-w-0 text-xs leading-relaxed">
@@ -214,6 +214,20 @@ export async function RightRail({ viewer, lang, t }: { viewer: string | null; la
           ))}
         </ul>
       </section>
+      <p className="px-1 text-[11px] leading-relaxed opacity-60">
+        <Link href="/policy" className="hover:underline">
+          {t("운영 정책")}
+        </Link>
+        {" · "}
+        <Link href="/guide" className="hover:underline">
+          {t("공식 안내")}
+        </Link>
+        {" · "}
+        <Link href="/boards" className="hover:underline">
+          {t("게시판")}
+        </Link>
+        {" · © 2026 Boundless"}
+      </p>
     </div>
   );
 }

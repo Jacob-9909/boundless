@@ -370,7 +370,6 @@ export const EN: Record<string, string> = {
   "모두의 광장": "Everyone’s square",
   "모든 나라 이웃이 함께 보는 최신 글": "Latest posts everyone can see",
   "홈": "Home",
-  "오늘 새 글": "New today",
   "로그인하고 이야기해 보세요": "Sign in to join in",
   "라운지": "Lounge",
   "우리나라 라운지는 같은 국적 이웃만 들어올 수 있어요": "Country lounges are only for neighbors of that nationality",

@@ -4,7 +4,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { AccountSwitcher } from "@/components/Community";
 import { Icon } from "@/components/Icon";
 import { LangMenu } from "@/components/LangMenu";
-import { SideNav, type NavItem } from "@/components/SideNav";
+import { BoardNav, SideNav, type NavItem } from "@/components/SideNav";
 import { Avatar, Flag, LevelBadge, Logo, btn } from "@/components/ui";
 import { canViewQueue, demoEnabled, getT, getUser } from "@/lib/auth";
 import { BOARDS, GROUPS } from "@/lib/boards";
@@ -53,34 +53,30 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
               {t("글쓰기")}
             </Link>
 
-            {GROUPS.map((gr) => (
-              <div key={gr.id}>
-                <p className="mb-1 px-3 text-xs font-bold tracking-wide opacity-70">{t(gr.ko)}</p>
-                <ul>
-                  {BOARDS.filter((b) => b.group === gr.id).map((b) => {
-                    const c = counts.find((x) => x.topic === b.id);
-                    return (
-                      <li key={b.id}>
-                        <Link href={`/b/${b.id}`} title={t(b.ko)} className="flex h-9 items-center gap-2.5 rounded-xl px-3 text-sm whitespace-nowrap text-ink/80 hover:bg-ink/[.05]">
-                          <span className="flex size-6 items-center justify-center rounded-lg text-white" style={{ background: b.color }}>
-                            <Icon name={b.icon} size={13} />
-                          </span>
-                          <span className="min-w-0 truncate">{t(b.ko)}</span>
-                          {!!c?.today && <span className="size-1.5 rounded-full bg-alert" aria-label={t("오늘 새 글")} />}
-                          <span className="ml-auto text-xs opacity-70">{c?.n ?? 0}</span>
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            ))}
-            <SideNav items={navEnd} label={t("더 보기")} />
+            <hr className="border-ink/[.07]" />
+            <BoardNav
+              label={t("게시판")}
+              groups={GROUPS.map((gr) => ({
+                label: t(gr.ko),
+                items: BOARDS.filter((b) => b.group === gr.id).map((b) => {
+                  const today = counts.find((x) => x.topic === b.id)?.today ?? 0;
+                  return { href: `/b/${b.id}`, label: t(b.ko), icon: b.icon, color: b.color, today, todayText: t("새 글 {n}", { n: today }) };
+                }),
+              }))}
+            />
+            <hr className="border-ink/[.07]" />
+            <SideNav items={navEnd} label={t("더 보기")} compact />
+            <p className="px-3 text-[11px] opacity-60">
+              <Link href="/policy" className="hover:underline">
+                {t("운영 정책")}
+              </Link>
+              {" · © 2026 Boundless"}
+            </p>
           </div>
 
           <div className="space-y-2 border-t border-ink/[.07] p-3">
             {user ? (
-              <div className="overflow-hidden rounded-2xl border border-ink/[.07] bg-white">
+              <Link href="/settings" title={t("내 공개 국적")} className="block overflow-hidden rounded-2xl border border-ink/[.07] bg-white transition hover:border-ink/20">
                 <div className="bg-pattern h-1.5 bg-primary bg-[length:auto_24px]" aria-hidden="true" />
                 <div className="flex items-center gap-2.5 px-3 py-2.5">
                   <Avatar code={user.nationality} size={36} />
@@ -92,7 +88,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
                     {points && <LevelBadge points={points.points} t={t} />}
                   </div>
                 </div>
-              </div>
+              </Link>
             ) : (
               <div className="rounded-2xl border border-ink/[.07] bg-white p-3">
                 <p className="text-sm font-bold">{t("로그인하고 이야기해 보세요")}</p>
