@@ -416,6 +416,7 @@ export default async function Landing(props: PageProps<"/">) {
               <h2 className={sectionTitle}>{t("들어오는 순간, 당신의 문화로")}</h2>
               <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-black/75">
                 {t("로그인 화면이 고른 나라의 색과 전통 문양, 모국어 인사로 바뀌어요. 가입하면 앱 곳곳이 내 문화의 색으로 물들어요.")}
+                {demo && ` ${t("카드를 누르면 그 나라 샘플 이웃으로 바로 들어가요.")}`}
               </p>
             </div>
             <Link href="/login" className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-[#14161C] px-5 text-[15px] font-bold text-white">
@@ -424,13 +425,11 @@ export default async function Landing(props: PageProps<"/">) {
             </Link>
           </div>
           <ul className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-            {CULTURES.map((c) => (
-              <li key={c.code}>
-                <Link
-                  href={`/login?culture=${c.code}`}
-                  style={themeVars(c)}
-                  className="group relative flex h-48 flex-col justify-end overflow-hidden rounded-2xl bg-primary p-3.5 text-white transition hover:-translate-y-1 hover:shadow-xl"
-                >
+            {CULTURES.map((c) => {
+              const cls =
+                "group relative flex h-48 w-full flex-col justify-end overflow-hidden rounded-2xl bg-primary p-3.5 text-left text-white transition hover:-translate-y-1 hover:shadow-xl";
+              const face = (
+                <>
                   <span className="bg-pattern absolute inset-0 opacity-35 transition group-hover:opacity-55" aria-hidden="true" />
                   <Landmark culture={c} className="absolute inset-x-0 bottom-0 h-auto w-full opacity-80 transition group-hover:opacity-100" />
                   <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" aria-hidden="true" />
@@ -440,9 +439,25 @@ export default async function Landing(props: PageProps<"/">) {
                     {c.native}
                   </span>
                   <span className="relative mt-0.5 line-clamp-1 text-[11px] opacity-70">{t(c.motif)}</span>
-                </Link>
-              </li>
-            ))}
+                </>
+              );
+              // With sample accounts on, a card enters as that country's neighbor; otherwise it previews the themed sign-in.
+              return (
+                <li key={c.code}>
+                  {demo ? (
+                    <form action={demoLogin.bind(null, c.code)}>
+                      <button style={themeVars(c)} className={cls} aria-label={`${c.native} · ${t("샘플 계정으로 체험")}`}>
+                        {face}
+                      </button>
+                    </form>
+                  ) : (
+                    <Link href={`/login?culture=${c.code}`} style={themeVars(c)} className={cls}>
+                      {face}
+                    </Link>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </div>
       </section>

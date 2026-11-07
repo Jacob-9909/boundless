@@ -616,4 +616,6 @@ export const EN: Record<string, string> = {
   "지우고 새로 쓰기": "Clear and start over",
   // login language
   "{lang}로 보기": "View in {lang}",
+  // landing culture cards
+  "카드를 누르면 그 나라 샘플 이웃으로 바로 들어가요.": "Pick a card to enter as that country's sample neighbor.",
 };

@@ -558,5 +558,6 @@
   "불러오는 중…": "Chargement…",
   "이 기기에 임시 저장한 글을 불러왔어요.": "Le brouillon enregistré sur cet appareil a été restauré.",
   "지우고 새로 쓰기": "Effacer et recommencer",
-  "{lang}로 보기": "Voir en {lang}"
+  "{lang}로 보기": "Voir en {lang}",
+  "카드를 누르면 그 나라 샘플 이웃으로 바로 들어가요.": "Choisissez une carte pour entrer comme voisin de démonstration de ce pays."
 }
