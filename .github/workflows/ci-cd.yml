@@ -1,0 +1,58 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+      SESSION_SECRET: ci-only-not-a-secret
+      ADMIN_EMAILS: admin@example.com
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: node scripts/i18n-check.mjs
+      - run: npm run build
+      - run: node scripts/db.mjs db/schema.sql db/seed.sql
+      # e2e runs against the dev server: without SMTP it shows the sign-in code on screen.
+      - name: e2e
+        run: |
+          npx next dev -p 3000 > dev.log 2>&1 &
+          for _ in $(seq 60); do curl -fsS -o /dev/null http://localhost:3000/api/health && break; sleep 2; done
+          BASE_URL=http://localhost:3000 CHROME_PATH=$(which google-chrome) node e2e/flow.mjs || (tail -50 dev.log; exit 1)
+
+  deploy:
+    needs: check
+    # Turn on with the repository variable DEPLOY_ENABLED=true once oracle_vm is set up (see README).
+    if: github.event_name == 'push' && vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    concurrency: deploy
+    steps:
+      - name: Deploy to oracle_vm
+        env:
+          SSH_KEY: ${{ secrets.VM_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.VM_KNOWN_HOSTS }}
+          VM_HOST: ${{ secrets.VM_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519
+          ssh "ubuntu@$VM_HOST" deploy

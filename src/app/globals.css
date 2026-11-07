@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+/* Culture theme tokens. Defaults = the neutral Boundless route-map theme;
+   a signed-in member's culture (or the login screen's choice) overrides them inline. */
+:root {
+  --c-primary: #1b3a6b;
+  --c-accent: #4fa3e0;
+  --c-ink: #0e1b33;
+  --c-paper: #f3f6fb;
+  --c-soft: #d6e8f8;
+  --c-extra: #e4572e;
+  --c-font: var(--font-brand);
+}
+
+@theme inline {
+  --color-primary: var(--c-primary);
+  --color-accent: var(--c-accent);
+  --color-ink: var(--c-ink);
+  --color-paper: var(--c-paper);
+  --color-soft: var(--c-soft);
+  --color-extra: var(--c-extra);
+  --font-sans: system-ui, -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", "Segoe UI", sans-serif;
+  --font-display: var(--font-brand), system-ui, "Apple SD Gothic Neo", sans-serif;
+  --font-culture: var(--c-font), var(--font-brand), system-ui, sans-serif;
+}
+
+body {
+  background: var(--c-paper);
+  color: var(--c-ink);
+  transition:
+    background-color 0.4s ease,
+    color 0.4s ease;
+}
+
+.bg-pattern {
+  background-image: var(--c-pattern);
+}
+
+/* Small route-map label above page titles: "○ LINE 02 · SEARCH" */
+.station-label {
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+.animate-fade-in {
+  animation: fade-in 0.45s ease both;
+}
+
+:focus-visible {
+  outline: 3px solid var(--c-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
