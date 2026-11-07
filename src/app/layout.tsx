@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   description: "국경 없이 누구나 어우러지는 한국 생활 커뮤니티 · A borderless community for everyone living in Korea",
 };
 
-export const viewport: Viewport = { width: "device-width", initialScale: 1 };
+export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#1B3A6B" };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const lang = await getLang();

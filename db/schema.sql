@@ -126,7 +126,7 @@ UPDATE boundless.posts SET kind = 'review' WHERE kind = 'experience';
 
 ALTER TABLE boundless.users ADD COLUMN IF NOT EXISTS read_lang text; -- translation target; NULL = from nationality
 
--- ponytail: cache keyed by 'p:<post id>' / 'c:<comment id>'; rows of deleted items linger until a cleanup job exists.
+-- Cache keyed by 'p:<post id>' / 'c:<comment id>'. Deleting a post, comment or account removes its rows (actions.ts).
 CREATE TABLE IF NOT EXISTS boundless.translations (
   item text NOT NULL,
   lang text NOT NULL,
@@ -145,3 +145,18 @@ SELECT u.id AS user_id, u.nationality,
   ((SELECT count(*)::int FROM boundless.post_likes l JOIN boundless.posts p ON p.id = l.post_id WHERE p.user_id = u.id)
    + (SELECT count(*)::int FROM boundless.comment_likes l JOIN boundless.comments c ON c.id = l.comment_id WHERE c.user_id = u.id)) AS helped
 FROM boundless.users u;
+
+-- Appeals: the author of a hidden post or comment can ask once for a second look.
+CREATE TABLE IF NOT EXISTS boundless.appeals (
+  id bigserial PRIMARY KEY,
+  user_id uuid NOT NULL REFERENCES boundless.users ON DELETE CASCADE,
+  post_id bigint REFERENCES boundless.posts ON DELETE CASCADE,
+  comment_id bigint REFERENCES boundless.comments ON DELETE CASCADE,
+  reason text NOT NULL CHECK (char_length(reason) BETWEEN 10 AND 1000),
+  status text NOT NULL DEFAULT 'received' CHECK (status IN ('received', 'restored', 'upheld')),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  resolved_at timestamptz,
+  CHECK ((post_id IS NULL) <> (comment_id IS NULL))
+);
+CREATE UNIQUE INDEX IF NOT EXISTS appeals_post_once ON boundless.appeals (post_id) WHERE post_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS appeals_comment_once ON boundless.appeals (comment_id) WHERE comment_id IS NOT NULL;

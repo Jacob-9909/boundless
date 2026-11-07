@@ -147,6 +147,19 @@ await item.waitFor({ state: "detached" });
 await visitor.goto(postUrl);
 await visitor.getByText("hidden by moderators").waitFor();
 
+// A appeals once; the admin restores the post and it is public again.
+await a.goto(postUrl);
+await a.getByText("Ask for a second look").click();
+await a.getByLabel("Tell us why it should be looked at again").fill("This only asks about recycling days, no personal data.");
+await a.getByRole("button", { name: "Send appeal" }).click();
+await a.getByText("Appeal received").waitFor();
+await admin.goto(BASE + "/admin");
+const appealItem = admin.locator("li", { hasText: "no personal data" });
+await appealItem.getByRole("button", { name: "Restore" }).click();
+await appealItem.waitFor({ state: "detached" });
+await visitor.goto(postUrl);
+await visitor.getByRole("heading", { level: 1, name: title }).waitFor();
+
 // C deletes the account; signing in again starts a fresh sign-up.
 await c.goto(BASE + "/settings");
 await c.getByText("Delete account").click();

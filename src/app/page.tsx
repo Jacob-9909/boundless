@@ -574,6 +574,12 @@ export default async function Landing(props: PageProps<"/">) {
       <footer className="mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-5 py-10 text-sm text-black/75 md:px-8">
         <Logo className="text-[#14161C]" size={24} />
         <span>{t("국경 없이 어우러지는 한국 생활 커뮤니티")}</span>
+        <Link href="/policy" className="inline-flex h-9 items-center font-bold underline">
+          {t("운영 정책")}
+        </Link>
+        <Link href="/guide" className="inline-flex h-9 items-center font-bold underline">
+          {t("공식 안내")}
+        </Link>
         <span className="ml-auto text-xs">{t("시연 버전 · 모든 글과 계정은 가상 데이터예요.")}</span>
       </footer>
     </main>

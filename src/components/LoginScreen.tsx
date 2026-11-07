@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition, type CSSProperties } from "react";
-import { completeSignup, demoLogin, sendCode, verifyCode } from "@/app/actions";
+import { completeSignup, demoLogin, sendCode, setLang, verifyCode } from "@/app/actions";
 import { CULTURES, DEFAULT_CULTURE, cultureOf, themeVars, type Culture } from "@/lib/cultures";
-import type { Lang } from "@/lib/i18n";
+import { LANG_NAMES, toLang, type Lang } from "@/lib/i18n";
 import { useT } from "./I18n";
 import { Icon } from "./Icon";
 import { LangMenu } from "./LangMenu";
@@ -122,10 +122,24 @@ export function LoginScreen({
           {/* Default theme has no home language, so its line follows the UI language. */}
           <p className="mt-3 font-culture text-xl opacity-95 sm:text-2xl">{culture.code === "XX" ? t(culture.line) : culture.line}</p>
           <p className="mt-5 max-w-md text-sm opacity-85">{t("Boundless는 한국에 사는 모든 외국인이 생활 정보를 찾고, 익명으로 묻고, 경험을 나누는 곳이에요.")}</p>
-          <p className="mt-4 inline-flex items-center gap-2 rounded-full bg-black/25 px-3 py-1 text-xs backdrop-blur">
-            <span className="size-2 rounded-full bg-accent" aria-hidden="true" />
-            {t(culture.motif)}
-          </p>
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <p className="inline-flex items-center gap-2 rounded-full bg-black/25 px-3 py-1 text-xs backdrop-blur">
+              <span className="size-2 rounded-full bg-accent" aria-hidden="true" />
+              {t(culture.motif)}
+            </p>
+            {/* Picked a culture whose language isn't on screen: one tap to read everything in it. */}
+            {(() => {
+              const own = toLang(culture.langs[0]);
+              return own && own !== lang ? (
+                <form action={setLang.bind(null, own)}>
+                  <button className="inline-flex h-8 items-center gap-1.5 rounded-full bg-white px-3 text-xs font-bold text-ink shadow-sm hover:bg-white/90">
+                    <Icon name="globe" size={14} />
+                    {t("{lang}로 보기", { lang: LANG_NAMES[own] })}
+                  </button>
+                </form>
+              ) : null;
+            })()}
+          </div>
         </div>
       </section>
 
@@ -275,6 +289,10 @@ export function LoginScreen({
                 <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mt-0.5 size-5 shrink-0 accent-[var(--c-primary)]" />
                 <span>{t("만 14세 이상이며, 개인정보를 올리지 않는 커뮤니티 규칙에 동의해요.")}</span>
               </label>
+              <Link href="/policy" target="_blank" className="-mt-2 inline-flex h-8 items-center gap-1 text-xs font-bold text-primary underline">
+                {t("운영 정책 보기")}
+                <Icon name="external" size={12} />
+              </Link>
               <ErrorBox error={error} t={t} />
               <button disabled={pending} className={`${btn} w-full`}>
                 {t("가입 완료")}

@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
-import { reportContent, updateNationality, type Result } from "@/app/actions";
+import { useActionState, useEffect, useRef, useState } from "react";
+import { appeal, reportContent, updateNationality, type Result } from "@/app/actions";
 import type { Board } from "@/lib/boards";
 import { REGIONS, REPORT_REASONS } from "@/lib/i18n";
 import { Icon } from "./Icon";
@@ -32,6 +32,7 @@ export function WriteForm({
   langs,
   nationality,
   countryLabel,
+  draftKey,
 }: {
   action: (s: PostState, f: FormData) => Promise<PostState>;
   submitLabel: string;
@@ -42,15 +43,71 @@ export function WriteForm({
   langs: { code: string; name: string }[];
   nationality: string;
   countryLabel: string;
+  draftKey?: string; // new posts only: title and body autosave on this device
 }) {
   const t = useT();
   const [state, action, pending] = useActionState(serverAction, {});
   const v: Record<string, string> = state.values ?? initial;
   const [tagId, setTagId] = useState(v.kind || board.tags[0].id);
   const [len, setLen] = useState((v.body ?? "").length);
+  const form = useRef<HTMLFormElement>(null);
+  const [restored, setRestored] = useState(false);
+  const storeKey = draftKey && `draft:${draftKey}`;
+  const fields = () => {
+    const f = form.current?.elements;
+    return { title: f?.namedItem("title") as HTMLInputElement | null, body: f?.namedItem("body") as HTMLTextAreaElement | null };
+  };
+  // Bring back a draft left on this device (closed tab, lost connection), unless the form already has text.
+  useEffect(() => {
+    if (!storeKey) return;
+    let d: { title?: string; body?: string } | null = null;
+    try {
+      d = JSON.parse(localStorage.getItem(storeKey) ?? "null");
+    } catch {}
+    const { title, body } = fields();
+    if (!d?.body || !title || !body || body.value) return;
+    if (!title.value) title.value = d.title ?? "";
+    body.value = d.body;
+    queueMicrotask(() => {
+      setLen(d.body?.length ?? 0);
+      setRestored(true);
+    });
+  }, [storeKey]);
+  const saveDraft = () => {
+    const { title, body } = fields();
+    if (!storeKey || !title || !body) return;
+    try {
+      localStorage.setItem(storeKey, JSON.stringify({ title: title.value, body: body.value }));
+    } catch {}
+  };
+  const dropDraft = () => {
+    if (!storeKey) return;
+    try {
+      localStorage.removeItem(storeKey);
+    } catch {}
+  };
   return (
-    <form action={action} className="space-y-5 px-4 py-4 md:px-4">
+    <form ref={form} action={action} onInput={saveDraft} onSubmit={dropDraft} className="space-y-5 px-4 py-4 md:px-4">
       <input type="hidden" name="board" value={board.id} />
+      {restored && (
+        <p role="status" className="flex flex-wrap items-center gap-x-2 rounded-xl bg-soft/70 px-3.5 py-2 text-sm">
+          {t("이 기기에 임시 저장한 글을 불러왔어요.")}
+          <button
+            type="button"
+            onClick={() => {
+              const { title, body } = fields();
+              if (title) title.value = "";
+              if (body) body.value = "";
+              setLen(0);
+              setRestored(false);
+              dropDraft();
+            }}
+            className="inline-flex h-8 items-center font-bold text-primary underline"
+          >
+            {t("지우고 새로 쓰기")}
+          </button>
+        </p>
+      )}
       <input type="hidden" name="space" value={space} />
 
       <div className="flex items-center gap-3 rounded-2xl bg-white p-3 ring-1 ring-ink/[.07]">
@@ -304,5 +361,36 @@ export function NationalityForm({ current, countries }: { current: string; count
       <ErrorLine error={state.error} />
       {state.ok && <p className="text-sm font-semibold text-primary">{t("저장했어요.")}</p>}
     </form>
+  );
+}
+
+/** Shown to the author of hidden content: ask once for a second look, then see where it stands. */
+export function AppealForm({ post, comment, status }: { post?: string; comment?: string; status: string | null }) {
+  const t = useT();
+  const [state, action, pending] = useActionState(appeal, {});
+  if (status === "upheld") return <p className="mt-2 text-xs font-semibold text-red-800">{t("재심 결과: 운영 정책에 맞지 않아 가림을 유지했어요.")}</p>;
+  if (status === "received" || state.ok)
+    return (
+      <p role="status" className="mt-2 text-xs font-semibold text-primary">
+        {t("재심을 접수했어요. 운영자가 다시 확인하면 결과가 여기에 표시돼요.")}
+      </p>
+    );
+  return (
+    <details className="mt-2 text-sm not-italic" open={!!state.error}>
+      <summary className="inline-flex h-8 cursor-pointer items-center font-bold text-primary">{t("재심 요청하기")}</summary>
+      <form action={action} className="mt-2 space-y-2">
+        {post && <input type="hidden" name="post" value={post} />}
+        {comment && <input type="hidden" name="comment" value={comment} />}
+        <label htmlFor={`appeal-${post ?? comment}`} className={labelCls}>
+          {t("왜 다시 봐야 하는지 적어 주세요")}
+        </label>
+        <textarea id={`appeal-${post ?? comment}`} name="reason" required minLength={10} maxLength={1000} rows={3} className={field} />
+        <p className="text-xs opacity-70">{t("재심은 글마다 한 번 요청할 수 있어요.")}</p>
+        <ErrorLine error={state.error} />
+        <button disabled={pending} className={`${btn} h-10 text-sm`}>
+          {t("재심 요청 보내기")}
+        </button>
+      </form>
+    </details>
   );
 }

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { moderate } from "@/app/actions";
+import { moderate, resolveAppeal } from "@/app/actions";
 import { NationalityChip, Notice, PageHead } from "@/components/ui";
 import { canViewQueue, getT, getUser, isAdmin } from "@/lib/auth";
 import { q } from "@/lib/db";
@@ -26,7 +26,7 @@ export default async function AdminPage() {
   // The demo moderator (judges) sees the real queue, but cannot act on it.
   const readOnly = !isAdmin(user);
 
-  const [open, events] = await Promise.all([
+  const [open, events, appeals] = await Promise.all([
     q<Open>(
       `SELECT r.id, r.reason, r.details, r.created_at,
          COALESCE(r.post_id, c.post_id) AS post_id, r.comment_id IS NOT NULL AS is_comment,
@@ -43,11 +43,20 @@ export default async function AdminPage() {
     q<{ name: string; n: number }>(
       "SELECT name, count(*)::int AS n FROM boundless.events WHERE created_at > now() - interval '7 days' GROUP BY name ORDER BY name",
     ),
+    q<{ id: string; reason: string; created_at: Date; post_id: string; is_comment: boolean; excerpt: string; nationality: string }>(
+      `SELECT a.id, a.reason, a.created_at, COALESCE(a.post_id, c.post_id) AS post_id, a.comment_id IS NOT NULL AS is_comment,
+         left(COALESCE(c.body, p.title || ' — ' || p.body), 160) AS excerpt, u.nationality
+       FROM boundless.appeals a
+       LEFT JOIN boundless.comments c ON c.id = a.comment_id
+       LEFT JOIN boundless.posts p ON p.id = a.post_id
+       JOIN boundless.users u ON u.id = a.user_id
+       WHERE a.status = 'received' ORDER BY a.created_at LIMIT 50`,
+    ),
   ]);
 
   return (
     <div className="mx-auto max-w-3xl pb-6">
-      <PageHead line="OPS · QUEUE" title={t("운영 큐")} desc={t("접수된 신고를 오래된 순서로 보여 줘요.")} />
+      <PageHead line="OPS · QUEUE" title={t("운영 큐")} desc={t("접수된 신고와 재심 요청을 오래된 순서로 보여 줘요.")} />
       {readOnly && (
         <p role="status" className="mx-4 mt-4 rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
           {t("시연용 운영자 계정이에요. 신고 내용과 지표는 실제와 같지만 처리 버튼은 꺼져 있어요.")}
@@ -58,6 +67,44 @@ export default async function AdminPage() {
           <p className="font-bold">{t("최근 7일 이용 지표")}</p>
           <p className="mt-1 opacity-80">{events.length ? events.map((e) => `${e.name} ${e.n}`).join(" · ") : "—"}</p>
         </section>
+        {appeals.length > 0 && (
+          <section>
+            <h2 className="mb-2 font-display text-lg font-extrabold">{t("재심 요청 {n}건", { n: appeals.length })}</h2>
+            <ul className="space-y-3">
+              {appeals.map((a) => (
+                <li key={a.id} className="rounded-2xl border-l-4 border-primary bg-white p-4 text-sm">
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                    <span className="rounded bg-soft px-2 py-0.5 font-bold text-primary">{t("재심")}</span>
+                    <span>{a.is_comment ? t("댓글") : t("글")}</span>
+                    <NationalityChip code={a.nationality} lang={lang} />
+                    <span className="ml-auto opacity-70">{timeAgo(a.created_at, lang)}</span>
+                  </div>
+                  <p className="mt-2 whitespace-pre-wrap opacity-80">{a.excerpt}</p>
+                  <p className="mt-2 rounded-xl bg-paper px-3 py-2">
+                    <span className="font-bold">{t("작성자 사유")}</span> · {a.reason}
+                  </p>
+                  <div className="mt-2 flex items-center gap-2">
+                    {(["restore", "uphold"] as const).map((action) => (
+                      <form key={action} action={resolveAppeal}>
+                        <input type="hidden" name="appeal" value={a.id} />
+                        <input type="hidden" name="action" value={action} />
+                        <button
+                          disabled={readOnly}
+                          className={`h-9 rounded-full px-4 text-[13px] font-bold disabled:cursor-not-allowed disabled:opacity-40 ${action === "restore" ? "bg-primary text-paper" : "bg-soft"}`}
+                        >
+                          {action === "restore" ? t("복구하기") : t("가림 유지")}
+                        </button>
+                      </form>
+                    ))}
+                    <Link href={`/posts/${a.post_id}`} className="ml-auto inline-flex h-8 items-center text-xs text-primary underline">
+                      {t("원문 보기")}
+                    </Link>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
         {open.length === 0 && <Notice title={t("처리할 신고가 없어요")} />}
         <ul className="space-y-3">
           {open.map((r) => (

@@ -133,6 +133,9 @@ export default async function SettingsPage() {
                     )}
                   </span>
                 </div>
+                <Link href="/policy" className={`${row} font-bold text-primary`}>
+                  {t("운영 정책")} <span aria-hidden="true">›</span>
+                </Link>
                 {canViewQueue(user) && (
                   <Link href="/admin" className={`${row} font-bold text-primary`}>
                     {t("운영 큐")} <span aria-hidden="true">›</span>

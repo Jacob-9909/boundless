@@ -95,6 +95,7 @@ export default async function WritePage(props: PageProps<"/write">) {
         langs={POST_LANGS.map((code) => ({ code, name: langName(code, lang) }))}
         nationality={user.nationality}
         countryLabel={country}
+        draftKey={`${lounge ? "lounge" : "global"}:${board.id}`}
       />
     </div>
   );

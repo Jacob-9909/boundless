@@ -41,6 +41,7 @@ export type CommentRow = {
   likes: number;
   liked: boolean;
   mine: boolean;
+  appeal: string | null; // received | restored | upheld, when the author asked for a second look
 };
 
 const POINTS = (alias: string) => `(SELECT mp.posts + 2 * mp.answers + 3 * mp.helped FROM boundless.member_points mp WHERE mp.user_id = ${alias})`;
@@ -96,7 +97,12 @@ export function listPosts(
   add("p.space = ?", opts.space ?? "global");
   if (opts.board) add("p.topic = ?", opts.board);
   if (opts.tag) add("p.kind = ?", opts.tag);
-  if (opts.query) add("(p.title ILIKE ? OR p.body ILIKE ?)", likeEscape(opts.query));
+  // Original text, plus any cached translation, so "recycling" also finds a Vietnamese post someone translated.
+  if (opts.query)
+    add(
+      "(p.title ILIKE ? OR p.body ILIKE ? OR EXISTS (SELECT 1 FROM boundless.translations tr WHERE tr.item = 'p:' || p.id AND (tr.title ILIKE ? OR tr.body ILIKE ?)))",
+      likeEscape(opts.query)
+    );
   if (opts.nationality) add("u.nationality = ?", opts.nationality);
   if (opts.region) add("p.region = ?", opts.region);
   if (opts.waiting) where.push(`${ASKS} AND NOT p.solved AND NOT EXISTS (SELECT 1 FROM boundless.comments c WHERE c.post_id = p.id AND NOT c.hidden)`);
@@ -132,8 +138,9 @@ export function savedPosts(viewer: string) {
 
 export async function getPost(viewer: string | null, id: string) {
   if (!/^\d{1,18}$/.test(id)) return null;
-  const rows = await q<PostRow & { blocked: boolean }>(
-    `SELECT ${POST_COLS}, (${NOT_BLOCKED("p.user_id")}) IS FALSE AS blocked ${FROM} WHERE p.id = $2`,
+  const rows = await q<PostRow & { blocked: boolean; appeal: string | null }>(
+    `SELECT ${POST_COLS}, (${NOT_BLOCKED("p.user_id")}) IS FALSE AS blocked,
+       (SELECT a.status FROM boundless.appeals a WHERE a.post_id = p.id) AS appeal ${FROM} WHERE p.id = $2`,
     [viewer, id]
   );
   return rows[0] ?? null;
@@ -144,7 +151,8 @@ export function getComments(viewer: string | null, postId: string) {
     `SELECT c.id, c.parent_id, c.anon_no, c.body, c.hidden, c.created_at, u.nationality, ${POINTS("c.user_id")} AS points,
        (SELECT count(*)::int FROM boundless.comment_likes l WHERE l.comment_id = c.id) AS likes,
        EXISTS (SELECT 1 FROM boundless.comment_likes l WHERE l.comment_id = c.id AND l.user_id = $1::uuid) AS liked,
-       (c.user_id = $1::uuid) IS TRUE AS mine
+       (c.user_id = $1::uuid) IS TRUE AS mine,
+       (SELECT a.status FROM boundless.appeals a WHERE a.comment_id = c.id) AS appeal
      FROM boundless.comments c JOIN boundless.users u ON u.id = c.user_id
      WHERE c.post_id = $2 AND ${NOT_BLOCKED("c.user_id")} ORDER BY c.created_at`,
     [viewer, postId]

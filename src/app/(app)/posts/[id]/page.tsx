@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { addComment, deleteOwn, setDeal, toggleLike, toggleSave, toggleSolved } from "@/app/actions";
-import { CommentForm } from "@/components/forms";
+import { CommentForm, AppealForm } from "@/components/forms";
+import { ShareButton } from "@/components/Share";
 import { Icon } from "@/components/Icon";
 import { RightRail } from "@/components/Community";
 import { Translatable } from "@/components/Translate";
@@ -35,7 +36,8 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
     return (
       <div className="p-4">
         <Notice label={t("접근 제한")} title={post.hidden ? t("운영 정책에 따라 가려진 글이에요") : t("차단한 계정의 글이에요")}>
-          <Link href="/feed" className="font-bold text-primary underline">
+          {post.hidden && post.mine && <AppealForm post={post.id} status={post.appeal} />}
+          <Link href="/feed" className="mt-3 inline-flex h-8 items-center font-bold text-primary underline">
             {t("피드로 돌아가기")}
           </Link>
         </Notice>
@@ -164,6 +166,7 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
                 {t("도움돼요")} {post.likes}
               </Link>
             )}
+            <ShareButton title={post.title} className={`${pill} border-ink/15 bg-white`} />
             <span className="ml-auto flex items-center gap-3 text-xs">
               {post.mine && (
                 <>
@@ -247,7 +250,13 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
 }
 
 function Comment({ c, postId, t, lang, signedIn, target }: { c: CommentRow; postId: string; t: T; lang: Lang; signedIn: boolean; target: string }) {
-  if (c.hidden) return <p className="rounded-xl bg-white p-3.5 text-sm italic opacity-70">{t("운영 정책에 따라 가려진 댓글이에요")}</p>;
+  if (c.hidden)
+    return (
+      <div className="rounded-xl bg-white p-3.5 text-sm">
+        <p className="italic opacity-70">{t("운영 정책에 따라 가려진 댓글이에요")}</p>
+        {c.mine && <AppealForm comment={c.id} status={c.appeal} />}
+      </div>
+    );
   return (
     <div
       data-comment

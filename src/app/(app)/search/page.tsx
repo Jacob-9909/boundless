@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { NationalityChip, Notice, PageHead, PostCard, btn, btnGhost, field, labelCls } from "@/components/ui";
+import { NationalityChip, Notice, PageHead, PostCard, btn, btnGhost, field, labelCls, BoardBadge } from "@/components/ui";
 import { getT, getUser } from "@/lib/auth";
 import { track } from "@/lib/db";
 import { BOARDS, isBoard } from "@/lib/boards";
@@ -28,7 +28,7 @@ export default async function SearchPage(props: PageProps<"/search">) {
 
   return (
     <div className="mx-auto max-w-3xl pb-6">
-      <PageHead line="LINE 02 · SEARCH" title={t("검색")} desc={t("글 제목과 본문 원문에서 찾아요.")} />
+      <PageHead line="LINE 02 · SEARCH" title={t("검색")} desc={t("글 원문과, 한 번이라도 번역된 글의 번역문에서 찾아요.")} />
       <form className="space-y-3 px-4 py-4" role="search">
         {from && (
           <div className="flex items-center gap-2 text-sm">
@@ -89,7 +89,17 @@ export default async function SearchPage(props: PageProps<"/search">) {
 
       <div className="px-4 pb-6">
         {!searched ? (
-          <Notice title={t("글 검색")}>{t("“부산”이나 “Library”처럼 찾아보세요. 검색은 원문을 기준으로 해요.")}</Notice>
+          <>
+            <Notice title={t("글 검색")}>{t("“부산”이나 “Library”처럼 찾아보세요. 검색은 원문을 기준으로 해요.")}</Notice>
+            <p className="mt-5 mb-2 text-sm font-bold">{t("주제로 둘러보기")}</p>
+            <ul className="flex flex-wrap gap-1.5">
+              {BOARDS.map((b) => (
+                <li key={b.id}>
+                  <BoardBadge id={b.id} t={t} href={`/b/${b.id}`} />
+                </li>
+              ))}
+            </ul>
+          </>
         ) : posts.length ? (
           <>
             <p className="mb-2 text-sm opacity-70">{posts.length === PAGE ? t("최근 {n}개의 글", { n: PAGE }) : t("{n}개의 글", { n: posts.length })}</p>

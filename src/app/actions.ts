@@ -295,11 +295,24 @@ export async function deleteOwn(f: FormData) {
   const comment = str(f, "comment");
   const post = str(f, "post");
   if (/^\d{1,18}$/.test(comment)) {
+    // Cached translations go with the text (the comment and its replies).
+    await q(
+      `DELETE FROM boundless.translations WHERE item IN (
+         SELECT 'c:' || c.id FROM boundless.comments c JOIN boundless.comments own ON own.id = $1 AND own.user_id = $2
+         WHERE c.id = own.id OR c.parent_id = own.id)`,
+      [comment, user.id]
+    );
     await q("DELETE FROM boundless.comments WHERE id = $1 AND user_id = $2", [comment, user.id]);
     refresh();
     return;
   }
   if (/^\d{1,18}$/.test(post)) {
+    await q(
+      `DELETE FROM boundless.translations WHERE item IN (
+         SELECT 'p:' || id FROM boundless.posts WHERE id = $1 AND user_id = $2
+         UNION SELECT 'c:' || c.id FROM boundless.comments c JOIN boundless.posts p ON p.id = c.post_id WHERE p.id = $1 AND p.user_id = $2)`,
+      [post, user.id]
+    );
     await q("DELETE FROM boundless.posts WHERE id = $1 AND user_id = $2", [post, user.id]);
     redirect("/me");
   }
@@ -337,6 +350,47 @@ export async function reportContent(_: Result, f: FormData): Promise<Result> {
   ]);
   track("report", user.id);
   return { ok: true };
+}
+
+/** The author of a hidden post or comment asks once for a second look. */
+export async function appeal(_: Result, f: FormData): Promise<Result> {
+  const user = await requireUser();
+  const target = await targetOwner(f);
+  const reason = str(f, "reason");
+  if (!target || target.owner !== user.id) return { error: "재심을 요청할 글을 찾지 못했어요." };
+  if (reason.length < 10 || reason.length > 1000) return { error: "재심 사유를 10자 이상 적어 주세요." };
+  const hidden = await q<{ hidden: boolean }>(
+    target.comment ? "SELECT hidden FROM boundless.comments WHERE id = $1" : "SELECT hidden FROM boundless.posts WHERE id = $1",
+    [target.comment ?? target.post]
+  );
+  if (!hidden[0]?.hidden) return { error: "가려진 글만 재심을 요청할 수 있어요." };
+  await q("INSERT INTO boundless.appeals (user_id, post_id, comment_id, reason) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING", [
+    user.id,
+    target.post,
+    target.comment,
+    reason,
+  ]);
+  track("appeal", user.id);
+  refresh();
+  return { ok: true };
+}
+
+/** Moderator decision on an appeal: restore the content, or keep it hidden. */
+export async function resolveAppeal(f: FormData) {
+  const user = await getUser();
+  if (!isAdmin(user)) redirect("/feed");
+  const id = str(f, "appeal");
+  const action = str(f, "action");
+  if (!/^\d{1,18}$/.test(id) || (action !== "restore" && action !== "uphold")) return;
+  const r = await q<{ post_id: string | null; comment_id: string | null }>(
+    "UPDATE boundless.appeals SET status = $2, resolved_at = now() WHERE id = $1 AND status = 'received' RETURNING post_id, comment_id",
+    [id, action === "restore" ? "restored" : "upheld"]
+  );
+  if (r[0] && action === "restore") {
+    if (r[0].comment_id) await q("UPDATE boundless.comments SET hidden = false WHERE id = $1", [r[0].comment_id]);
+    else await q("UPDATE boundless.posts SET hidden = false WHERE id = $1", [r[0].post_id]);
+  }
+  refresh();
 }
 
 export async function blockAuthor(f: FormData) {
@@ -382,7 +436,14 @@ export async function setRegion(f: FormData) {
 export async function deleteAccount(f: FormData) {
   const user = await requireUser();
   if (f.get("confirm") !== "on") return;
-  // ponytail: hard delete cascades to posts, comments, reports and blocks. Revisit when the retention policy (P04) lands.
+  // Hard delete, as /policy promises: cascades to posts, comments, reports, appeals, blocks; cached
+  // translations of that text are removed first. Usage events keep only an anonymous row (user_id SET NULL).
+  await q(
+    `DELETE FROM boundless.translations WHERE item IN (
+       SELECT 'p:' || id FROM boundless.posts WHERE user_id = $1
+       UNION SELECT 'c:' || c.id FROM boundless.comments c JOIN boundless.posts p ON p.id = c.post_id WHERE c.user_id = $1 OR p.user_id = $1)`,
+    [user.id]
+  );
   await q("DELETE FROM boundless.users WHERE id = $1", [user.id]);
   await endSession();
   redirect("/");

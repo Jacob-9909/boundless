@@ -67,7 +67,14 @@ export default async function MePage(props: PageProps<"/me">) {
             {posts.map((p) => (
               <li key={p.id} className={p.hidden ? "opacity-70" : ""}>
                 <PostCard post={p} lang={lang} t={t} />
-                {p.hidden && <p className="mt-1 text-xs font-semibold text-red-700">{t("운영 정책에 따라 가려진 글이에요")}</p>}
+                {p.hidden && (
+                  <p className="mt-1 flex flex-wrap items-center gap-x-2 text-xs font-semibold text-red-700">
+                    {t("운영 정책에 따라 가려진 글이에요")}
+                    <Link href={`/posts/${p.id}`} className="inline-flex h-8 items-center text-primary underline">
+                      {t("재심 요청·결과 보기")}
+                    </Link>
+                  </p>
+                )}
               </li>
             ))}
           </ul>
