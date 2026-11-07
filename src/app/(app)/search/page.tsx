@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { NationalityChip, Notice, PageHead, PostCard, btn, btnGhost, field, labelCls, BoardBadge } from "@/components/ui";
+import { NationalityChip, Notice, PageHead, PostCard, btn, btnGhost, field, labelCls, BoardBadge, postList } from "@/components/ui";
 import { getT, getUser } from "@/lib/auth";
 import { track } from "@/lib/db";
 import { BOARDS, isBoard } from "@/lib/boards";
@@ -103,7 +103,7 @@ export default async function SearchPage(props: PageProps<"/search">) {
         ) : posts.length ? (
           <>
             <p className="mb-2 text-sm opacity-70">{posts.length === PAGE ? t("최근 {n}개의 글", { n: PAGE }) : t("{n}개의 글", { n: posts.length })}</p>
-            <ul className="space-y-3">
+            <ul className={postList}>
               {posts.map((p) => (
                 <li key={p.id}>
                   <PostCard post={p} lang={lang} t={t} />

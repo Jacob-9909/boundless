@@ -184,7 +184,6 @@ export const EN: Record<string, string> = {
   "국적은 30일에 한 번만 바꿀 수 있어요.": "Nationality can be changed once every 30 days.",
 
   // feed, search, own content
-  "답변을 기다려요": "Waiting for answers",
   "이웃의 글": "Neighbors’ posts",
   "국적 필터 해제": "Clear nationality filter",
   "이전 글 더 보기": "Load older posts",
@@ -274,7 +273,6 @@ export const EN: Record<string, string> = {
 
   // web app shell, feed, rail
   "본문으로 건너뛰기": "Skip to content",
-  "이웃": "Neighbor",
   "국적 하나만 공개돼요. 이메일은 비공개.": "Only your nationality is shown. Email stays private.",
   "{hello}, 이웃님": "{hello}, neighbor",
   "오늘 새 글 {today}개 · 답변을 기다리는 질문 {waiting}개": "{today} new posts today · {waiting} questions waiting for answers",
@@ -618,4 +616,6 @@ export const EN: Record<string, string> = {
   "{lang}로 보기": "View in {lang}",
   // landing culture cards
   "카드를 누르면 그 나라 샘플 이웃으로 바로 들어가요.": "Pick a card to enter as that country's sample neighbor.",
+  // feed composer
+  "한국 생활, 무엇이든 물어보세요": "Ask anything about life in Korea",
 };

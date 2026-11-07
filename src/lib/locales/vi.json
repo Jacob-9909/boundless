@@ -155,7 +155,6 @@
   "신고할 글을 찾지 못했어요.": "Không tìm thấy nội dung đó.",
   "신고 사유를 골라 주세요.": "Chọn một lý do.",
   "국적은 30일에 한 번만 바꿀 수 있어요.": "Quốc tịch chỉ có thể đổi 30 ngày một lần.",
-  "답변을 기다려요": "Đang chờ câu trả lời",
   "이웃의 글": "Bài viết của hàng xóm",
   "국적 필터 해제": "Xóa bộ lọc quốc tịch",
   "이전 글 더 보기": "Tải bài viết cũ hơn",
@@ -237,7 +236,6 @@
   "주민센터 서류 발급 같은 행정 서비스. 외국인등록번호로 이용.": "Giấy tờ và dịch vụ hành chính trực tuyến, dùng số đăng ký người nước ngoài.",
   "재난 문자와 대피소 안내를 여러 언어로 받는 정부 앱.": "Ứng dụng của chính phủ nhận cảnh báo thiên tai và thông tin nơi trú ẩn bằng nhiều ngôn ngữ.",
   "본문으로 건너뛰기": "Chuyển đến nội dung",
-  "이웃": "Hàng xóm",
   "국적 하나만 공개돼요. 이메일은 비공개.": "Chỉ hiển thị quốc tịch. Email được giữ kín.",
   "{hello}, 이웃님": "{hello}, hàng xóm",
   "오늘 새 글 {today}개 · 답변을 기다리는 질문 {waiting}개": "Hôm nay có {today} bài mới · {waiting} câu hỏi đang chờ trả lời",
@@ -559,5 +557,6 @@
   "이 기기에 임시 저장한 글을 불러왔어요.": "Đã khôi phục bản nháp lưu trên thiết bị này.",
   "지우고 새로 쓰기": "Xóa và viết lại",
   "{lang}로 보기": "Xem bằng {lang}",
-  "카드를 누르면 그 나라 샘플 이웃으로 바로 들어가요.": "Chọn một thẻ để vào ngay với tư cách hàng xóm mẫu của nước đó."
+  "카드를 누르면 그 나라 샘플 이웃으로 바로 들어가요.": "Chọn một thẻ để vào ngay với tư cách hàng xóm mẫu của nước đó.",
+  "한국 생활, 무엇이든 물어보세요": "Hỏi bất cứ điều gì về cuộc sống ở Hàn Quốc"
 }

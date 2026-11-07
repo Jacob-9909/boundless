@@ -6,6 +6,7 @@ import { cultureOf, landmarkMarkup, patternUrl, type Culture } from "@/lib/cultu
 import type { Help } from "@/lib/guide";
 import { countryName, langAutonym, regionLabel, timeAgo, type Lang, type T } from "@/lib/i18n";
 import type { PostRow } from "@/lib/posts";
+import { toggleLike } from "@/app/actions";
 import { Icon } from "./Icon";
 
 /* Design tokens. Radius: containers 16-24px, controls 12px, tags 6px, pills full.
@@ -220,77 +221,95 @@ export function Notice({ tone = "info", label, title, children }: { tone?: "info
   );
 }
 
-export function Stat({ icon, n, label }: { icon: "helpful" | "comment"; n: number; label: string }) {
-  return (
-    <span className="inline-flex items-center gap-1 whitespace-nowrap" aria-label={`${label} ${n}`}>
-      <Icon name={icon} size={15} />
-      {n}
-    </span>
-  );
-}
+/** Container for a list of posts: one surface, items split by hairlines (forum/Reddit style). */
+export const postList = `${card} divide-y divide-ink/[.07] overflow-hidden`;
 
-/** Feed card: who wrote it (anonymous + culture + level), where, what, and the best answer so far. */
+const action = "inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full px-3 transition";
+
+/**
+ * Feed item. One line says where and who (board + nationality + level), then the question,
+ * the best answer so far, and actions. The title link stretches over the whole item;
+ * the helpful toggle sits above it so it can be pressed in place.
+ */
 export function PostCard({ post, lang, t, showBoard = true }: { post: PostRow; lang: Lang; t: T; showBoard?: boolean }) {
   const board = boardOf(post.topic);
   const asks = tagOf(post.topic, post.kind).asks;
   const waiting = asks && post.comments === 0 && !post.solved;
   return (
-    <Link href={`/posts/${post.id}`} className={`${card} group block p-4 transition hover:-translate-y-0.5 hover:shadow-[0_10px_30px_-12px_rgba(16,24,40,.25)] md:p-5`}>
-      <div className="flex gap-3">
-        <Avatar code={post.nationality} size={42} />
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-x-1.5 text-[13px]">
-            <span className="font-bold whitespace-nowrap">{t("이웃")}</span>
-            <LevelBadge points={post.points} t={t} />
-            <span className="min-w-0 truncate opacity-70">
-              · {countryName(post.nationality, lang)}
-              {post.region && ` · ${regionLabel(post.region, t)}`}
+    <article className="group relative px-4 py-4 transition-colors hover:bg-paper/70 md:px-5">
+      <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px]">
+        {showBoard ? (
+          <>
+            <span className="flex size-5 shrink-0 items-center justify-center rounded-full text-white" style={{ background: board.color }}>
+              <Icon name={board.icon} size={11} />
             </span>
-            <span className="ml-auto shrink-0 whitespace-nowrap opacity-70">{timeAgo(post.created_at, lang)}</span>
-          </div>
-          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-            {showBoard && <BoardBadge id={post.topic} t={t} />}
-            <span className={`${tag} bg-ink/[.05]`} title={t("원문")}>
-              <Icon name="globe" size={12} />
-              {langAutonym(post.lang, lang)}
+            <span className="font-bold whitespace-nowrap">{t(board.ko)}</span>
+            <span className="opacity-40" aria-hidden="true">
+              •
             </span>
-            {post.solved && (
-              <span className={`${tag} bg-emerald-700 text-white`}>
-                <Icon name="check" size={12} />
-                {t("해결됨")}
-              </span>
-            )}
-            {waiting && <span className={`${tag} border border-alert/40 text-alert`}>{t("답변을 기다려요")}</span>}
-          </div>
-          <h2 className="mt-2.5 font-display text-[17px] leading-snug font-bold [overflow-wrap:anywhere] group-hover:underline md:text-lg">
-            <TagText board={post.topic} tagId={post.kind} t={t} />
-            {post.title}
-          </h2>
-          {(board.extra === "market" || board.extra === "event") && (
-            <div className="mt-1.5">{board.extra === "market" ? <MarketLine post={post} t={t} /> : <EventLine post={post} t={t} />}</div>
-          )}
-          <p className="mt-1 line-clamp-2 text-sm leading-relaxed opacity-70 [overflow-wrap:anywhere]">{post.body}</p>
-
-          {post.top_answer && (
-            <div className="mt-3 flex gap-2.5 rounded-xl bg-paper p-3">
-              <Avatar code={post.top_answer.nationality} size={24} />
-              <p className="line-clamp-2 min-w-0 text-[13px] leading-relaxed [overflow-wrap:anywhere]">
-                <span className="mr-1 font-bold text-primary">{t("가장 도움된 답변")}</span>
-                <span className="opacity-80">{post.top_answer.body}</span>
-              </p>
-            </div>
-          )}
-
-          <div className="mt-3 flex items-center gap-4 text-[13px]">
-            <span className="flex items-center gap-4 opacity-70">
-              <Stat icon="helpful" n={post.likes} label={t("도움돼요")} />
-              <Stat icon="comment" n={post.comments} label={t("댓글")} />
-            </span>
-            {waiting && <span className="ml-auto font-bold whitespace-nowrap text-primary">{t("답변하기")} →</span>}
-          </div>
-        </div>
+            <Flag code={post.nationality} h={11} />
+          </>
+        ) : (
+          <Avatar code={post.nationality} size={22} />
+        )}
+        <span className={`whitespace-nowrap ${showBoard ? "" : "font-bold"}`}>{t("{country} 이웃", { country: countryName(post.nationality, lang) })}</span>
+        <LevelBadge points={post.points} t={t} />
+        <span className="whitespace-nowrap opacity-70">
+          {post.region && `· ${regionLabel(post.region, t)} `}· {timeAgo(post.created_at, lang)}
+        </span>
       </div>
-    </Link>
+
+      <h2 className="mt-2 font-display text-[17px] leading-snug font-bold [overflow-wrap:anywhere] md:text-lg">
+        <Link href={`/posts/${post.id}`} className="after:absolute after:inset-0 after:z-10 group-hover:underline">
+          <TagText board={post.topic} tagId={post.kind} t={t} />
+          {post.title}
+        </Link>
+      </h2>
+      {(board.extra === "market" || board.extra === "event") && (
+        <div className="mt-1.5">{board.extra === "market" ? <MarketLine post={post} t={t} /> : <EventLine post={post} t={t} />}</div>
+      )}
+      <p className="mt-1 line-clamp-2 text-sm leading-relaxed opacity-75 [overflow-wrap:anywhere]">{post.body}</p>
+
+      {post.top_answer && (
+        <div className="mt-3 flex gap-2.5 border-l-2 border-primary/40 pl-3">
+          <Avatar code={post.top_answer.nationality} size={22} />
+          <p className="line-clamp-2 min-w-0 text-[13px] leading-relaxed [overflow-wrap:anywhere]">
+            <span className="mr-1 font-bold text-primary">{t("가장 도움된 답변")}</span>
+            <span className="opacity-80">{post.top_answer.body}</span>
+          </p>
+        </div>
+      )}
+
+      <div className="mt-3 flex flex-wrap items-center gap-2 text-[13px] font-semibold">
+        <form action={toggleLike} className="relative z-20">
+          <input type="hidden" name="post" value={post.id} />
+          <button
+            aria-pressed={post.liked}
+            aria-label={`${t("도움돼요")} ${post.likes}`}
+            className={`${action} ${post.liked ? "bg-primary text-paper" : "bg-ink/[.05] hover:bg-ink/10"}`}
+          >
+            <Icon name="helpful" size={15} />
+            {post.likes}
+          </button>
+        </form>
+        <span className={`${action} bg-ink/[.05]`} aria-label={`${t("댓글")} ${post.comments}`}>
+          <Icon name="comment" size={15} />
+          {post.comments}
+        </span>
+        <span className={`${action} px-2 font-medium opacity-70`} title={t("원문")}>
+          <Icon name="globe" size={13} />
+          {langAutonym(post.lang, lang)}
+        </span>
+        {post.solved ? (
+          <span className={`${tag} ml-auto bg-emerald-700 text-white`}>
+            <Icon name="check" size={12} />
+            {t("해결됨")}
+          </span>
+        ) : (
+          waiting && <span className="ml-auto font-bold whitespace-nowrap text-primary">{t("답변하기")} →</span>
+        )}
+      </div>
+    </article>
   );
 }
 

@@ -1,9 +1,9 @@
 import Link from "next/link";
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import type { Tag } from "@/lib/boards";
 import type { Lang, T } from "@/lib/i18n";
 import { PAGE, type PostRow } from "@/lib/posts";
-import { Notice, PostCard, btnGhost } from "./ui";
+import { Notice, PostCard, btnGhost, postList } from "./ui";
 
 export type Sort = "new" | "likes" | "waiting";
 export const parseSort = (v: unknown): Sort => (v === "likes" || v === "waiting" ? v : "new");
@@ -20,7 +20,7 @@ export function listHref(base: string, cur: { tag?: string; sort?: Sort }, chang
   return s ? `${base}?${s}` : base;
 }
 
-export function ListControls({ base, tags, tag, sort, t }: { base: string; tags?: Tag[]; tag: string; sort: Sort; t: T }) {
+export function ListControls({ base, tags, tag, sort, t, lead }: { base: string; tags?: Tag[]; tag: string; sort: Sort; t: T; lead?: ReactNode }) {
   const chip = (on: boolean) =>
     `inline-flex h-9 shrink-0 items-center rounded-full px-3.5 text-[13px] font-bold whitespace-nowrap transition ${on ? "bg-ink text-white" : "bg-white text-ink/70 ring-1 ring-ink/10 hover:ring-ink/25"}`;
   return (
@@ -37,7 +37,7 @@ export function ListControls({ base, tags, tag, sort, t }: { base: string; tags?
           ))}
         </nav>
       ) : (
-        <span />
+        (lead ?? <span />)
       )}
       <div className="flex shrink-0 rounded-full bg-ink/[.06] p-1" role="tablist" aria-label={t("정렬")}>
         {(
@@ -89,7 +89,7 @@ export function FeedList({
   const last = posts.at(-1)!;
   return (
     <>
-      <ul className="stagger space-y-3">
+      <ul className={`stagger ${postList}`}>
         {posts.map((p, i) => (
           <li key={p.id} style={{ "--i": Math.min(i, 10) } as CSSProperties}>
             <PostCard post={p} lang={lang} t={t} showBoard={showBoard} />

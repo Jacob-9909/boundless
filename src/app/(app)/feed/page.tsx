@@ -2,7 +2,7 @@ import Link from "next/link";
 import { WithRail } from "@/components/Community";
 import { FeedList, ListControls, listHref, parseSort } from "@/components/Feed";
 import { Icon } from "@/components/Icon";
-import { Avatar, Flag, Landmark, TagText, card } from "@/components/ui";
+import { Avatar, Flag, Landmark, TagText, btn, btnGhost, card } from "@/components/ui";
 import { getT, getUser } from "@/lib/auth";
 import { BOARDS } from "@/lib/boards";
 import { cultureOf, DEFAULT_CULTURE } from "@/lib/cultures";
@@ -29,74 +29,89 @@ export default async function Home(props: PageProps<"/feed">) {
   return (
     <WithRail viewer={viewer} lang={lang} t={t}>
       <div className="min-w-0 space-y-5">
-        {/* Welcome: in the member's language, on their culture's pattern and landmark */}
-        <section className="relative overflow-hidden rounded-3xl bg-primary p-6 text-paper md:p-8">
-          <span className="bg-pattern absolute inset-0 opacity-30" aria-hidden="true" />
-          <span className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/20 to-transparent" aria-hidden="true" />
-          <Landmark culture={culture} className="absolute right-0 bottom-0 h-28 w-auto opacity-90 md:h-40" />
-          <div className="relative max-w-lg">
-            {user ? (
-              <>
-                <p className="flex items-center gap-2 text-sm font-bold opacity-90">
-                  <Flag code={user.nationality} h={13} />
-                  {country}
-                </p>
-                <h1 className="mt-1.5 font-culture text-4xl leading-tight text-balance md:text-5xl">{t("{hello}, 이웃님", { hello: culture.hello })}</h1>
-                <p className="mt-2 text-sm opacity-90 [text-shadow:0_1px_6px_rgb(0_0_0/.4)] md:text-[15px]">
-                  {t("오늘 새 글 {today}개 · 답변을 기다리는 질문 {waiting}개", { today: stats.today, waiting: stats.waiting })}
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="font-display text-3xl leading-tight font-extrabold md:text-[42px]">{t("한국 생활, 혼자 고민하지 마세요")}</p>
-                <p className="mt-2 text-sm opacity-90 md:text-[15px]">{t("{countries}개국 이웃이 남긴 글 {posts}개와 답변 {answers}개가 있어요.", stats)}</p>
-              </>
-            )}
-            <div className="mt-5 flex flex-wrap gap-2">
+        {/* Welcome + composer, like a community header with a "create post" bar */}
+        <section className={`${card} overflow-hidden`}>
+          <div className="relative overflow-hidden bg-primary px-5 py-5 text-paper md:px-6">
+            <span className="bg-pattern absolute inset-0 opacity-30" aria-hidden="true" />
+            <span className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/25 to-transparent" aria-hidden="true" />
+            <Landmark culture={culture} className="absolute right-0 bottom-0 h-20 w-auto opacity-80 md:h-24" />
+            <div className="relative max-w-lg [text-shadow:0_1px_6px_rgb(0_0_0/.35)]">
               {user ? (
-                <Link href="/write" className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-white px-5 text-[15px] font-bold whitespace-nowrap text-primary shadow-sm hover:bg-white/90">
-                  <Icon name="edit" size={17} />
-                  {t("글쓰기")}
-                </Link>
+                <>
+                  <p className="flex items-center gap-2 text-[13px] font-bold opacity-90">
+                    <Flag code={user.nationality} h={12} />
+                    {country}
+                  </p>
+                  <h1 className="mt-1 font-culture text-3xl leading-tight text-balance md:text-4xl">{t("{hello}, 이웃님", { hello: culture.hello })}</h1>
+                  <p className="mt-1.5 text-[13px] opacity-90 md:text-sm">
+                    {t("오늘 새 글 {today}개 · 답변을 기다리는 질문 {waiting}개", { today: stats.today, waiting: stats.waiting })}
+                  </p>
+                </>
               ) : (
                 <>
-                  <Link href="/login" className="inline-flex h-11 items-center rounded-xl bg-white px-5 text-[15px] font-bold whitespace-nowrap text-primary hover:bg-white/90">
-                    {t("로그인")}
-                  </Link>
-                  <Link href="/#demo" className="inline-flex h-11 items-center rounded-xl bg-white/15 px-5 text-[15px] font-bold whitespace-nowrap backdrop-blur hover:bg-white/25">
-                    {t("샘플 계정으로 체험")}
-                  </Link>
+                  <h1 className="font-display text-2xl leading-tight font-extrabold md:text-3xl">{t("한국 생활, 혼자 고민하지 마세요")}</h1>
+                  <p className="mt-1.5 text-[13px] opacity-90 md:text-sm">{t("{countries}개국 이웃이 남긴 글 {posts}개와 답변 {answers}개가 있어요.", stats)}</p>
                 </>
               )}
             </div>
           </div>
+          {user ? (
+            <div className="flex items-center gap-3 p-3 md:px-4">
+              <span className="hidden sm:contents">
+                <Avatar code={user.nationality} size={36} />
+              </span>
+              <Link
+                href="/write"
+                className="flex h-11 min-w-0 flex-1 items-center gap-2 rounded-full border border-ink/10 bg-paper pr-1.5 pl-4 transition hover:border-ink/25 hover:bg-white"
+              >
+                <span className="min-w-0 flex-1 truncate text-[15px] text-ink/60">{t("한국 생활, 무엇이든 물어보세요")}</span>
+                <span className="inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-primary px-3 text-[13px] font-bold text-paper">
+                  <Icon name="edit" size={14} />
+                  {t("글쓰기")}
+                </span>
+              </Link>
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2 p-3 md:px-4">
+              <Link href="/login" className={btn}>
+                {t("로그인")}
+              </Link>
+              <Link href="/#demo" className={btnGhost}>
+                {t("샘플 계정으로 체험")}
+              </Link>
+            </div>
+          )}
         </section>
 
-        {/* Boards at a glance */}
-        <section>
-          <div className="mb-2.5 flex items-baseline justify-between">
-            <h2 className="font-display text-xl font-extrabold tracking-tight">{t("게시판")}</h2>
-            <Link href="/boards" className="inline-flex h-8 items-center text-[13px] opacity-70 hover:underline">
-              {t("전체 보기")}
-            </Link>
-          </div>
-          <ul className="-mx-4 flex snap-x scroll-px-4 gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-4 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-6">
+        {/* Topics as chips on phones and tablets; the desktop sidebar already lists them */}
+        <nav aria-label={t("게시판")} className="lg:hidden">
+          <ul className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:px-0 md:pb-0">
             {BOARDS.map((b) => {
               const c = counts.find((x) => x.topic === b.id);
               return (
-                <li key={b.id} className="w-[104px] shrink-0 snap-start sm:w-auto">
-                  <Link href={`/b/${b.id}`} className={`${card} flex h-full flex-col items-start gap-2 p-3 transition hover:-translate-y-0.5 hover:shadow-md`}>
-                    <span className="flex size-9 items-center justify-center rounded-xl text-white" style={{ background: b.color }}>
-                      <Icon name={b.icon} size={18} />
+                <li key={b.id} className="shrink-0">
+                  <Link href={`/b/${b.id}`} className="inline-flex h-9 items-center gap-2 rounded-full bg-white pr-3.5 pl-1.5 text-[13px] font-bold whitespace-nowrap ring-1 ring-ink/10 transition hover:ring-ink/25">
+                    <span className="flex size-6 items-center justify-center rounded-full text-white" style={{ background: b.color }}>
+                      <Icon name={b.icon} size={13} />
                     </span>
-                    <span className="text-[13px] leading-tight font-bold">{t(b.ko)}</span>
-                    <span className="text-[11px] opacity-70">{c?.today ? t("새 글 {n}", { n: c.today }) : t("글 {n}개", { n: c?.n ?? 0 })}</span>
+                    {t(b.ko)}
+                    {!!c?.today && (
+                      <span className="rounded-full bg-alert px-1.5 text-[11px] leading-[18px] text-white">
+                        <span aria-hidden="true">{c.today}</span>
+                        <span className="sr-only">{t("새 글 {n}", { n: c.today })}</span>
+                      </span>
+                    )}
                   </Link>
                 </li>
               );
             })}
+            <li className="shrink-0">
+              <Link href="/boards" className="inline-flex h-9 items-center rounded-full px-3 text-[13px] font-bold whitespace-nowrap text-primary hover:underline">
+                {t("전체 보기")} →
+              </Link>
+            </li>
           </ul>
-        </section>
+        </nav>
 
         {/* My country's lounge */}
         {user && (
@@ -137,11 +152,18 @@ export default async function Home(props: PageProps<"/feed">) {
 
         {/* Everyone's square */}
         <section className="space-y-3">
-          <div>
-            <h2 className="font-display text-xl font-extrabold tracking-tight">{t("모두의 광장")}</h2>
-            <p className="text-[13px] opacity-70">{t("모든 나라 이웃이 함께 보는 최신 글")}</p>
-          </div>
-          <ListControls base="/feed" tag="" sort={sort} t={t} />
+          <ListControls
+            base="/feed"
+            tag=""
+            sort={sort}
+            t={t}
+            lead={
+              <div>
+                <h2 className="font-display text-xl font-extrabold tracking-tight">{t("모두의 광장")}</h2>
+                <p className="text-[13px] opacity-70">{t("모든 나라 이웃이 함께 보는 최신 글")}</p>
+              </div>
+            }
+          />
           <FeedList
             posts={posts}
             lang={lang}

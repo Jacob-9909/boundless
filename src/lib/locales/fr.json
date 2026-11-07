@@ -155,7 +155,6 @@
   "신고할 글을 찾지 못했어요.": "Contenu introuvable.",
   "신고 사유를 골라 주세요.": "Choisissez un motif.",
   "국적은 30일에 한 번만 바꿀 수 있어요.": "La nationalité ne peut être changée qu’une fois tous les 30 jours.",
-  "답변을 기다려요": "En attente de réponses",
   "이웃의 글": "Publications des voisins",
   "국적 필터 해제": "Retirer le filtre de nationalité",
   "이전 글 더 보기": "Charger les publications plus anciennes",
@@ -237,7 +236,6 @@
   "주민센터 서류 발급 같은 행정 서비스. 외국인등록번호로 이용.": "Documents et démarches administratives en ligne avec votre numéro d’enregistrement d’étranger.",
   "재난 문자와 대피소 안내를 여러 언어로 받는 정부 앱.": "Application officielle d’alertes de catastrophe et d’informations sur les abris, en plusieurs langues.",
   "본문으로 건너뛰기": "Aller au contenu",
-  "이웃": "Voisin",
   "국적 하나만 공개돼요. 이메일은 비공개.": "Seule votre nationalité est affichée. Votre e-mail reste privé.",
   "{hello}, 이웃님": "{hello}, voisin",
   "오늘 새 글 {today}개 · 답변을 기다리는 질문 {waiting}개": "{today} nouvelles publications aujourd’hui · {waiting} questions en attente de réponse",
@@ -559,5 +557,6 @@
   "이 기기에 임시 저장한 글을 불러왔어요.": "Le brouillon enregistré sur cet appareil a été restauré.",
   "지우고 새로 쓰기": "Effacer et recommencer",
   "{lang}로 보기": "Voir en {lang}",
-  "카드를 누르면 그 나라 샘플 이웃으로 바로 들어가요.": "Choisissez une carte pour entrer comme voisin de démonstration de ce pays."
+  "카드를 누르면 그 나라 샘플 이웃으로 바로 들어가요.": "Choisissez une carte pour entrer comme voisin de démonstration de ce pays.",
+  "한국 생활, 무엇이든 물어보세요": "Posez n’importe quelle question sur la vie en Corée"
 }

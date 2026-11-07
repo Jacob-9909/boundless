@@ -155,7 +155,6 @@
   "신고할 글을 찾지 못했어요.": "Konten itu tidak ditemukan.",
   "신고 사유를 골라 주세요.": "Pilih alasan.",
   "국적은 30일에 한 번만 바꿀 수 있어요.": "Kewarganegaraan hanya bisa diubah sekali setiap 30 hari.",
-  "답변을 기다려요": "Menunggu jawaban",
   "이웃의 글": "Postingan tetangga",
   "국적 필터 해제": "Hapus filter kewarganegaraan",
   "이전 글 더 보기": "Muat postingan lama",
@@ -237,7 +236,6 @@
   "주민센터 서류 발급 같은 행정 서비스. 외국인등록번호로 이용.": "Dokumen dan layanan pemerintahan daring memakai nomor registrasi orang asing.",
   "재난 문자와 대피소 안내를 여러 언어로 받는 정부 앱.": "Aplikasi pemerintah untuk peringatan bencana dan info tempat evakuasi dalam banyak bahasa.",
   "본문으로 건너뛰기": "Lewati ke konten",
-  "이웃": "Tetangga",
   "국적 하나만 공개돼요. 이메일은 비공개.": "Hanya kewarganegaraan yang terlihat. Email tetap rahasia.",
   "{hello}, 이웃님": "{hello}, tetangga",
   "오늘 새 글 {today}개 · 답변을 기다리는 질문 {waiting}개": "{today} postingan baru hari ini · {waiting} pertanyaan menunggu jawaban",
@@ -559,5 +557,6 @@
   "이 기기에 임시 저장한 글을 불러왔어요.": "Draf yang tersimpan di perangkat ini sudah dipulihkan.",
   "지우고 새로 쓰기": "Hapus dan mulai lagi",
   "{lang}로 보기": "Lihat dalam {lang}",
-  "카드를 누르면 그 나라 샘플 이웃으로 바로 들어가요.": "Pilih kartu untuk langsung masuk sebagai tetangga demo dari negara itu."
+  "카드를 누르면 그 나라 샘플 이웃으로 바로 들어가요.": "Pilih kartu untuk langsung masuk sebagai tetangga demo dari negara itu.",
+  "한국 생활, 무엇이든 물어보세요": "Tanyakan apa saja tentang hidup di Korea"
 }

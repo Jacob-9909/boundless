@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Icon } from "@/components/Icon";
-import { Notice, PageHead, PostCard, SignInRequired, btn } from "@/components/ui";
+import { Notice, PageHead, PostCard, SignInRequired, btn, postList } from "@/components/ui";
 import { getT, getUser } from "@/lib/auth";
 import { q } from "@/lib/db";
 import { timeAgo } from "@/lib/i18n";
@@ -63,7 +63,7 @@ export default async function MePage(props: PageProps<"/me">) {
           </Link>
         )}
         {posts.length ? (
-          <ul className="space-y-3">
+          <ul className={postList}>
             {posts.map((p) => (
               <li key={p.id} className={p.hidden ? "opacity-70" : ""}>
                 <PostCard post={p} lang={lang} t={t} />
