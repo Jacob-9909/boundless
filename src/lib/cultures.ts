@@ -7,6 +7,7 @@ export type Palette = { primary: string; accent: string; ink: string; paper: str
 export type Culture = {
   code: string; // ISO 3166-1 alpha-2, or "XX" for the default theme
   native: string; // country name in its own language
+  hello: string; // one-word hello in the local language
   greet: string; // welcome line in the local language
   line: string; // "you are not alone in Korea" in the local language
   langs: string[]; // browser language prefixes that suggest this culture
@@ -38,6 +39,7 @@ function petals(cx: number, cy: number, n: number, rx: number, ry: number, fill:
 export const DEFAULT_CULTURE: Culture = {
   code: "XX",
   native: "Boundless",
+  hello: "안녕하세요",
   greet: "Welcome to Boundless",
   line: "어디서 왔든, 여기선 모두 이웃이에요.",
   langs: [],
@@ -60,6 +62,7 @@ export const CULTURES: Culture[] = [
   {
     code: "CN",
     native: "中国",
+    hello: "你好",
     greet: "欢迎来到 Boundless",
     line: "在韩国，你并不孤单。",
     langs: ["zh-cn", "zh-hans"],
@@ -72,6 +75,7 @@ export const CULTURES: Culture[] = [
   {
     code: "VN",
     native: "Việt Nam",
+    hello: "Xin chào",
     greet: "Chào mừng bạn đến với Boundless",
     line: "Ở Hàn Quốc, bạn không hề đơn độc.",
     langs: ["vi"],
@@ -92,6 +96,7 @@ export const CULTURES: Culture[] = [
   {
     code: "TH",
     native: "ประเทศไทย",
+    hello: "สวัสดี",
     greet: "ยินดีต้อนรับสู่ Boundless",
     line: "ที่เกาหลี คุณไม่ได้อยู่คนเดียว",
     langs: ["th"],
@@ -110,6 +115,7 @@ export const CULTURES: Culture[] = [
   {
     code: "US",
     native: "United States",
+    hello: "Hello",
     greet: "Welcome to Boundless",
     line: "Far from home, never alone.",
     langs: ["en-us"],
@@ -126,6 +132,7 @@ export const CULTURES: Culture[] = [
   {
     code: "UZ",
     native: "Oʻzbekiston",
+    hello: "Salom",
     greet: "Boundless'ga xush kelibsiz",
     line: "Koreyada siz yolgʻiz emassiz.",
     langs: ["uz"],
@@ -144,6 +151,7 @@ export const CULTURES: Culture[] = [
   {
     code: "MN",
     native: "Монгол Улс",
+    hello: "Сайн уу",
     greet: "Boundless-д тавтай морилно уу",
     line: "Солонгост та ганцаараа биш.",
     langs: ["mn"],
@@ -161,6 +169,7 @@ export const CULTURES: Culture[] = [
   {
     code: "PH",
     native: "Pilipinas",
+    hello: "Mabuhay",
     greet: "Mabuhay! Maligayang pagdating sa Boundless",
     line: "Sa Korea, hindi ka nag-iisa.",
     langs: ["fil", "tl"],
@@ -182,6 +191,7 @@ export const CULTURES: Culture[] = [
   {
     code: "NP",
     native: "नेपाल",
+    hello: "नमस्ते",
     greet: "Boundless मा स्वागत छ",
     line: "कोरियामा तपाईं एक्लो हुनुहुन्न।",
     langs: ["ne"],
@@ -202,6 +212,7 @@ export const CULTURES: Culture[] = [
   {
     code: "ID",
     native: "Indonesia",
+    hello: "Halo",
     greet: "Selamat datang di Boundless",
     line: "Di Korea, kamu tidak sendirian.",
     langs: ["id", "in"],
@@ -222,6 +233,7 @@ export const CULTURES: Culture[] = [
   {
     code: "JP",
     native: "日本",
+    hello: "こんにちは",
     greet: "Boundlessへようこそ",
     line: "韓国でも、ひとりじゃない。",
     langs: ["ja"],
@@ -237,6 +249,7 @@ export const CULTURES: Culture[] = [
   {
     code: "KH",
     native: "កម្ពុជា",
+    hello: "សួស្តី",
     greet: "សូមស្វាគមន៍មកកាន់ Boundless",
     line: "នៅប្រទេសកូរ៉េ អ្នកមិននៅម្នាក់ឯងទេ។",
     langs: ["km"],
@@ -257,6 +270,7 @@ export const CULTURES: Culture[] = [
   {
     code: "KZ",
     native: "Қазақстан",
+    hello: "Сәлем",
     greet: "Boundless-ке қош келдіңіз",
     line: "Кореяда сіз жалғыз емессіз.",
     langs: ["kk"],
@@ -275,6 +289,7 @@ export const CULTURES: Culture[] = [
   {
     code: "RU",
     native: "Россия",
+    hello: "Привет",
     greet: "Добро пожаловать в Boundless",
     line: "В Корее вы не одни.",
     langs: ["ru"],
@@ -295,6 +310,7 @@ export const CULTURES: Culture[] = [
   {
     code: "FR",
     native: "France",
+    hello: "Bonjour",
     greet: "Bienvenue sur Boundless",
     line: "En Corée, vous n’êtes pas seuls.",
     langs: ["fr"],
@@ -314,6 +330,7 @@ export const CULTURES: Culture[] = [
   {
     code: "IN",
     native: "भारत",
+    hello: "नमस्ते",
     greet: "Boundless में आपका स्वागत है",
     line: "कोरिया में आप अकेले नहीं हैं।",
     langs: ["hi"],

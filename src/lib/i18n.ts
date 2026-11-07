@@ -30,13 +30,15 @@ export function sortedCountries(lang: Lang) {
 }
 
 // Topic "stations" on the home route map.
+// Each topic is a "line" colored like a Seoul subway line (the route-map motif from the prototype).
 export const TOPICS = [
-  { id: "transit", ko: "교통" },
-  { id: "procedures", ko: "행정·절차" },
-  { id: "housing", ko: "주거" },
-  { id: "health", ko: "병원·건강" },
-  { id: "daily", ko: "일상생활" },
+  { id: "transit", ko: "교통", color: "#00A5DE" },
+  { id: "procedures", ko: "행정·절차", color: "#0052A4" },
+  { id: "housing", ko: "주거", color: "#EF7C1C" },
+  { id: "health", ko: "병원·건강", color: "#E6186C" },
+  { id: "daily", ko: "일상생활", color: "#00A84D" },
 ] as const;
+export const topicColor = (id: string) => TOPICS.find((x) => x.id === id)?.color ?? "#00A84D";
 export const isTopic = (v: string) => TOPICS.some((x) => x.id === v);
 export const topicLabel = (id: string, t: T) => t(TOPICS.find((x) => x.id === id)?.ko ?? "일상생활");
 

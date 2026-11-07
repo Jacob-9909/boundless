@@ -113,3 +113,25 @@ FROM boundless.comments c WHERE c.body LIKE 'Every building can be different%';
 
 INSERT INTO boundless.saves (user_id, post_id)
 SELECT '00000000-0000-4000-8000-000000000002', id FROM boundless.posts WHERE title LIKE 'ARC renewal%';
+
+-- Sample neighbors for the remaining culture themes (one-click demo accounts use <code>@example.com).
+INSERT INTO boundless.users (id, email, nationality, created_at) VALUES
+  ('00000000-0000-4000-8000-000000000014', 'kh@example.com', 'KH', now() - interval '4 days'),
+  ('00000000-0000-4000-8000-000000000015', 'ru@example.com', 'RU', now() - interval '3 days'),
+  ('00000000-0000-4000-8000-000000000016', 'in@example.com', 'IN', now() - interval '2 days');
+
+INSERT INTO boundless.posts (user_id, topic, kind, lang, region, title, body, created_at) VALUES
+  ('00000000-0000-4000-8000-000000000014', 'procedures', 'question', 'km', 'gyeonggi',
+   'ការប្តូរអាសយដ្ឋាននៅលើកាតស្នាក់នៅ',
+   'ខ្ញុំទើបផ្លាស់ផ្ទះ។ តើត្រូវយកឯកសារអ្វីខ្លះទៅការិយាល័យ?', now() - interval '6 hours'),
+  ('00000000-0000-4000-8000-000000000015', 'health', 'experience', 'ru', 'seoul',
+   'Как я сходил к врачу без корейского',
+   E'Взял переводчик в телефоне и заранее распечатал симптомы на корейском.\nВрач всё понял, приём занял десять минут.', now() - interval '20 hours'),
+  ('00000000-0000-4000-8000-000000000016', 'daily', 'question', 'hi', 'busan',
+   'बुसान में भारतीय किराने का सामान कहाँ मिलेगा?',
+   'मसाले और दाल कहाँ से खरीदें? कोई दुकान बताइए।', now() - interval '2 hours');
+
+INSERT INTO boundless.comments (post_id, user_id, anon_no, body, created_at)
+SELECT id, '00000000-0000-4000-8000-000000000005', 1,
+  'Try the Nepali and Indian grocery shops near Busan station. They have dal, rice and most spices.', now() - interval '1 hour'
+FROM boundless.posts WHERE title LIKE 'बुसान में%';

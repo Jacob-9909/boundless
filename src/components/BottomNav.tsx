@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { Icon } from "./Icon";
 
 const ITEMS = [
-  { href: "/", icon: "home", key: "feed" },
+  { href: "/feed", icon: "home", key: "feed" },
   { href: "/search", icon: "search", key: "search" },
   { href: "/me", icon: "file", key: "me" },
   { href: "/guide", icon: "info", key: "guide" },
@@ -18,7 +18,7 @@ export function BottomNav({ labels, unread = 0 }: { labels: Record<(typeof ITEMS
     <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-ink/10 bg-paper/95 backdrop-blur" aria-label="Main">
       <ul className="mx-auto grid max-w-xl grid-cols-5 gap-1 px-2 py-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))]">
         {ITEMS.map((it) => {
-          const active = it.href === "/" ? path === "/" : path.startsWith(it.href);
+          const active = path.startsWith(it.href);
           return (
             <li key={it.href}>
               <Link

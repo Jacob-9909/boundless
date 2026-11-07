@@ -18,6 +18,7 @@ export type PostRow = {
   liked: boolean;
   saved: boolean;
   mine: boolean;
+  top_answer: { body: string; nationality: string; likes: number } | null;
 };
 
 export type CommentRow = {
@@ -39,7 +40,13 @@ const POST_COLS = `p.id, p.topic, p.kind, p.lang, p.region, p.title, p.body, p.h
   (SELECT count(*)::int FROM boundless.post_likes l WHERE l.post_id = p.id) AS likes,
   EXISTS (SELECT 1 FROM boundless.post_likes l WHERE l.post_id = p.id AND l.user_id = $1::uuid) AS liked,
   EXISTS (SELECT 1 FROM boundless.saves s WHERE s.post_id = p.id AND s.user_id = $1::uuid) AS saved,
-  (p.user_id = $1::uuid) IS TRUE AS mine`;
+  (p.user_id = $1::uuid) IS TRUE AS mine,
+  (SELECT json_build_object('body', left(a.body, 160), 'nationality', au.nationality, 'likes', a.likes)
+     FROM (SELECT c.*, (SELECT count(*)::int FROM boundless.comment_likes l WHERE l.comment_id = c.id) AS likes
+           FROM boundless.comments c WHERE c.post_id = p.id AND c.parent_id IS NULL AND NOT c.hidden AND c.user_id <> p.user_id
+             AND c.user_id NOT IN (SELECT blocked_id FROM boundless.blocks WHERE user_id = $1::uuid)) a
+     JOIN boundless.users au ON au.id = a.user_id
+     ORDER BY a.likes DESC, a.created_at LIMIT 1) AS top_answer`;
 const FROM = "FROM boundless.posts p JOIN boundless.users u ON u.id = p.user_id";
 
 // Content from accounts the viewer blocked is never shown to them.
@@ -53,7 +60,16 @@ export const PAGE = 20;
 
 export function listPosts(
   viewer: string | null,
-  opts: { query?: string; topic?: string; nationality?: string; region?: string; before?: string; sort?: "new" | "likes"; limit?: number } = {}
+  opts: {
+    query?: string;
+    topic?: string;
+    nationality?: string;
+    region?: string;
+    before?: string;
+    sort?: "new" | "likes";
+    waiting?: boolean; // questions nobody has answered yet
+    limit?: number;
+  } = {}
 ) {
   const params: unknown[] = [viewer];
   const where = ["NOT p.hidden", NOT_BLOCKED("p.user_id")];
@@ -65,6 +81,7 @@ export function listPosts(
   if (opts.topic) add("p.topic = ?", opts.topic);
   if (opts.nationality) add("u.nationality = ?", opts.nationality);
   if (opts.region) add("p.region = ?", opts.region);
+  if (opts.waiting) where.push("p.kind = 'question' AND NOT p.solved AND NOT EXISTS (SELECT 1 FROM boundless.comments c WHERE c.post_id = p.id AND NOT c.hidden)");
   // Cursor for "load more": created_at of the last post on the previous page.
   if (opts.before && !Number.isNaN(Date.parse(opts.before))) add("p.created_at < ?::timestamptz", opts.before);
   params.push(opts.limit ?? PAGE);
@@ -137,6 +154,34 @@ export async function unreadCount(viewer: string, since: Date) {
     [viewer, since]
   );
   return r[0].n;
+}
+
+/** Headline numbers for the landing page and the feed rail. */
+export async function communityStats() {
+  const r = await q<{ countries: number; posts: number; answers: number; today: number; waiting: number }>(
+    `SELECT (SELECT count(DISTINCT nationality)::int FROM boundless.users) AS countries,
+            (SELECT count(*)::int FROM boundless.posts WHERE NOT hidden) AS posts,
+            (SELECT count(*)::int FROM boundless.comments WHERE NOT hidden) AS answers,
+            (SELECT count(*)::int FROM boundless.posts WHERE NOT hidden AND created_at > now() - interval '1 day') AS today,
+            (SELECT count(*)::int FROM boundless.posts p WHERE NOT p.hidden AND p.kind = 'question' AND NOT p.solved
+               AND NOT EXISTS (SELECT 1 FROM boundless.comments c WHERE c.post_id = p.id AND NOT c.hidden)) AS waiting`
+  );
+  return r[0];
+}
+
+export function topicCounts() {
+  return q<{ topic: string; n: number }>("SELECT topic, count(*)::int AS n FROM boundless.posts WHERE NOT hidden GROUP BY topic");
+}
+
+/** Latest replies across the community, for the "recent activity" rail. */
+export function recentActivity(viewer: string | null, limit = 5) {
+  return q<{ id: string; post_id: string; title: string; body: string; nationality: string; created_at: Date }>(
+    `SELECT c.id, c.post_id, p.title, left(c.body, 90) AS body, u.nationality, c.created_at
+     FROM boundless.comments c JOIN boundless.users u ON u.id = c.user_id JOIN boundless.posts p ON p.id = c.post_id
+     WHERE NOT c.hidden AND NOT p.hidden AND ${NOT_BLOCKED("c.user_id")} AND ${NOT_BLOCKED("p.user_id")}
+     ORDER BY c.created_at DESC LIMIT $2`,
+    [viewer, limit]
+  );
 }
 
 /** Member count per nationality, for the "neighbors from N countries" strip. */

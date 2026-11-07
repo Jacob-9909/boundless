@@ -7,6 +7,8 @@ import {
   consumeCode,
   endSession,
   getT,
+  DEMO_MODERATOR,
+  demoEnabled,
   getUser,
   isAdmin,
   isDemoEmail,
@@ -86,6 +88,25 @@ export async function completeSignup(nationality: string, agreed: boolean): Prom
   await startSession(rows[0].id);
   track("signup", rows[0].id);
   return { ok: true };
+}
+
+/**
+ * Judges and demos: enter as the sample neighbor from a country without email verification.
+ * Sample accounts are fictional (@example.com) and can never moderate.
+ */
+export async function demoLogin(code: string) {
+  if (!demoEnabled()) return;
+  const mod = code === "MOD";
+  const nationality = mod ? "KR" : code === "XX" ? "CA" : code;
+  if (!isCountry(nationality)) return;
+  const email = mod ? DEMO_MODERATOR : `${nationality.toLowerCase()}@example.com`;
+  const rows = await q<{ id: string }>(
+    `INSERT INTO boundless.users (email, nationality) VALUES ($1, $2)
+     ON CONFLICT (email) DO UPDATE SET email = EXCLUDED.email RETURNING id`,
+    [email, nationality]
+  );
+  await startSession(rows[0].id);
+  redirect(mod ? "/admin" : "/feed");
 }
 
 export async function signOut() {
@@ -256,7 +277,7 @@ export async function blockAuthor(f: FormData) {
   if (target && target.owner !== user.id) {
     await q("INSERT INTO boundless.blocks (user_id, blocked_id) VALUES ($1, $2) ON CONFLICT DO NOTHING", [user.id, target.owner]);
   }
-  redirect("/");
+  redirect("/feed");
 }
 
 export async function unblockAll() {
@@ -303,7 +324,7 @@ export async function deleteAccount(f: FormData) {
 
 export async function moderate(f: FormData) {
   const user = await getUser();
-  if (!isAdmin(user)) redirect("/");
+  if (!isAdmin(user)) redirect("/feed");
   const id = str(f, "report");
   const action = str(f, "action");
   if (!/^\d{1,18}$/.test(id) || (action !== "hide" && action !== "dismiss")) return;

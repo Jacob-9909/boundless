@@ -30,26 +30,28 @@ async function signIn(page, email, culture) {
   await page.getByLabel("6-digit code").fill(code);
   await page.getByRole("button", { name: "Verify" }).click();
   const last = page.getByText("One last step");
-  await Promise.race([last.waitFor(), page.waitForURL(BASE + "/")]);
+  await Promise.race([last.waitFor(), page.waitForURL(BASE + "/feed")]);
   if (await last.isVisible()) {
     await page.getByRole("button", { name: "Finish sign-up" }).click();
     await page.getByText("Please confirm you are 14 or older").waitFor();
     await page.getByRole("checkbox").check();
     await page.getByRole("button", { name: "Finish sign-up" }).click();
-    await page.waitForURL(BASE + "/");
+    await page.waitForURL(BASE + "/feed");
   }
 }
 
 async function comment(page, text) {
   await page.getByLabel("Comment").fill(text);
   await page.getByRole("button", { name: "Reply" }).click();
-  await page.getByText(text).waitFor();
+  await page.getByText(text, { exact: true }).waitFor();
 }
 
-// Visitor can browse but not open private pages.
+// Visitor lands on the intro page, can browse the feed, but not open private pages.
 const visitor = await newUser();
 await visitor.goto(BASE + "/");
-await visitor.getByText("Latest posts").waitFor();
+await visitor.getByRole("link", { name: "Browse the feed" }).first().click();
+await visitor.waitForURL(BASE + "/feed");
+await visitor.getByText("What do you want to know about life in Korea?").waitFor();
 await visitor.goto(BASE + "/me");
 await visitor.getByText("Sign in to see this page").waitFor();
 
@@ -79,7 +81,7 @@ const c = await newUser();
 await signIn(c, `e2e-c-${run}@example.com`);
 await c.goto(postUrl);
 await comment(c, "C reply");
-const handles = await c.locator("li > div > div > span.font-bold").allTextContents();
+const handles = await c.locator("[data-handle]").allTextContents();
 assert.deepEqual(handles.slice(0, 4), ["Author", "Neighbor 1", "Neighbor 1", "Neighbor 2"]);
 
 // Community features: helpful vote, save, nested reply, reply alert, solved, edit, delete own reply.
@@ -96,10 +98,10 @@ await thread.locator("summary", { hasText: "Reply" }).click();
 await thread.getByLabel("Reply").fill("B nested reply");
 await thread.getByRole("button", { name: "Post reply" }).click();
 await thread.getByText("B nested reply").waitFor();
-const mine = b.locator("div.rounded-xl", { hasText: "B second reply" });
+const mine = b.locator("[data-comment]", { hasText: "B second reply" });
 await mine.locator("summary", { hasText: "Delete" }).click();
 await mine.getByRole("button", { name: "Delete" }).click();
-await b.getByText("B second reply").waitFor({ state: "detached" });
+await b.getByText("B second reply", { exact: true }).waitFor({ state: "detached" });
 
 await a.goto(BASE + "/me");
 await a.getByText(/\d+ new replies/).waitFor();
@@ -126,7 +128,7 @@ await b.goto(BASE + "/settings");
 await b.getByText("Received").first().waitFor();
 await b.goto(BASE + `/report?post=${postId}`);
 await b.getByRole("button", { name: "Block author" }).click();
-await b.waitForURL(BASE + "/");
+await b.waitForURL(BASE + "/feed");
 assert.equal(await b.getByText(title).count(), 0, "blocked author's post must leave B's feed");
 await b.goto(postUrl);
 await b.getByText("account you blocked").waitFor();
@@ -148,6 +150,13 @@ await c.getByLabel("I understand everything will be deleted").check();
 await c.getByRole("button", { name: "Delete", exact: true }).click();
 await c.waitForURL(BASE + "/");
 await c.getByRole("link", { name: "Sign in" }).waitFor();
+
+// Judges: one click on the intro page enters as a country's sample neighbor.
+const judge = await newUser();
+await judge.goto(BASE + "/#demo");
+await judge.locator("#demo form button", { hasText: "Vietnam" }).first().click();
+await judge.waitForURL(BASE + "/feed");
+await judge.getByText("Xin chào, neighbor").waitFor();
 
 assert.deepEqual(pageErrors, [], "no uncaught page errors");
 await browser.close();

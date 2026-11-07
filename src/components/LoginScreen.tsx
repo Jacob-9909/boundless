@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition, type CSSProperties } from "react";
-import { completeSignup, sendCode, setLang, verifyCode } from "@/app/actions";
+import { completeSignup, demoLogin, sendCode, setLang, verifyCode } from "@/app/actions";
 import { CULTURES, DEFAULT_CULTURE, cultureOf, themeVars, type Culture } from "@/lib/cultures";
 import { translator, type Lang } from "@/lib/i18n";
 import { Icon } from "./Icon";
@@ -17,7 +17,19 @@ function saveCulture(code: string) {
   document.cookie = `culture=${code}; path=/; max-age=31536000; samesite=lax`;
 }
 
-export function LoginScreen({ lang, initial, next, countries }: { lang: Lang; initial: string; next: string; countries: { code: string; name: string }[] }) {
+export function LoginScreen({
+  lang,
+  initial,
+  next,
+  countries,
+  demo,
+}: {
+  lang: Lang;
+  initial: string;
+  next: string;
+  countries: { code: string; name: string }[];
+  demo: boolean;
+}) {
   const t = translator(lang);
   const router = useRouter();
   const [culture, setCulture] = useState(() => cultureOf(initial));
@@ -160,7 +172,7 @@ export function LoginScreen({ lang, initial, next, countries }: { lang: Lang; in
                 {pending ? t("보내는 중…") : t("로그인 코드 받기")}
               </button>
               <p className="text-center text-xs opacity-60">
-                <Link href="/" className="underline">
+                <Link href="/feed" className="underline">
                   {t("가입하지 않고 둘러보기")}
                 </Link>
               </p>
@@ -267,6 +279,21 @@ export function LoginScreen({ lang, initial, next, countries }: { lang: Lang; in
             </form>
           )}
         </div>
+
+        {demo && (
+          <div className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl border border-dashed border-primary/40 bg-soft/40 p-4">
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold">{t("심사위원·체험용")}</p>
+              <p className="text-xs opacity-70">{t("이메일 인증 없이 이 나라의 샘플 이웃으로 둘러봐요. 모든 데이터는 가상이에요.")}</p>
+            </div>
+            <form action={demoLogin.bind(null, culture.code)}>
+              <button className={`${btn} h-10 text-sm`}>
+                {culture.code === "XX" ? <Icon name="globe" size={16} /> : <Flag code={culture.code} h={12} />}
+                {t("샘플 계정으로 입장")}
+              </button>
+            </form>
+          </div>
+        )}
       </section>
     </div>
   );

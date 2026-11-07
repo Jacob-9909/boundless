@@ -33,7 +33,7 @@ gh secret set VERCEL_TOKEN -R Jacob-9909/boundless   # 붙여넣고 Enter
 | --- | --- | --- | --- |
 | `DATABASE_URL`, `DATABASE_URL_UNPOOLED` 등 | ✓ | ✓ | Neon 연동이 자동 관리 |
 | `SESSION_SECRET` | ✓ | ✓ | 환경별 무작위 값 |
-| `DEMO_LOGIN=1` | ✓ | ✓ | `@example.com` 가상 계정만 로그인 코드를 화면에 보여 줌(시연용). 이 계정은 운영자 권한을 받지 못함. 실제 출시 때 지운다 |
+| `DEMO_LOGIN=1` | ✓ | ✓ | 시연용. 첫 화면 "심사위원 · 체험용 샘플 계정"에서 나라를 누르면 그 나라 샘플 이웃(`<코드>@example.com`)으로 바로 입장, 운영자 화면은 읽기 전용 계정(`moderator@example.com`)으로 입장. `@example.com` 계정은 로그인 코드도 화면에 보여 주고, 운영 처리 권한은 받지 못함. 실제 출시 때 지운다 |
 | `EMAIL_SENDER`, `EMAIL_PASSWORD` | 미설정 | | Gmail 앱 비밀번호. **설정 전에는 실제 이메일로 가입할 수 없다** |
 | `ADMIN_EMAILS` | 미설정 | | 운영 큐(`/admin`) 를 볼 실제 이메일 |
 

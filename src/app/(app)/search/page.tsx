@@ -9,7 +9,10 @@ export const metadata = { title: "Search" };
 
 export default async function SearchPage(props: PageProps<"/search">) {
   const sp = await props.searchParams;
-  const query = String(sp.q ?? "").normalize("NFC").trim().slice(0, 100);
+  const query = String(sp.q ?? "")
+    .normalize("NFC")
+    .trim()
+    .slice(0, 100);
   const topic = isTopic(String(sp.topic ?? "")) ? String(sp.topic) : "";
   const from = isCountry(String(sp.from ?? "")) ? String(sp.from) : "";
   const region = isRegion(String(sp.region ?? "")) ? String(sp.region) : "";
@@ -23,7 +26,7 @@ export default async function SearchPage(props: PageProps<"/search">) {
   if (query) track("search", user?.id ?? null);
 
   return (
-    <>
+    <div className="mx-auto max-w-3xl pb-6">
       <PageHead line="LINE 02 · SEARCH" title={t("검색")} desc={t("글 제목과 본문 원문에서 찾아요.")} />
       <form className="space-y-3 px-4 py-4" role="search">
         {from && (
@@ -111,6 +114,6 @@ export default async function SearchPage(props: PageProps<"/search">) {
           </Notice>
         )}
       </div>
-    </>
+    </div>
   );
 }

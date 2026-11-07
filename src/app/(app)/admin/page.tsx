@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { moderate } from "@/app/actions";
 import { NationalityChip, Notice, PageHead } from "@/components/ui";
-import { getT, getUser, isAdmin } from "@/lib/auth";
+import { canViewQueue, getT, getUser, isAdmin } from "@/lib/auth";
 import { q } from "@/lib/db";
 import { REPORT_REASONS, timeAgo } from "@/lib/i18n";
 
@@ -22,7 +22,9 @@ type Open = {
 
 export default async function AdminPage() {
   const [{ lang, t }, user] = await Promise.all([getT(), getUser()]);
-  if (!isAdmin(user)) redirect("/");
+  if (!canViewQueue(user)) redirect("/feed");
+  // The demo moderator (judges) sees the real queue, but cannot act on it.
+  const readOnly = !isAdmin(user);
 
   const [open, events] = await Promise.all([
     q<Open>(
@@ -36,16 +38,21 @@ export default async function AdminPage() {
        LEFT JOIN boundless.comments c ON c.id = r.comment_id
        LEFT JOIN boundless.posts p ON p.id = r.post_id
        JOIN boundless.users u ON u.id = COALESCE(c.user_id, p.user_id)
-       WHERE r.status = 'received' ORDER BY r.created_at LIMIT 50`
+       WHERE r.status = 'received' ORDER BY r.created_at LIMIT 50`,
     ),
     q<{ name: string; n: number }>(
-      "SELECT name, count(*)::int AS n FROM boundless.events WHERE created_at > now() - interval '7 days' GROUP BY name ORDER BY name"
+      "SELECT name, count(*)::int AS n FROM boundless.events WHERE created_at > now() - interval '7 days' GROUP BY name ORDER BY name",
     ),
   ]);
 
   return (
-    <>
+    <div className="mx-auto max-w-3xl pb-6">
       <PageHead line="OPS · QUEUE" title={t("운영 큐")} desc={t("접수된 신고를 오래된 순서로 보여 줘요.")} />
+      {readOnly && (
+        <p role="status" className="mx-4 mt-4 rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          {t("시연용 운영자 계정이에요. 신고 내용과 지표는 실제와 같지만 처리 버튼은 꺼져 있어요.")}
+        </p>
+      )}
       <div className="space-y-4 px-4 py-4">
         <section className="rounded-2xl border border-ink/10 bg-white p-4 text-sm">
           <p className="font-bold">{t("최근 7일 이용 지표")}</p>
@@ -69,7 +76,10 @@ export default async function AdminPage() {
                   <form key={action} action={moderate}>
                     <input type="hidden" name="report" value={r.id} />
                     <input type="hidden" name="action" value={action} />
-                    <button className={`h-9 rounded-full px-4 text-[13px] font-bold ${action === "hide" ? "bg-red-700 text-white" : "bg-soft"}`}>
+                    <button
+                      disabled={readOnly}
+                      className={`h-9 rounded-full px-4 text-[13px] font-bold disabled:cursor-not-allowed disabled:opacity-40 ${action === "hide" ? "bg-red-700 text-white" : "bg-soft"}`}
+                    >
                       {action === "hide" ? t("가리기") : t("문제 없음")}
                     </button>
                   </form>
@@ -82,6 +92,6 @@ export default async function AdminPage() {
           ))}
         </ul>
       </div>
-    </>
+    </div>
   );
 }

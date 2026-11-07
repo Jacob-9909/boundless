@@ -66,3 +66,49 @@ body {
     transition: none !important;
   }
 }
+
+/* Tailwind v4 resets buttons to cursor: default; every clickable control should show the pointer. */
+button:not(:disabled),
+[role="button"],
+summary,
+label[for],
+select {
+  cursor: pointer;
+}
+
+/* Landing route map: lines draw in once, trains loop. */
+.route-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: route-draw 1.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes route-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Lists enter with a short stagger (set --i on each item). */
+.stagger > * {
+  animation: fade-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--i, 0) * 40ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .train {
+    display: none;
+  }
+  .route-draw {
+    stroke-dashoffset: 0;
+  }
+}
+
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -4rem;
+  z-index: 50;
+}
+.skip-link:focus {
+  top: 1rem;
+}

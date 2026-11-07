@@ -15,7 +15,7 @@ export default async function EditPage(props: PageProps<"/posts/[id]/edit">) {
   const post = await getPost(user.id, id);
   if (!post || !post.mine) notFound();
   return (
-    <>
+    <div className="mx-auto max-w-3xl pb-6">
       <BackLink href={`/posts/${post.id}`} label={t("뒤로")} />
       <PageHead line="LINE 03 · EDIT" title={t("글 수정")} />
       <WriteForm
@@ -27,6 +27,6 @@ export default async function EditPage(props: PageProps<"/posts/[id]/edit">) {
         nationality={user.nationality}
         countryLabel={countryName(user.nationality, lang)}
       />
-    </>
+    </div>
   );
 }

@@ -20,7 +20,7 @@ export default async function MePage(props: PageProps<"/me">) {
     `flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl text-sm font-bold transition ${on ? "bg-primary text-paper shadow-sm" : "text-ink/70"}`;
 
   return (
-    <>
+    <div className="mx-auto max-w-3xl pb-6">
       <PageHead line="LINE 04 · MY POSTS" title={t("내 글")} desc={t("나만 볼 수 있는 목록이에요. 글을 열어 답변을 확인하세요.")} />
       <div className="space-y-4 px-4 py-4">
         {fresh.length > 0 && (
@@ -34,7 +34,10 @@ export default async function MePage(props: PageProps<"/me">) {
                 <li key={r.id}>
                   <Link href={`/posts/${r.post_id}`} className="block text-sm hover:underline">
                     <span className="font-semibold">{r.anon_no === 0 ? t("글쓴이") : t("이웃 {n}", { n: r.anon_no })}</span>
-                    <span className="opacity-60"> · {r.title} · {timeAgo(r.created_at, lang)}</span>
+                    <span className="opacity-60">
+                      {" "}
+                      · {r.title} · {timeAgo(r.created_at, lang)}
+                    </span>
                     <span className="block truncate opacity-80">{r.body}</span>
                   </Link>
                 </li>
@@ -74,6 +77,6 @@ export default async function MePage(props: PageProps<"/me">) {
           <Notice title={t("아직 쓴 글이 없어요")}>{t("내 질문과 답변 수가 여기에 표시돼요.")}</Notice>
         )}
       </div>
-    </>
+    </div>
   );
 }

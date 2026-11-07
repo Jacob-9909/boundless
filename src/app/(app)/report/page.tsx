@@ -13,7 +13,7 @@ export default async function ReportPage(props: PageProps<"/report">) {
   if (!user) return <SignInRequired t={t} next={`/report?${new URLSearchParams(sp as Record<string, string>)}`} />;
 
   return (
-    <>
+    <div className="mx-auto max-w-3xl pb-6">
       <BackLink href={post ? `/posts/${post}` : "/"} label={t("뒤로")} />
       <PageHead line="LINE 08 · REPORT" title={comment ? t("댓글 신고") : t("글 신고")} desc={t("신고 내용은 공개되지 않아요. 운영자가 검토해요.")} />
       <div className="space-y-4 p-4">
@@ -26,6 +26,6 @@ export default async function ReportPage(props: PageProps<"/report">) {
           <button className={`${card} mt-3 h-11 px-5 text-[15px] font-bold text-primary`}>{t("작성자 차단")}</button>
         </form>
       </div>
-    </>
+    </div>
   );
 }

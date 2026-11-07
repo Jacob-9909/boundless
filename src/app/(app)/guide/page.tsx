@@ -7,7 +7,7 @@ export const metadata = { title: "Official help" };
 export default async function GuidePage() {
   const { lang, t } = await getT();
   return (
-    <>
+    <div className="mx-auto max-w-3xl pb-6">
       <PageHead line="LINE 06 · GUIDE" title={t("공식 안내")} desc={t("커뮤니티 답변과 함께 정부·공공기관 안내를 꼭 확인하세요.")} />
       <div className="space-y-6 px-4 py-4">
         <section>
@@ -48,6 +48,6 @@ export default async function GuidePage() {
           {t("Boundless는 위 기관과 관계가 없어요. 제도와 연락처는 바뀔 수 있으니 공식 사이트에서 최신 내용을 확인하세요. (2026년 11월 확인)")}
         </p>
       </div>
-    </>
+    </div>
   );
 }

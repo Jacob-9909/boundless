@@ -73,11 +73,20 @@ export async function verifiedEmail() {
 
 export const isDemoEmail = (email: string) => process.env.DEMO_LOGIN === "1" && email.endsWith("@example.com");
 
+/** One-click sample accounts for judges and demos (always on in development). */
+export const demoEnabled = () => process.env.DEMO_LOGIN === "1" || process.env.NODE_ENV !== "production";
+export const DEMO_MODERATOR = "moderator@example.com";
+
 export function isAdmin(user: User | null) {
   // Demo accounts can be opened by anyone, so they never get moderation rights.
   if (!user || isDemoEmail(user.email)) return false;
   const list = (process.env.ADMIN_EMAILS ?? "").split(",").map((s) => s.trim().toLowerCase());
   return list.includes(user.email);
+}
+
+/** Real admins act on reports; the demo moderator may only look (read-only queue). */
+export function canViewQueue(user: User | null) {
+  return isAdmin(user) || (!!user && demoEnabled() && user.email === DEMO_MODERATOR);
 }
 
 export function normalizeEmail(raw: unknown) {

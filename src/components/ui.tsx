@@ -1,15 +1,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
-import { cultureOf } from "@/lib/cultures";
+import { cultureOf, patternUrl } from "@/lib/cultures";
 import type { Help } from "@/lib/guide";
-import { countryName, kindLabel, langAutonym, regionLabel, timeAgo, topicLabel, type Lang, type T } from "@/lib/i18n";
+import { countryName, kindLabel, langAutonym, regionLabel, timeAgo, topicColor, topicLabel, type Lang, type T } from "@/lib/i18n";
 import type { PostRow } from "@/lib/posts";
 import { Icon } from "./Icon";
 
-/* Design tokens. Radius: containers 16px (rounded-2xl), controls 12px (rounded-xl), tags 6px (rounded-md),
-   pills full. Height: controls 44px (h-11), compact actions 36px (h-9). Type: body 15px, meta 13px, tags 12px. */
-export const card = "rounded-2xl border border-ink/10 bg-white";
+/* Design tokens. Radius: containers 16-24px, controls 12px, tags 6px, pills full.
+   Height: controls 44px (h-11), compact actions 36px (h-9). Type: body 15px, meta 13px, tags 12px. */
+export const card = "rounded-2xl border border-ink/[.07] bg-white shadow-[0_1px_2px_rgba(16,24,40,.04)]";
 export const btn =
   "inline-flex h-11 items-center justify-center gap-1.5 rounded-xl bg-primary px-5 text-[15px] font-bold text-paper transition hover:brightness-110 active:scale-[.98] disabled:opacity-50";
 export const btnGhost =
@@ -20,31 +20,69 @@ export const field =
   "w-full rounded-xl border border-ink/20 bg-white px-3.5 py-2.5 text-base outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10";
 export const labelCls = "mb-1.5 block text-sm font-bold";
 
-/** Mark: a station on a line that runs out past a dashed border. */
-export function Logo({ className = "" }: { className?: string }) {
+/** Seoul subway line colors: the brand's "many lines, one network" motif. */
+export const LINES = ["#0052A4", "#00A84D", "#EF7C1C", "#00A5DE", "#996CAC", "#E6186C", "#CD7C2F", "#747F00"];
+
+/** Mark: three colored lines run through a dashed border and out the other side. */
+export function Logo({ className = "", size = 28 }: { className?: string; size?: number }) {
   return (
     <span className={`inline-flex items-center gap-2 font-display text-lg font-extrabold tracking-tight ${className}`}>
-      <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true">
-        <circle cx="11" cy="15" r="9" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="3 3" />
-        <path d="M5 21 L23 3" stroke="var(--c-extra)" strokeWidth="3" strokeLinecap="round" />
-        <circle cx="11" cy="15" r="3.5" fill="var(--c-paper)" stroke="currentColor" strokeWidth="2" />
+      <svg width={size} height={size} viewBox="0 0 28 28" aria-hidden="true">
+        <circle cx="14" cy="14" r="10" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="3 3" opacity=".7" />
+        <path d="M3 19 L19 3" stroke={LINES[1]} strokeWidth="3" strokeLinecap="round" />
+        <path d="M6 24 L25 5" stroke={LINES[2]} strokeWidth="3" strokeLinecap="round" />
+        <path d="M11 26 L26 11" stroke={LINES[3]} strokeWidth="3" strokeLinecap="round" />
       </svg>
       BOUNDLESS
     </span>
   );
 }
 
-/** SVG flag (emoji flags render as letters on Windows). */
-export function Flag({ code, h = 14, className = "" }: { code: string; h?: number; className?: string }) {
+/** SVG flag (emoji flags render as letters on Windows). `round` crops to a circle. */
+export function Flag({ code, h = 14, round = false, className = "" }: { code: string; h?: number; round?: boolean; className?: string }) {
   return (
     <Image
       src={`/flags/${code}.svg`}
       alt=""
-      width={Math.round(h * 1.5)}
+      width={round ? h : Math.round(h * 1.5)}
       height={h}
       unoptimized
-      className={`inline-block shrink-0 rounded-[3px] object-cover shadow-[0_0_0_1px_rgba(0,0,0,.1)] ${className}`}
+      className={`inline-block shrink-0 object-cover shadow-[0_0_0_1px_rgba(0,0,0,.1)] ${round ? "rounded-full" : "rounded-[3px]"} ${className}`}
     />
+  );
+}
+
+/** Anonymous avatar: the author's culture pattern in a circle, with their flag as a badge. */
+export function Avatar({ code, size = 40 }: { code: string; size?: number }) {
+  const c = cultureOf(code);
+  return (
+    <span className="relative inline-block shrink-0" style={{ width: size, height: size }}>
+      <span
+        className="block size-full rounded-full ring-1 ring-black/5"
+        style={{ backgroundColor: c.c.primary, backgroundImage: patternUrl(c), backgroundSize: `${Math.round(size * 0.85)}px`, backgroundPosition: "center" }}
+      />
+      <span className="absolute -right-0.5 -bottom-0.5 flex rounded-full bg-white p-[1.5px]">
+        <Flag code={code} h={Math.max(12, Math.round(size * 0.38))} round />
+      </span>
+    </span>
+  );
+}
+
+/** A topic drawn as a subway line badge. */
+export function TopicBadge({ id, t, href }: { id: string; t: T; href?: string }) {
+  const inner = (
+    <>
+      <span className="size-2.5 rounded-full ring-2 ring-white" style={{ background: topicColor(id) }} />
+      {topicLabel(id, t)}
+    </>
+  );
+  const cls = "inline-flex items-center gap-1.5 rounded-full bg-ink/[.05] px-2.5 py-0.5 text-xs font-semibold";
+  return href ? (
+    <Link href={href} className={`${cls} hover:bg-ink/10`}>
+      {inner}
+    </Link>
+  ) : (
+    <span className={cls}>{inner}</span>
   );
 }
 
@@ -72,19 +110,27 @@ export function StationLabel({ children, className = "" }: { children: ReactNode
   );
 }
 
+/** Page banner: soft culture color with the member's pattern fading in from the right. */
 export function PageHead({ line, title, desc }: { line: string; title: string; desc?: string }) {
   return (
-    <header className="border-b-4 border-primary bg-soft px-4 pt-5 pb-6">
-      <StationLabel className="text-primary">{line}</StationLabel>
-      <h1 className="mt-1.5 font-display text-[28px] leading-tight font-extrabold tracking-tight">{title}</h1>
-      {desc && <p className="mt-1.5 text-sm leading-relaxed opacity-80">{desc}</p>}
+    <header className="relative overflow-hidden bg-soft px-5 pt-6 pb-7 md:mx-4 md:mt-6 md:rounded-3xl md:px-8 md:pt-8 md:pb-9">
+      <span
+        className="bg-pattern absolute inset-y-0 right-0 w-2/5 opacity-25 [mask-image:linear-gradient(to_left,black,transparent)]"
+        style={{ backgroundColor: "var(--c-primary)" }}
+        aria-hidden="true"
+      />
+      <div className="relative">
+        <StationLabel className="text-primary">{line}</StationLabel>
+        <h1 className="mt-2 font-display text-[28px] leading-tight font-extrabold tracking-tight md:text-4xl">{title}</h1>
+        {desc && <p className="mt-2 max-w-xl text-sm leading-relaxed opacity-80 md:text-[15px]">{desc}</p>}
+      </div>
     </header>
   );
 }
 
 export function BackLink({ href, label }: { href: string; label: string }) {
   return (
-    <div className="px-4 pt-3">
+    <div className="px-4 pt-3 md:pt-5">
       <Link href={href} className="inline-flex h-9 items-center gap-0.5 rounded-full pr-3 text-sm font-bold text-primary">
         <Icon name="back" size={18} />
         {label}
@@ -107,46 +153,64 @@ export function Notice({ tone = "info", label, title, children }: { tone?: "info
 export function Stat({ icon, n, label }: { icon: "helpful" | "comment"; n: number; label: string }) {
   return (
     <span className="inline-flex items-center gap-1" aria-label={`${label} ${n}`}>
-      <Icon name={icon} size={14} />
+      <Icon name={icon} size={15} />
       {n}
     </span>
   );
 }
 
+/** Feed card: who asked (anonymous + culture), what, and the most helpful answer so far. */
 export function PostCard({ post, lang, t }: { post: PostRow; lang: Lang; t: T }) {
+  const waiting = post.kind === "question" && post.comments === 0 && !post.solved;
   return (
-    <Link href={`/posts/${post.id}`} className={`${card} block p-4 transition hover:-translate-y-0.5 hover:shadow-[0_6px_20px_-8px_rgba(0,0,0,.18)]`}>
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className={`${tag} ${post.kind === "question" ? "bg-primary text-paper" : "bg-soft text-ink"}`}>{kindLabel(post.kind, t)}</span>
-        <span className={`${tag} bg-ink/5`}>{topicLabel(post.topic, t)}</span>
-        {post.region && (
-          <span className={`${tag} bg-ink/5`}>
-            <Icon name="pin" size={12} />
-            {regionLabel(post.region, t)}
-          </span>
-        )}
-        <span className={`${tag} bg-ink/5`} title={t("원문")}>
-          <Icon name="globe" size={12} />
-          {langAutonym(post.lang, lang)}
-        </span>
-        {post.solved ? (
-          <span className={`${tag} bg-emerald-700 text-white`}>
-            <Icon name="check" size={12} />
-            {t("해결됨")}
-          </span>
-        ) : (
-          post.kind === "question" && post.comments === 0 && <span className={`${tag} border border-extra/40 text-extra`}>{t("답변을 기다려요")}</span>
-        )}
-      </div>
-      <h3 className="mt-2.5 font-display text-[17px] leading-snug font-bold [overflow-wrap:anywhere]">{post.title}</h3>
-      <p className="mt-1 line-clamp-2 text-sm leading-relaxed opacity-75 [overflow-wrap:anywhere]">{post.body}</p>
-      <div className="mt-3 flex items-center gap-2 text-xs">
-        <NationalityChip code={post.nationality} lang={lang} />
-        <span className="ml-auto flex shrink-0 items-center gap-2.5 opacity-60">
-          <Stat icon="helpful" n={post.likes} label={t("도움돼요")} />
-          <Stat icon="comment" n={post.comments} label={t("댓글")} />
-          <span>{timeAgo(post.created_at, lang)}</span>
-        </span>
+    <Link href={`/posts/${post.id}`} className={`${card} group block p-4 transition hover:-translate-y-0.5 hover:shadow-[0_10px_30px_-12px_rgba(16,24,40,.25)] md:p-5`}>
+      <div className="flex gap-3">
+        <Avatar code={post.nationality} size={42} />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5 text-[13px]">
+            <span className="font-bold">{t("이웃")}</span>
+            <span className="truncate opacity-60">
+              · {countryName(post.nationality, lang)}
+              {post.region && ` · ${regionLabel(post.region, t)}`}
+            </span>
+            <span className="ml-auto shrink-0 opacity-50">{timeAgo(post.created_at, lang)}</span>
+          </div>
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            <span className={`${tag} ${post.kind === "question" ? "bg-primary text-paper" : "bg-soft text-ink"}`}>{kindLabel(post.kind, t)}</span>
+            <TopicBadge id={post.topic} t={t} />
+            <span className={`${tag} bg-ink/[.05]`} title={t("원문")}>
+              <Icon name="globe" size={12} />
+              {langAutonym(post.lang, lang)}
+            </span>
+            {post.solved && (
+              <span className={`${tag} bg-emerald-700 text-white`}>
+                <Icon name="check" size={12} />
+                {t("해결됨")}
+              </span>
+            )}
+            {waiting && <span className={`${tag} border border-extra/40 text-extra`}>{t("답변을 기다려요")}</span>}
+          </div>
+          <h3 className="mt-2.5 font-display text-[17px] leading-snug font-bold [overflow-wrap:anywhere] group-hover:underline md:text-lg">{post.title}</h3>
+          <p className="mt-1 line-clamp-2 text-sm leading-relaxed opacity-70 [overflow-wrap:anywhere]">{post.body}</p>
+
+          {post.top_answer && (
+            <div className="mt-3 flex gap-2.5 rounded-xl bg-paper p-3">
+              <Avatar code={post.top_answer.nationality} size={24} />
+              <p className="line-clamp-2 min-w-0 text-[13px] leading-relaxed [overflow-wrap:anywhere]">
+                <span className="mr-1 font-bold text-primary">{t("가장 도움된 답변")}</span>
+                <span className="opacity-80">{post.top_answer.body}</span>
+              </p>
+            </div>
+          )}
+
+          <div className="mt-3 flex items-center gap-4 text-[13px]">
+            <span className="flex items-center gap-4 opacity-60">
+              <Stat icon="helpful" n={post.likes} label={t("도움돼요")} />
+              <Stat icon="comment" n={post.comments} label={t("댓글")} />
+            </span>
+            {waiting && <span className="ml-auto font-bold text-primary">{t("답변하기")} →</span>}
+          </div>
+        </div>
       </div>
     </Link>
   );
@@ -154,17 +218,17 @@ export function PostCard({ post, lang, t }: { post: PostRow; lang: Lang; t: T })
 
 export function SignInRequired({ t, next }: { t: T; next: string }) {
   return (
-    <div className="p-4">
+    <div className="mx-auto max-w-3xl p-4 md:pt-8">
       <div className="rounded-2xl border-l-4 border-primary bg-soft/60 p-5">
         <StationLabel className="text-primary">{t("로그인 필요")}</StationLabel>
         <p className="mt-1.5 font-display text-lg font-bold">{t("로그인하면 볼 수 있어요")}</p>
         <p className="mt-1 text-sm opacity-80">{t("이 정보는 내 계정에서만 보여요.")}</p>
-        <div className="mt-4 flex gap-2">
+        <div className="mt-4 flex flex-wrap gap-2">
           <Link href={`/login?next=${encodeURIComponent(next)}`} className={btn}>
             {t("로그인")}
           </Link>
-          <Link href="/" className={btnGhost}>
-            {t("피드로 돌아가기")}
+          <Link href="/#demo" className={btnGhost}>
+            {t("샘플 계정으로 체험")}
           </Link>
         </div>
       </div>

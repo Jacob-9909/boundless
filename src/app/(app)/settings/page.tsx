@@ -3,7 +3,7 @@ import { deleteAccount, setLang, setRegion, signOut, unblockAll } from "@/app/ac
 import { NationalityForm } from "@/components/forms";
 import { Icon } from "@/components/Icon";
 import { PageHead, btn, field } from "@/components/ui";
-import { getT, getUser, isAdmin } from "@/lib/auth";
+import { canViewQueue, getT, getUser } from "@/lib/auth";
 import { q } from "@/lib/db";
 import { REGIONS, REPORT_REASONS, sortedCountries, timeAgo } from "@/lib/i18n";
 
@@ -19,7 +19,7 @@ export default async function SettingsPage() {
           `SELECT r.id, r.reason, r.status, r.created_at, COALESCE(r.post_id, c.post_id) AS post_id
            FROM boundless.reports r LEFT JOIN boundless.comments c ON c.id = r.comment_id
            WHERE r.reporter_id = $1 ORDER BY r.created_at DESC LIMIT 20`,
-          [user.id]
+          [user.id],
         ),
         q<{ n: number }>("SELECT count(*)::int AS n FROM boundless.blocks WHERE user_id = $1", [user.id]),
       ])
@@ -27,7 +27,7 @@ export default async function SettingsPage() {
   const status: Record<string, string> = { received: t("접수됨"), actioned: t("조치 완료"), dismissed: t("문제 없음으로 종료") };
 
   return (
-    <>
+    <div className="mx-auto max-w-3xl pb-6">
       <PageHead line="LINE 05 · SETTINGS" title={t("설정")} />
       <div className="space-y-6 px-4 py-4">
         <section>
@@ -38,7 +38,10 @@ export default async function SettingsPage() {
               <div className="flex gap-1">
                 {(["ko", "en"] as const).map((l) => (
                   <form key={l} action={setLang.bind(null, l)}>
-                    <button aria-pressed={lang === l} className={`h-9 rounded-full px-3.5 text-[13px] font-bold ${lang === l ? "bg-primary text-paper" : "bg-white"}`}>
+                    <button
+                      aria-pressed={lang === l}
+                      className={`h-9 rounded-full px-3.5 text-[13px] font-bold ${lang === l ? "bg-primary text-paper" : "bg-white"}`}
+                    >
                       {l === "ko" ? "한국어" : "English"}
                     </button>
                   </form>
@@ -120,7 +123,7 @@ export default async function SettingsPage() {
                     )}
                   </span>
                 </div>
-                {isAdmin(user) && (
+                {canViewQueue(user) && (
                   <Link href="/admin" className={`${row} font-bold text-primary`}>
                     {t("운영 큐")} <span aria-hidden="true">›</span>
                   </Link>
@@ -147,6 +150,6 @@ export default async function SettingsPage() {
           </Link>
         )}
       </div>
-    </>
+    </div>
   );
 }
