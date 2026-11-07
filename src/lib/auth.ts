@@ -71,8 +71,11 @@ export async function verifiedEmail() {
   return unseal((await cookies()).get(VERIFIED)?.value);
 }
 
+export const isDemoEmail = (email: string) => process.env.DEMO_LOGIN === "1" && email.endsWith("@example.com");
+
 export function isAdmin(user: User | null) {
-  if (!user) return false;
+  // Demo accounts can be opened by anyone, so they never get moderation rights.
+  if (!user || isDemoEmail(user.email)) return false;
   const list = (process.env.ADMIN_EMAILS ?? "").split(",").map((s) => s.trim().toLowerCase());
   return list.includes(user.email);
 }

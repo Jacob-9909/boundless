@@ -179,7 +179,7 @@ export function LoginScreen({ lang, initial, next, countries }: { lang: Lang; in
               <p className="text-sm opacity-80">{t("{email} 로 6자리 코드를 보냈어요.", { email })}</p>
               {devCode && (
                 <p className="rounded-xl bg-amber-50 px-3.5 py-2.5 text-sm text-amber-900">
-                  {t("개발 모드: 메일 대신 코드를 보여 줘요")} · <b className="tracking-widest">{devCode}</b>
+                  {t("개발·데모 계정이라 메일 대신 코드를 보여 줘요")} · <b className="tracking-widest">{devCode}</b>
                 </p>
               )}
               <div>

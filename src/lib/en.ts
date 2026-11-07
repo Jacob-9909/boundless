@@ -159,7 +159,7 @@ export const EN: Record<string, string> = {
   "가입하지 않고 둘러보기": "Browse without an account",
   "메일함을 확인하세요": "Check your inbox",
   "{email} 로 6자리 코드를 보냈어요.": "We sent a 6-digit code to {email}.",
-  "개발 모드: 메일 대신 코드를 보여 줘요": "Dev mode: showing the code instead of emailing it",
+  "개발·데모 계정이라 메일 대신 코드를 보여 줘요": "Dev or demo account: showing the code instead of emailing it",
   "6자리 코드": "6-digit code",
   "확인": "Verify",
   "이메일 바꾸기": "Use another email",

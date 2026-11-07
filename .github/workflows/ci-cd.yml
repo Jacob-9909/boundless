@@ -21,8 +21,8 @@ jobs:
       SESSION_SECRET: ci-only-not-a-secret
       ADMIN_EMAILS: admin@example.com
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
@@ -38,21 +38,36 @@ jobs:
           for _ in $(seq 60); do curl -fsS -o /dev/null http://localhost:3000/api/health && break; sleep 2; done
           BASE_URL=http://localhost:3000 CHROME_PATH=$(which google-chrome) node e2e/flow.mjs || (tail -50 dev.log; exit 1)
 
+  # CD: only after the checks pass on main. Builds here, uploads the prebuilt output to Vercel.
   deploy:
     needs: check
-    # Turn on with the repository variable DEPLOY_ENABLED=true once oracle_vm is set up (see README).
-    if: github.event_name == 'push' && vars.DEPLOY_ENABLED == 'true'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    concurrency: deploy
+    concurrency: production
+    environment:
+      name: production
+      url: https://boundless-virid.vercel.app
+    env:
+      # Project identifiers, not secrets (also in .vercel/project.json after `vercel link`).
+      VERCEL_ORG_ID: team_n6RysxNek0puntAZW4aJmVcZ
+      VERCEL_PROJECT_ID: prj_Jo82mFSFN1XNeHCJ59CoKWiHqggd
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
     steps:
-      - name: Deploy to oracle_vm
-        env:
-          SSH_KEY: ${{ secrets.VM_SSH_KEY }}
-          KNOWN_HOSTS: ${{ secrets.VM_KNOWN_HOSTS }}
-          VM_HOST: ${{ secrets.VM_HOST }}
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - name: Check token
+        run: test -n "$VERCEL_TOKEN" || (echo "::error::Add the VERCEL_TOKEN repository secret (see docs/DEPLOY.md)"; exit 1)
+      - run: npm ci
+      - run: npx vercel@65.12.1 pull --yes --environment=production --token="$VERCEL_TOKEN"
+      # Schema is idempotent; apply it before the new code goes live.
+      - name: Migrate
         run: |
-          mkdir -p ~/.ssh
-          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
-          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/id_ed25519
-          ssh "ubuntu@$VM_HOST" deploy
+          set -a; . .vercel/.env.production.local; set +a
+          DATABASE_URL="$DATABASE_URL_UNPOOLED" node scripts/db.mjs db/schema.sql
+      - run: npx vercel@65.12.1 build --prod --token="$VERCEL_TOKEN"
+      - run: npx vercel@65.12.1 deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+      - name: Health check
+        run: curl -fsS --retry 5 --retry-delay 3 https://boundless-virid.vercel.app/api/health

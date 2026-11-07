@@ -1,8 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Self-hosted on oracle_vm like triplan: `node server.js` from .next/standalone.
-  output: "standalone",
+  // Self-hosting on a VM runs `node server.js` from .next/standalone; Vercel builds its own output.
+  output: process.env.VERCEL ? undefined : "standalone",
   turbopack: {
     rules: {
       "*.css": {

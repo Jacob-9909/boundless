@@ -9,6 +9,7 @@ import {
   getT,
   getUser,
   isAdmin,
+  isDemoEmail,
   issueCode,
   markVerified,
   normalizeEmail,
@@ -47,6 +48,8 @@ export async function sendCode(rawEmail: string): Promise<Result & { devCode?: s
   if (!email) return { error: "이메일 주소를 확인해 주세요." };
   const code = await issueCode(email);
   if (!code) return { error: "코드를 너무 자주 요청했어요. 1분 뒤에 다시 시도해 주세요. 하루 10번까지 받을 수 있어요." };
+  // Demo deployments: fictional @example.com accounts (reserved domain, nobody owns it) get the code on screen.
+  if (isDemoEmail(email)) return { ok: true, devCode: code };
   try {
     const devCode = await sendCodeMail(email, code, (await getT()).t);
     return { ok: true, devCode };

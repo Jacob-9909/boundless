@@ -87,5 +87,6 @@ CI(`.github/workflows/ci-cd.yml`)는 Postgres 서비스 위에서 lint, i18n, bu
 
 ## 배포
 
-현재 oracle_vm에는 **샘플 DB만** 있다(스키마 `boundless`, 가상 데이터). 앱은 다른 클라우드 서버에 올릴 예정이다.
-서버 준비, 환경변수, 도메인, 자동 배포, 데이터 이전, 출시 전 체크리스트: [docs/DEPLOY.md](docs/DEPLOY.md)
+- 앱: Vercel https://boundless-virid.vercel.app (DB: Neon, 싱가포르). `main` 에 푸시하면 CI 통과 후 자동 배포된다.
+- oracle_vm 에는 샘플 DB 만 있다(스키마 `boundless`, 가상 데이터).
+- 환경변수, `VERCEL_TOKEN` 등록, 시연용 데이터 정리, 나중에 다른 클라우드 서버로 옮기는 절차: [docs/DEPLOY.md](docs/DEPLOY.md)
