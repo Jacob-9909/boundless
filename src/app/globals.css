@@ -19,9 +19,14 @@
   --color-paper: var(--c-paper);
   --color-soft: var(--c-soft);
   --color-extra: var(--c-extra);
-  --font-sans: system-ui, -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", "Segoe UI", sans-serif;
-  --font-display: var(--font-brand), system-ui, "Apple SD Gothic Neo", sans-serif;
+  --font-sans: var(--font-body), system-ui, -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", "Segoe UI", sans-serif;
+  --font-display: var(--font-brand), var(--font-body), system-ui, "Apple SD Gothic Neo", sans-serif;
   --font-culture: var(--c-font), var(--font-brand), system-ui, sans-serif;
+}
+
+/* Korean UI text breaks between words, not inside them; user content still wraps anywhere when it must. */
+:lang(ko) body {
+  word-break: keep-all;
 }
 
 body {

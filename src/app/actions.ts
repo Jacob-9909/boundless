@@ -9,6 +9,7 @@ import {
   getT,
   DEMO_MODERATOR,
   demoEnabled,
+  getLang,
   getUser,
   isAdmin,
   isDemoEmail,
@@ -19,7 +20,9 @@ import {
   verifiedEmail,
 } from "@/lib/auth";
 import { q, track } from "@/lib/db";
-import { isCountry, isRegion, isTopic, KINDS, POST_LANGS, REPORT_REASONS } from "@/lib/i18n";
+import { boardOf, DEALS, isBoard, LOUNGE } from "@/lib/boards";
+import { isCountry, isRegion, POST_LANGS, READ_LANGS, readLangOf, REPORT_REASONS } from "@/lib/i18n";
+import { translateItem } from "@/lib/translate";
 import { sendCodeMail } from "@/lib/mail";
 
 // Errors are returned as Korean dictionary keys; the client translates them.
@@ -123,34 +126,56 @@ export async function setLang(lang: string) {
 
 type PostState = Result & { values?: Record<string, string> };
 
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
 function readPost(f: FormData) {
   const values = {
+    board: str(f, "board"),
+    kind: str(f, "kind"),
     title: str(f, "title"),
     body: str(f, "body"),
-    topic: str(f, "topic"),
-    kind: str(f, "kind"),
     lang: str(f, "lang"),
     region: str(f, "region"),
+    price: str(f, "price"),
+    place: str(f, "place"),
+    starts_on: str(f, "starts_on"),
+    ends_on: str(f, "ends_on"),
+    space: str(f, "space"),
   };
-  const { title, body, topic, kind, lang, region } = values;
+  const v = values;
+  const board = boardOf(v.board);
+  const lounge = v.space === "lounge";
   let error: string | null = null;
-  if (title.length < 2 || title.length > 120) error = "제목은 2~120자로 적어 주세요.";
-  else if (body.length < 2 || body.length > 5000) error = "본문은 2~5000자로 적어 주세요.";
-  else if (!isTopic(topic)) error = "주제를 골라 주세요.";
-  else if (!KINDS.some((k) => k.id === kind)) error = "글 종류를 골라 주세요.";
-  else if (!POST_LANGS.includes(lang)) error = "원문 언어를 골라 주세요.";
-  else if (region && !isRegion(region)) error = "지역을 다시 골라 주세요.";
-  return { values, error };
+  if (lounge ? v.board !== LOUNGE.id : !isBoard(v.board)) error = "게시판을 골라 주세요.";
+  else if (!board.tags.some((t) => t.id === v.kind)) error = "말머리를 골라 주세요.";
+  else if (v.title.length < 2 || v.title.length > 120) error = "제목은 2~120자로 적어 주세요.";
+  else if (v.body.length < 2 || v.body.length > 5000) error = "본문은 2~5000자로 적어 주세요.";
+  else if (!POST_LANGS.includes(v.lang)) error = "원문 언어를 골라 주세요.";
+  else if (v.region && !isRegion(v.region)) error = "지역을 다시 골라 주세요.";
+  else if (board.extra === "market" && v.kind !== "free" && !/^\d{1,9}$/.test(v.price.replace(/[,\s]/g, ""))) error = "가격을 숫자로 적어 주세요. 나눔이면 말머리를 '나눔'으로 바꿔 주세요.";
+  else if (v.place.length > 80) error = "장소는 80자 이내로 적어 주세요.";
+  else if ((v.starts_on && !DATE_RE.test(v.starts_on)) || (v.ends_on && !DATE_RE.test(v.ends_on))) error = "날짜를 다시 골라 주세요.";
+  else if (v.starts_on && v.ends_on && v.ends_on < v.starts_on) error = "끝나는 날이 시작하는 날보다 빨라요.";
+  const extra = {
+    price: board.extra === "market" ? (v.kind === "free" ? 0 : Number(v.price.replace(/[,\s]/g, "")) || 0) : null,
+    deal: board.extra === "market" ? "open" : null,
+    place: v.place || null,
+    starts_on: board.extra === "event" ? v.starts_on || null : null,
+    ends_on: board.extra === "event" ? v.ends_on || null : null,
+  };
+  return { values, error, extra, lounge };
 }
 
 export async function createPost(_: PostState, f: FormData): Promise<PostState> {
   const user = await requireUser();
-  const { values, error } = readPost(f);
+  const { values, error, extra, lounge } = readPost(f);
   if (error) return { error, values };
   if ((await recentCount("posts", user.id)) >= 5) return { error: "글은 1시간에 5개까지 올릴 수 있어요.", values };
   const rows = await q<{ id: string }>(
-    "INSERT INTO boundless.posts (user_id, topic, kind, lang, region, title, body) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id",
-    [user.id, values.topic, values.kind, values.lang, values.region || null, values.title, values.body]
+    `INSERT INTO boundless.posts (user_id, space, topic, kind, lang, region, title, body, price, deal, place, starts_on, ends_on)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id`,
+    [user.id, lounge ? user.nationality : "global", values.board, values.kind, values.lang, values.region || null, values.title, values.body,
+     extra.price, extra.deal, extra.place, extra.starts_on, extra.ends_on]
   );
   track("post", user.id);
   redirect(`/posts/${rows[0].id}`);
@@ -158,13 +183,17 @@ export async function createPost(_: PostState, f: FormData): Promise<PostState> 
 
 export async function updatePost(postId: string, _: PostState, f: FormData): Promise<PostState> {
   const user = await requireUser();
-  const { values, error } = readPost(f);
+  const { values, error, extra } = readPost(f);
   if (error) return { error, values };
+  // The space never changes on edit; the board stays inside the same space.
   await q(
-    `UPDATE boundless.posts SET topic = $3, kind = $4, lang = $5, region = $6, title = $7, body = $8, updated_at = now()
+    `UPDATE boundless.posts SET topic = $3, kind = $4, lang = $5, region = $6, title = $7, body = $8,
+       price = $9, place = $10, starts_on = $11, ends_on = $12, updated_at = now()
      WHERE id = $1 AND user_id = $2`,
-    [postId, user.id, values.topic, values.kind, values.lang, values.region || null, values.title, values.body]
+    [postId, user.id, values.board, values.kind, values.lang, values.region || null, values.title, values.body,
+     extra.price, extra.place, extra.starts_on, extra.ends_on]
   );
+  await q("DELETE FROM boundless.translations WHERE item = $1", [`p:${postId}`]);
   redirect(`/posts/${postId}`);
 }
 
@@ -176,6 +205,7 @@ export async function addComment(postId: string, _: Result, f: FormData): Promis
   if ((await recentCount("comments", user.id)) >= 30) return { error: "댓글은 1시간에 30개까지 달 수 있어요." };
   // Anonymous handle inside this post: author = 0, everyone else numbered by their first comment.
   // Replies hang one level deep: replying to a reply attaches to its top-level comment.
+  // Lounge posts accept replies only from members of that nationality.
   // ponytail: two brand-new commenters at the same instant could share a number; add a per-post lock if that shows up.
   const rows = await q(
     `INSERT INTO boundless.comments (post_id, user_id, body, anon_no, parent_id)
@@ -183,13 +213,49 @@ export async function addComment(postId: string, _: Result, f: FormData): Promis
        (SELECT anon_no FROM boundless.comments WHERE post_id = p.id AND user_id = $2 LIMIT 1),
        (SELECT COALESCE(max(anon_no), 0) + 1 FROM boundless.comments WHERE post_id = p.id)) END,
        (SELECT COALESCE(pc.parent_id, pc.id) FROM boundless.comments pc WHERE pc.id = $4::bigint AND pc.post_id = p.id)
-     FROM boundless.posts p WHERE p.id = $1 AND NOT p.hidden RETURNING id`,
-    [postId, user.id, body, /^\d{1,18}$/.test(parent) ? parent : null]
+     FROM boundless.posts p
+     WHERE p.id = $1 AND NOT p.hidden AND (p.space = 'global' OR p.space = $5)
+     RETURNING id`,
+    [postId, user.id, body, /^\d{1,18}$/.test(parent) ? parent : null, user.nationality]
   );
   if (!rows.length) return { error: "이 글에는 댓글을 달 수 없어요." };
   track("comment", user.id);
   refresh();
   return { ok: true };
+}
+
+/** Marketplace owner: 판매중 → 예약중 → 거래완료. */
+export async function setDeal(f: FormData) {
+  const user = await requireUser();
+  const deal = str(f, "deal");
+  if (!DEALS.some((d) => d.id === deal)) return;
+  await q("UPDATE boundless.posts SET deal = $3 WHERE id = $1 AND user_id = $2 AND price IS NOT NULL", [str(f, "post"), user.id, deal]);
+  refresh();
+}
+
+/** Translate a post or comment into the viewer's reading language. */
+export async function translate(kind: "p" | "c", id: string): Promise<{ title?: string | null; body?: string; error?: string }> {
+  if (!/^\d{1,18}$/.test(id)) return { error: "번역할 글을 찾지 못했어요." };
+  const [user, lang] = await Promise.all([getUser(), getLang()]);
+  const to = readLangOf(user, lang);
+  const rows = await q<{ title: string | null; body: string; lang: string; space: string; hidden: boolean }>(
+    kind === "p"
+      ? "SELECT title, body, lang, space, hidden FROM boundless.posts WHERE id = $1"
+      : `SELECT NULL AS title, c.body, 'other' AS lang, p.space, c.hidden OR p.hidden AS hidden
+         FROM boundless.comments c JOIN boundless.posts p ON p.id = c.post_id WHERE c.id = $1`,
+    [id]
+  );
+  const src = rows[0];
+  if (!src || src.hidden || (src.space !== "global" && src.space !== user?.nationality)) return { error: "번역할 글을 찾지 못했어요." };
+  const out = await translateItem(`${kind}:${id}`, { title: src.title ?? undefined, body: src.body, lang: src.lang }, to);
+  return out ?? { error: "지금은 번역할 수 없어요. 잠시 뒤 다시 시도해 주세요." };
+}
+
+export async function setReadLang(f: FormData) {
+  const user = await requireUser();
+  const v = str(f, "read_lang");
+  await q("UPDATE boundless.users SET read_lang = $2 WHERE id = $1", [user.id, READ_LANGS.includes(v) ? v : null]);
+  refresh();
 }
 
 /** 공감 / helpful toggle on a post or a comment. */

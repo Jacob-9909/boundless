@@ -7,7 +7,7 @@ import { completeSignup, demoLogin, sendCode, setLang, verifyCode } from "@/app/
 import { CULTURES, DEFAULT_CULTURE, cultureOf, themeVars, type Culture } from "@/lib/cultures";
 import { translator, type Lang } from "@/lib/i18n";
 import { Icon } from "./Icon";
-import { Flag, Logo, NationalityChip, btn, field, labelCls } from "./ui";
+import { Flag, Landmark, Logo, NationalityChip, btn, field, labelCls } from "./ui";
 
 type Step = "email" | "code" | "profile";
 const PICKER: Culture[] = [...CULTURES, DEFAULT_CULTURE];
@@ -96,7 +96,10 @@ export function LoginScreen({
       {/* Hero: re-skinned with the chosen culture's colors, pattern, script and greeting */}
       <section className="relative flex min-h-[46vh] flex-col overflow-hidden bg-primary px-5 pt-4 pb-8 text-paper transition-colors duration-500 lg:min-h-screen lg:px-10">
         <div key={`p-${culture.code}`} className="bg-pattern animate-fade-in absolute inset-0 opacity-30" aria-hidden="true" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent" aria-hidden="true" />
+        <div key={`l-${culture.code}`} className="animate-fade-in absolute inset-x-0 bottom-0" aria-hidden="true">
+          <Landmark culture={culture} className="ml-auto h-40 w-auto opacity-80 lg:h-56" />
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/15 to-transparent" aria-hidden="true" />
 
         <div className="relative flex items-center justify-between">
           <Link href="/" className="text-paper" aria-label="Boundless home">

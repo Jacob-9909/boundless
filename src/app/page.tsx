@@ -5,8 +5,9 @@ import { demoLogin, setLang } from "@/app/actions";
 import { cultureFonts } from "@/app/login/fonts";
 import { HelloRotator } from "@/components/HelloRotator";
 import { Icon, type IconName } from "@/components/Icon";
-import { Avatar, Flag, LINES, Logo, NationalityChip, TopicBadge } from "@/components/ui";
+import { Avatar, BoardBadge, Flag, Landmark, LINES, Logo, NationalityChip } from "@/components/ui";
 import { demoEnabled, getT, getUser } from "@/lib/auth";
+import { BOARDS } from "@/lib/boards";
 import { CULTURES, DEFAULT_CULTURE, themeVars } from "@/lib/cultures";
 import { HOTLINES, SITES } from "@/lib/guide";
 import { countryName, timeAgo } from "@/lib/i18n";
@@ -222,7 +223,7 @@ export default async function Landing(props: PageProps<"/">) {
                 </span>
                 <span className="mt-2 line-clamp-2 block text-[13px] leading-snug font-bold">{q.title}</span>
                 <span className="mt-2 block">
-                  <TopicBadge id={q.topic} t={t} />
+                  <BoardBadge id={q.topic} t={t} />
                 </span>
               </Link>
             )}
@@ -300,6 +301,54 @@ export default async function Landing(props: PageProps<"/">) {
         </ol>
       </section>
 
+      {/* ---------- Boards and spaces ---------- */}
+      <section className="mx-auto max-w-7xl px-5 pb-20 md:px-8">
+        <p className="station-label text-[#E6186C]">{t("게시판")}</p>
+        <h2 className="mt-2 font-display text-3xl font-extrabold tracking-tight md:text-[40px]">{t("편의 정보만이 아니라, 한국 생활 그 자체")}</h2>
+        <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-black/65">
+          {t("비자와 집 문제부터 성수동 팝업, 동네 맛집, 연애 고민, 이사하며 내놓는 중고 물건까지. 게시판마다 말머리가 있어 원하는 이야기를 바로 찾아요.")}
+        </p>
+        <div className="mt-8 grid gap-4 lg:grid-cols-[1.4fr_1fr]">
+          <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+            {BOARDS.map((b) => (
+              <li key={b.id}>
+                <Link href={`/b/${b.id}`} className="flex h-full flex-col gap-2 rounded-2xl bg-white p-3.5 ring-1 ring-black/[.06] transition hover:-translate-y-0.5 hover:shadow-md">
+                  <span className="flex size-9 items-center justify-center rounded-xl text-white" style={{ background: b.color }}>
+                    <Icon name={b.icon} size={18} />
+                  </span>
+                  <span className="text-sm font-bold">{t(b.ko)}</span>
+                  <span className="line-clamp-2 text-[11px] leading-snug text-black/55">{t(b.desc)}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <div className="grid gap-3">
+            <div className="rounded-3xl bg-[#0B1224] p-6 text-white">
+              <p className="flex items-center gap-2 text-sm font-bold text-white/70">
+                <Icon name="users" size={16} />
+                {t("모두의 광장")}
+              </p>
+              <p className="mt-2 text-xl font-extrabold">{t("모든 나라 이웃이 함께 보는 게시판")}</p>
+              <p className="mt-1.5 text-sm leading-relaxed text-white/65">{t("글마다 원문 언어가 표시되고, 버튼 하나로 내 언어로 번역해 읽어요.")}</p>
+              <span className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold">
+                <Icon name="translate" size={14} />
+                {t("Tiếng Việt로 번역")}
+              </span>
+            </div>
+            <div className="relative overflow-hidden rounded-3xl p-6 text-white" style={{ background: "#A8242B" }}>
+              <span className="bg-pattern absolute inset-0 opacity-25" style={themeVars(CULTURES[1]) as CSSProperties} aria-hidden="true" />
+              <Landmark culture={CULTURES[1]} className="absolute right-0 bottom-0 h-20 w-auto opacity-80" />
+              <p className="relative flex items-center gap-2 text-sm font-bold text-white/80">
+                <Flag code="VN" h={13} />
+                {t("우리나라 라운지")}
+              </p>
+              <p className="relative mt-2 text-xl font-extrabold">{t("같은 나라 이웃끼리, 우리말로")}</p>
+              <p className="relative mt-1.5 max-w-xs text-sm leading-relaxed text-white/80">{t("국적별 라운지는 그 나라 이웃만 들어와요. 말이 섞여 헷갈릴 일 없이 편하게.")}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ---------- Culture themes ---------- */}
       <section id="cultures" className="scroll-mt-6 bg-white py-20">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
@@ -322,10 +371,11 @@ export default async function Landing(props: PageProps<"/">) {
                 <Link
                   href={`/login?culture=${c.code}`}
                   style={themeVars(c) as CSSProperties}
-                  className="group relative flex h-40 flex-col justify-end overflow-hidden rounded-2xl bg-primary p-3.5 text-white transition hover:-translate-y-1 hover:shadow-xl"
+                  className="group relative flex h-48 flex-col justify-end overflow-hidden rounded-2xl bg-primary p-3.5 text-white transition hover:-translate-y-1 hover:shadow-xl"
                 >
-                  <span className="bg-pattern absolute inset-0 opacity-40 transition group-hover:opacity-60" aria-hidden="true" />
-                  <span className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" aria-hidden="true" />
+                  <span className="bg-pattern absolute inset-0 opacity-35 transition group-hover:opacity-55" aria-hidden="true" />
+                  <Landmark culture={c} className="absolute inset-x-0 bottom-0 h-auto w-full opacity-80 transition group-hover:opacity-100" />
+                  <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" aria-hidden="true" />
                   <span className="relative font-culture text-2xl leading-tight">{c.hello}</span>
                   <span className="relative mt-1 flex items-center gap-1.5 text-xs font-semibold opacity-90">
                     <Flag code={c.code} h={11} />

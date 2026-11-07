@@ -1,6 +1,7 @@
 // Client-safe i18n helpers. The Korean sentence is the dictionary key:
 // wrap UI text as t(<Korean sentence>) and add the English line to ./en.ts.
 // `node scripts/i18n-check.mjs` fails when a key is missing.
+import { cultureOf } from "./cultures";
 import { EN } from "./en";
 
 export type Lang = "ko" | "en";
@@ -30,18 +31,6 @@ export function sortedCountries(lang: Lang) {
 }
 
 // Topic "stations" on the home route map.
-// Each topic is a "line" colored like a Seoul subway line (the route-map motif from the prototype).
-export const TOPICS = [
-  { id: "transit", ko: "교통", color: "#00A5DE" },
-  { id: "procedures", ko: "행정·절차", color: "#0052A4" },
-  { id: "housing", ko: "주거", color: "#EF7C1C" },
-  { id: "health", ko: "병원·건강", color: "#E6186C" },
-  { id: "daily", ko: "일상생활", color: "#00A84D" },
-] as const;
-export const topicColor = (id: string) => TOPICS.find((x) => x.id === id)?.color ?? "#00A84D";
-export const isTopic = (v: string) => TOPICS.some((x) => x.id === v);
-export const topicLabel = (id: string, t: T) => t(TOPICS.find((x) => x.id === id)?.ko ?? "일상생활");
-
 // Provinces, for neighborhood-style filtering ("my area"). Rules like recycling differ by area.
 export const REGIONS = [
   { id: "seoul", ko: "서울" },
@@ -65,12 +54,6 @@ export const REGIONS = [
 export const isRegion = (v: string) => REGIONS.some((x) => x.id === v);
 export const regionLabel = (id: string | null, t: T) => (id ? t(REGIONS.find((x) => x.id === id)?.ko ?? "") : t("지역 무관"));
 
-export const KINDS = [
-  { id: "question", ko: "질문" },
-  { id: "experience", ko: "경험 공유" },
-] as const;
-export const kindLabel = (id: string, t: T) => t(KINDS.find((x) => x.id === id)?.ko ?? "질문");
-
 // Languages a post can be written in. Content is never machine-translated; we label the original.
 export const POST_LANGS = ["ko", "en", "zh", "vi", "th", "uz", "mn", "fil", "ne", "id", "ja", "km", "kk", "ru", "fr", "hi", "es", "other"];
 /** The language's own name ("français"), for compact labels. */
@@ -84,6 +67,16 @@ export function langName(code: string, lang: Lang) {
   const own = new Intl.DisplayNames([code], { type: "language" }).of(code) ?? code;
   const local = new Intl.DisplayNames([lang], { type: "language" }).of(code) ?? code;
   return own === local ? own : `${local} · ${own}`;
+}
+
+/** Languages a member can read translations in. */
+export const READ_LANGS = POST_LANGS.filter((l) => l !== "other");
+
+/** Translation target: the member's choice, else their culture's language, else the UI language. */
+export function readLangOf(user: { nationality: string; read_lang?: string | null } | null, ui: Lang) {
+  if (user?.read_lang && READ_LANGS.includes(user.read_lang)) return user.read_lang;
+  const guess = user ? (cultureOf(user.nationality).langs[0]?.split("-")[0] ?? "") : "";
+  return READ_LANGS.includes(guess) ? guess : ui;
 }
 
 export const REPORT_REASONS = [

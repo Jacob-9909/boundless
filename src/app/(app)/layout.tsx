@@ -1,90 +1,106 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { setLang } from "@/app/actions";
+import { cultureFonts } from "@/app/login/fonts";
 import { BottomNav } from "@/components/BottomNav";
-import { DemoSwitch } from "@/components/Community";
+import { AccountSwitcher } from "@/components/Community";
 import { Icon } from "@/components/Icon";
 import { SideNav, type NavItem } from "@/components/SideNav";
-import { Avatar, Flag, Logo, btn } from "@/components/ui";
+import { Avatar, Flag, Landmark, LevelBadge, Logo, btn } from "@/components/ui";
 import { canViewQueue, demoEnabled, getT, getUser } from "@/lib/auth";
+import { BOARDS, GROUPS } from "@/lib/boards";
 import { cultureOf, DEFAULT_CULTURE, themeVars } from "@/lib/cultures";
-import { countryName, TOPICS } from "@/lib/i18n";
-import { topicCounts, unreadCount } from "@/lib/posts";
+import { countryName } from "@/lib/i18n";
+import { boardCounts, myPoints, unreadCount } from "@/lib/posts";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
   const [{ lang, t }, user] = await Promise.all([getT(), getUser()]);
-  // A member sees the app in their own culture's colors; visitors see the neutral Boundless theme.
+  // A member sees the app in their own culture's colors; visitors see the neutral Seoul theme.
   const culture = user ? cultureOf(user.nationality) : DEFAULT_CULTURE;
-  const [unread, counts] = await Promise.all([user ? unreadCount(user.id, user.seen_at) : 0, topicCounts()]);
+  const [unread, counts, points] = await Promise.all([
+    user ? unreadCount(user.id, user.seen_at) : 0,
+    boardCounts(),
+    user ? myPoints(user.id) : Promise.resolve(null),
+  ]);
   const demoUser = !!user && demoEnabled() && user.email.endsWith("@example.com");
   const other = lang === "ko" ? "en" : "ko";
 
   const nav: NavItem[] = [
-    { href: "/feed", icon: "home", label: t("피드") },
+    { href: "/feed", icon: "home", label: t("홈") },
+    { href: "/lounge", icon: "users", label: user ? t("{country} 라운지", { country: countryName(user.nationality, lang) }) : t("우리나라 라운지") },
     { href: "/search", icon: "search", label: t("검색") },
-    { href: "/guide", icon: "info", label: t("공식 안내") },
     { href: "/me", icon: "file", label: t("내 글"), badge: unread },
+  ];
+  const navEnd: NavItem[] = [
+    { href: "/guide", icon: "info", label: t("공식 안내") },
     { href: "/settings", icon: "sliders", label: t("설정") },
     ...(canViewQueue(user) ? [{ href: "/admin", icon: "flag" as const, label: t("운영 큐") }] : []),
   ];
 
   return (
-    <div style={themeVars(culture) as CSSProperties} className="min-h-screen bg-paper text-ink">
+    <div style={themeVars(culture) as CSSProperties} className={`${cultureFonts} min-h-screen bg-paper text-ink`}>
       <a href="#main" className="skip-link rounded-xl bg-ink px-4 py-2 text-sm font-bold text-white">
         {t("본문으로 건너뛰기")}
       </a>
       <div className="mx-auto flex max-w-[1360px]">
         {/* Desktop sidebar */}
-        <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col gap-5 overflow-y-auto border-r border-ink/[.07] bg-white/70 px-4 py-5 backdrop-blur lg:flex">
-          <Link href="/?intro=1" className="px-2 text-ink" aria-label="Boundless">
-            <Logo />
-          </Link>
-          <SideNav items={nav} />
-          <Link href="/write" className={`${btn} w-full`}>
-            <Icon name="plus" size={18} />
-            {t("글쓰기")}
-          </Link>
+        <aside className="sticky top-0 hidden h-screen w-[264px] shrink-0 flex-col border-r border-ink/[.07] bg-white/75 backdrop-blur lg:flex">
+          <div className="flex-1 space-y-5 overflow-y-auto px-4 pt-5 pb-4">
+            <Link href="/?intro=1" className="block px-2 text-ink" aria-label="Boundless">
+              <Logo />
+            </Link>
+            <SideNav items={nav} />
+            <Link href="/write" className={`${btn} w-full`}>
+              <Icon name="plus" size={18} />
+              {t("글쓰기")}
+            </Link>
 
-          <div>
-            <p className="station-label mb-1 px-3 opacity-50">{t("주제 노선")}</p>
-            <ul>
-              {TOPICS.map((tp) => (
-                <li key={tp.id}>
-                  <Link href={`/feed?topic=${tp.id}`} className="flex h-9 items-center gap-3 rounded-xl px-3 text-sm text-ink/80 hover:bg-ink/[.05]">
-                    <span className="size-3 rounded-full ring-2 ring-white" style={{ background: tp.color }} />
-                    {t(tp.ko)}
-                    <span className="ml-auto text-xs opacity-50">{counts.find((c) => c.topic === tp.id)?.n ?? 0}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            {GROUPS.map((gr) => (
+              <div key={gr.id}>
+                <p className="mb-1 px-3 text-xs font-bold tracking-wide opacity-45">{t(gr.ko)}</p>
+                <ul>
+                  {BOARDS.filter((b) => b.group === gr.id).map((b) => {
+                    const c = counts.find((x) => x.topic === b.id);
+                    return (
+                      <li key={b.id}>
+                        <Link href={`/b/${b.id}`} className="flex h-9 items-center gap-2.5 rounded-xl px-3 text-sm whitespace-nowrap text-ink/80 hover:bg-ink/[.05]">
+                          <span className="flex size-6 items-center justify-center rounded-lg text-white" style={{ background: b.color }}>
+                            <Icon name={b.icon} size={13} />
+                          </span>
+                          {t(b.ko)}
+                          {!!c?.today && <span className="size-1.5 rounded-full bg-extra" aria-label={t("오늘 새 글")} />}
+                          <span className="ml-auto text-xs opacity-45">{c?.n ?? 0}</span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
+            <SideNav items={navEnd} />
           </div>
 
-          <div className="mt-auto space-y-3">
+          <div className="space-y-2 border-t border-ink/[.07] p-3">
             {user ? (
               <div className="overflow-hidden rounded-2xl border border-ink/[.07] bg-white">
-                <div className="bg-pattern h-10 bg-primary" aria-hidden="true" />
-                <div className="-mt-5 px-3 pb-3">
-                  <Avatar code={user.nationality} size={40} />
-                  <p className="mt-1.5 text-sm font-bold">{t("이웃")}</p>
-                  <p className="flex items-center gap-1.5 text-xs opacity-70">
-                    <Flag code={user.nationality} h={11} />
-                    {countryName(user.nationality, lang)}
-                  </p>
-                  <p className="mt-1 text-[11px] leading-snug opacity-50">{culture.motif[lang]}</p>
-                  {demoUser && (
-                    <details className="mt-2 rounded-xl bg-paper p-2">
-                      <summary className="cursor-pointer text-xs font-bold text-primary">{t("샘플 계정 바꾸기")}</summary>
-                      <div className="mt-2">
-                        <DemoSwitch t={t} lang={lang} current={user.nationality} compact />
-                      </div>
-                    </details>
-                  )}
+                <div className="relative h-14 overflow-hidden bg-primary">
+                  <span className="bg-pattern absolute inset-0 opacity-40" aria-hidden="true" />
+                  <Landmark culture={culture} className="absolute right-0 bottom-0 h-12 w-auto opacity-90" />
+                </div>
+                <div className="flex items-center gap-2.5 px-3 py-2.5">
+                  <Avatar code={user.nationality} size={36} />
+                  <div className="min-w-0">
+                    <p className="flex items-center gap-1.5 text-sm font-bold">
+                      <Flag code={user.nationality} h={11} />
+                      <span className="truncate">{countryName(user.nationality, lang)}</span>
+                    </p>
+                    {points && <LevelBadge points={points.points} t={t} />}
+                  </div>
                 </div>
               </div>
             ) : (
               <div className="rounded-2xl border border-ink/[.07] bg-white p-3">
-                <p className="text-sm font-bold">{t("로그인하고 질문해 보세요")}</p>
+                <p className="text-sm font-bold">{t("로그인하고 이야기해 보세요")}</p>
                 <p className="mt-0.5 text-xs opacity-60">{t("국적 하나만 공개돼요. 이메일은 비공개.")}</p>
                 <Link href="/login" className={`${btn} mt-3 h-10 w-full text-sm`}>
                   {t("로그인")}
@@ -94,6 +110,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
                 </Link>
               </div>
             )}
+            {demoUser && user && <AccountSwitcher t={t} lang={lang} current={user.nationality} />}
             <form action={setLang.bind(null, other)}>
               <button className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl text-[13px] font-bold text-ink/70 hover:bg-ink/[.05]" aria-label={t("화면 언어 바꾸기")}>
                 <Icon name="globe" size={16} />
@@ -108,7 +125,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           <header className="sticky top-0 z-20 border-b border-ink/10 bg-paper/95 backdrop-blur lg:hidden">
             <div className="flex items-center gap-2 px-4 py-2.5">
               <Link href="/feed" className="mr-auto text-ink" aria-label="Boundless">
-                <Logo />
+                <Logo size={26} />
               </Link>
               <form action={setLang.bind(null, other)}>
                 <button className="inline-flex h-9 items-center gap-1 rounded-full border border-ink/15 bg-white px-3 text-[13px] font-bold" aria-label={t("화면 언어 바꾸기")}>
@@ -134,7 +151,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
         </div>
       </div>
       <div className="lg:hidden">
-        <BottomNav labels={{ feed: t("피드"), search: t("검색"), me: t("내 글"), guide: t("안내"), settings: t("설정") }} unread={unread} />
+        <BottomNav labels={{ feed: t("홈"), boards: t("게시판"), lounge: t("라운지"), me: t("내 글"), settings: t("설정") }} unread={unread} />
       </div>
     </div>
   );

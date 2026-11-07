@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 import { updatePost } from "@/app/actions";
 import { WriteForm } from "@/components/forms";
-import { BackLink, PageHead, SignInRequired } from "@/components/ui";
+import { BackLink, SignInRequired } from "@/components/ui";
 import { getT, getUser } from "@/lib/auth";
+import { boardOf } from "@/lib/boards";
 import { countryName, langName, POST_LANGS } from "@/lib/i18n";
 import { getPost } from "@/lib/posts";
 
@@ -14,14 +15,26 @@ export default async function EditPage(props: PageProps<"/posts/[id]/edit">) {
   if (!user) return <SignInRequired t={t} next={`/posts/${id}/edit`} />;
   const post = await getPost(user.id, id);
   if (!post || !post.mine) notFound();
+  const lounge = post.space !== "global";
   return (
     <div className="mx-auto max-w-3xl pb-6">
       <BackLink href={`/posts/${post.id}`} label={t("뒤로")} />
-      <PageHead line="LINE 03 · EDIT" title={t("글 수정")} />
       <WriteForm
         action={updatePost.bind(null, post.id)}
         submitLabel={t("저장")}
-        initial={{ title: post.title, body: post.body, topic: post.topic, kind: post.kind, lang: post.lang, region: post.region ?? "" }}
+        board={boardOf(post.topic)}
+        space={lounge ? "lounge" : "global"}
+        initial={{
+          title: post.title,
+          body: post.body,
+          kind: post.kind,
+          lang: post.lang,
+          region: post.region ?? "",
+          price: post.price === null ? "" : String(post.price),
+          place: post.place ?? "",
+          starts_on: post.starts_on ?? "",
+          ends_on: post.ends_on ?? "",
+        }}
         lang={lang}
         langs={POST_LANGS.map((code) => ({ code, name: langName(code, lang) }))}
         nationality={user.nationality}

@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { deleteAccount, setLang, setRegion, signOut, unblockAll } from "@/app/actions";
+import { deleteAccount, setLang, setReadLang, setRegion, signOut, unblockAll } from "@/app/actions";
 import { NationalityForm } from "@/components/forms";
 import { Icon } from "@/components/Icon";
 import { PageHead, btn, field } from "@/components/ui";
 import { canViewQueue, getT, getUser } from "@/lib/auth";
 import { q } from "@/lib/db";
-import { REGIONS, REPORT_REASONS, sortedCountries, timeAgo } from "@/lib/i18n";
+import { langName, READ_LANGS, readLangOf, REGIONS, REPORT_REASONS, sortedCountries, timeAgo } from "@/lib/i18n";
 
 export const metadata = { title: "Settings" };
 
@@ -87,6 +87,26 @@ export default async function SettingsPage() {
                     <button className={btn}>{t("저장")}</button>
                   </div>
                   <p className="text-xs opacity-70">{t("글쓰기 기본 지역이 되고, 피드에서 우리 지역 글을 바로 볼 수 있어요. 공개되지 않아요.")}</p>
+                </form>
+                <form action={setReadLang} className="space-y-1 border-b border-ink/10 py-3">
+                  <label htmlFor="read-lang" className="block text-sm font-bold">
+                    <span className="inline-flex items-center gap-1">
+                      <Icon name="translate" size={15} />
+                      {t("번역해서 읽을 언어")}
+                    </span>
+                  </label>
+                  <div className="flex gap-2">
+                    <select id="read-lang" name="read_lang" defaultValue={user.read_lang ?? ""} className={field}>
+                      <option value="">{t("국적에 맞춰 자동 ({lang})", { lang: langName(readLangOf({ nationality: user.nationality }, lang), lang) })}</option>
+                      {READ_LANGS.map((l) => (
+                        <option key={l} value={l}>
+                          {langName(l, lang)}
+                        </option>
+                      ))}
+                    </select>
+                    <button className={btn}>{t("저장")}</button>
+                  </div>
+                  <p className="text-xs opacity-70">{t("글과 댓글의 번역 버튼이 이 언어로 번역해요.")}</p>
                 </form>
                 <div className={row}>
                   <span className="font-bold">{t("로그인 이메일 (비공개)")}</span>

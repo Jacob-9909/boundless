@@ -17,7 +17,7 @@ const used = new Set();
 for (const f of files) {
   const src = readFileSync(f, "utf8");
   // t("..."), tr(lang, "..."), { ko: "..." }, and Korean error strings returned from actions
-  for (const re of [/\bt\(\s*"([^"]+)"/g, /\btr\(\s*\w+\s*,\s*"([^"]+)"/g, /\bid:\s*"[^"]+",\s*ko:\s*"([^"]+)"/g, /(?:error|fail)\(?\s*[:=]?\s*"([^"]+)"/g, /\bdesc:\s*"([^"]+)"/g]) {
+  for (const re of [/\bt\(\s*"([^"]+)"/g, /\btr\(\s*\w+\s*,\s*"([^"]+)"/g, /\bid:\s*"[^"]+",\s*ko:\s*"([^"]+)"/g, /(?:error|fail)\(?\s*[:=]?\s*"([^"]+)"/g, /\bdesc:\s*"([^"]+)"/g, /\b(?:titleHint|bodyHint):\s*"([^"]+)"/g, /\bmin:\s*\d+,\s*ko:\s*"([^"]+)"/g]) {
     for (const m of src.matchAll(re)) if (hangul.test(m[1])) used.add(m[1]);
   }
 }

@@ -1,6 +1,7 @@
 // Culture themes. The login screen re-skins itself with the chosen culture,
 // and a signed-in member's own culture tints the app chrome.
 // Countries without a theme fall back to the neutral "Boundless" route-map theme.
+import { landmarkSvg } from "./landmarks";
 
 export type Palette = { primary: string; accent: string; ink: string; paper: string; soft: string; extra: string };
 
@@ -137,16 +138,21 @@ export const CULTURES: Culture[] = [
     line: "Koreyada siz yolgʻiz emassiz.",
     langs: ["uz"],
     font: "--font-uz",
-    motif: { ko: "레기스탄 타일의 팔각별 · 청록과 코발트", en: "Registan tile eight-point star · turquoise and cobalt" },
-    c: { primary: "#0B7479", accent: "#7FD3CF", ink: "#0B2A3C", paper: "#F6FBFA", soft: "#CDEDEB", extra: "#D9A441" },
+    motif: { ko: "마르길란 아드라스 이캇 직물 · 레기스탄", en: "Margilan adras ikat silk · Registan" },
+    c: { primary: "#0B6E73", accent: "#7FD3CF", ink: "#0B2A3C", paper: "#F4FAF9", soft: "#CDEDEB", extra: "#E8B23A" },
     pattern: (c) =>
       svg(
-        48,
-        48,
-        `<g transform='translate(24 24)' fill='${c.accent}'><rect x='-10' y='-10' width='20' height='20'/><rect x='-10' y='-10' width='20' height='20' transform='rotate(45)'/></g>` +
-          `<circle cx='24' cy='24' r='5' fill='${c.extra}'/>` +
-          `<g fill='${c.extra}' opacity='.8'><path d='M0 -4 L4 0 L0 4 L-4 0Z'/><path d='M48 44 L52 48 L48 52 L44 48Z'/><path d='M0 44 L4 48 L0 52 L-4 48Z'/><path d='M48 -4 L52 0 L48 4 L44 0Z'/></g>`
+        40,
+        64,
+        // Ikat: vertical flame/diamond shapes with soft edges where dye seeps under the binding.
+        `<defs><filter id='b'><feGaussianBlur stdDeviation='0.9'/></filter></defs><g filter='url(#b)'>` +
+          `<path d='M20 2 C31 14 31 26 20 32 C9 26 9 14 20 2Z' fill='${c.accent}'/>` +
+          `<path d='M20 32 C29 42 29 54 20 62 C11 54 11 42 20 32Z' fill='${c.extra}'/>` +
+          `<path d='M20 12 C24 17 24 21 20 24 C16 21 16 17 20 12Z' fill='${c.primary}'/>` +
+          `<path d='M0 18 C7 28 7 40 0 48Z M40 18 C33 28 33 40 40 48Z' fill='#E9558F' opacity='.85'/></g>`,
+        1.15
       ),
+
   },
   {
     code: "MN",
@@ -254,18 +260,16 @@ export const CULTURES: Culture[] = [
     line: "នៅប្រទេសកូរ៉េ អ្នកមិននៅម្នាក់ឯងទេ។",
     langs: ["km"],
     font: "--font-kh",
-    motif: { ko: "앙코르와트 연꽃봉오리 탑 · 사암색", en: "Angkor lotus-bud towers · sandstone" },
-    c: { primary: "#7E5632", accent: "#E7CFA6", ink: "#2B1D10", paper: "#FAF4EA", soft: "#EBDCC4", extra: "#032EA1" },
+    motif: { ko: "파랑·흰색 크로마 체크 · 앙코르와트", en: "Blue-and-white krama check · Angkor Wat" },
+    c: { primary: "#1D3F8F", accent: "#E9EEF8", ink: "#16213D", paper: "#F6F6F1", soft: "#DCE4F4", extra: "#D9B485" },
     pattern: (c) =>
       svg(
-        72,
-        48,
-        `<g fill='${c.accent}'>` +
-          `<path d='M36 4 C41 14 43 22 43 40 H29 C29 22 31 14 36 4Z'/>` +
-          `<path d='M18 16 C21 22 23 28 23 40 H13 C13 28 15 22 18 16Z' opacity='.8'/>` +
-          `<path d='M54 16 C57 22 59 28 59 40 H49 C49 28 51 22 54 16Z' opacity='.8'/>` +
-          `<rect x='6' y='40' width='60' height='3'/></g>`
+        36,
+        36,
+        `<rect width='36' height='14' fill='${c.accent}' opacity='.28'/><rect width='14' height='36' fill='${c.accent}' opacity='.28'/>` +
+          `<rect y='20' width='36' height='3' fill='${c.accent}' opacity='.18'/><rect x='20' width='3' height='36' fill='${c.accent}' opacity='.18'/>`
       ),
+
   },
   {
     code: "KZ",
@@ -335,16 +339,18 @@ export const CULTURES: Culture[] = [
     line: "कोरिया में आप अकेले नहीं हैं।",
     langs: ["hi"],
     font: "--font-in",
-    motif: { ko: "랑골리 꽃잎 · 사프란과 초록", en: "Rangoli petals · saffron and green" },
-    c: { primary: "#B4500E", accent: "#FFD8A8", ink: "#2D1606", paper: "#FFF8EF", soft: "#FBE0C8", extra: "#0F7B4F" },
+    motif: { ko: "페이즐리(부타) · 공작빛 · 타지마할", en: "Paisley (buta) · peacock hues · Taj Mahal" },
+    c: { primary: "#9E3D12", accent: "#FFD39A", ink: "#2D1606", paper: "#FFF8EF", soft: "#FBE0C8", extra: "#0E7C7B" },
     pattern: (c) =>
       svg(
         56,
         56,
-        petals(28, 28, 8, 4, 9, c.accent) +
-          `<circle cx='28' cy='28' r='4' fill='${c.extra}'/>` +
-          [0, 56].flatMap((x) => [0, 56].map((y) => `<circle cx='${x}' cy='${y}' r='3' fill='${c.accent}'/>`)).join("")
+        `<path d='M26 46 C11 46 9 27 19 18 C27 11 39 15 37 24 C35 31 26 29 28 22' fill='none' stroke='${c.accent}' stroke-width='3' stroke-linecap='round'/>` +
+          `<circle cx='22' cy='34' r='3' fill='${c.extra}'/>` +
+          [0, 56].flatMap((x) => [0, 56].map((y) => `<circle cx='${x}' cy='${y}' r='3' fill='${c.accent}'/>`)).join("") +
+          `<circle cx='46' cy='44' r='2' fill='${c.accent}'/><circle cx='8' cy='8' r='2' fill='${c.accent}' opacity='.7'/>`
       ),
+
   },
 ];
 
@@ -361,6 +367,10 @@ export function cultureFromLanguages(langs: readonly string[]): Culture | null {
     if (hit) return hit;
   }
   return null;
+}
+
+export function landmarkMarkup(c: Culture) {
+  return landmarkSvg(c.code, c.c);
 }
 
 export function patternUrl(c: Culture) {

@@ -51,7 +51,7 @@ const visitor = await newUser();
 await visitor.goto(BASE + "/");
 await visitor.getByRole("link", { name: "Browse the feed" }).first().click();
 await visitor.waitForURL(BASE + "/feed");
-await visitor.getByText("What do you want to know about life in Korea?").waitFor();
+await visitor.getByText("Everyone’s square").waitFor();
 await visitor.goto(BASE + "/me");
 await visitor.getByText("Sign in to see this page").waitFor();
 
@@ -61,9 +61,10 @@ await signIn(a, `e2e-a-${run}@example.com`, "日本");
 await a.goto(BASE + "/settings");
 assert.equal(await a.getByLabel("Public nationality", { exact: true }).inputValue(), "JP");
 await a.goto(BASE + "/write");
+await a.getByRole("link", { name: /Housing/ }).first().click();
+await a.waitForURL(/board=housing/);
 let title = `E2E recycling question ${run}`;
 await a.getByLabel("Title").fill(title);
-await a.getByLabel("Topic").selectOption("daily");
 await a.getByLabel("Post text").fill("Which day are boxes collected in Mapo?");
 await a.getByRole("button", { name: "Post", exact: true }).click();
 await a.waitForURL(/\/posts\/\d+$/);
@@ -113,7 +114,7 @@ title = `E2E recycling question (edited) ${run}`;
 await a.getByLabel("Title").fill(title);
 await a.getByRole("button", { name: "Save" }).click();
 await a.waitForURL(postUrl);
-assert.equal((await a.locator("h1").textContent()).trim(), title);
+assert.equal((await a.locator("h1").textContent()).trim(), `[Question]${title}`);
 
 // Search finds the post by its original text.
 await visitor.goto(BASE + `/search?q=${encodeURIComponent(String(run))}`);
@@ -157,6 +158,14 @@ await judge.goto(BASE + "/#demo");
 await judge.locator("#demo form button", { hasText: "Vietnam" }).first().click();
 await judge.waitForURL(BASE + "/feed");
 await judge.getByText("Xin chào, neighbor").waitFor();
+
+// Country lounges: the Vietnam lounge is visible to the Vietnamese sample neighbor, not to A (Japan).
+await judge.goto(BASE + "/lounge");
+const loungeUrl = BASE + (await judge.locator("a[href^='/posts/']").first().getAttribute("href"));
+await judge.goto(loungeUrl);
+await judge.getByText("Vietnam lounge").last().waitFor();
+await a.goto(loungeUrl);
+await a.getByText("only for neighbors from Vietnam").waitFor();
 
 assert.deepEqual(pageErrors, [], "no uncaught page errors");
 await browser.close();

@@ -1,9 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
-import { cultureOf, patternUrl } from "@/lib/cultures";
+import { boardOf, DEALS, levelOf, tagOf } from "@/lib/boards";
+import { cultureOf, landmarkMarkup, patternUrl, type Culture } from "@/lib/cultures";
 import type { Help } from "@/lib/guide";
-import { countryName, kindLabel, langAutonym, regionLabel, timeAgo, topicColor, topicLabel, type Lang, type T } from "@/lib/i18n";
+import { countryName, langAutonym, regionLabel, timeAgo, type Lang, type T } from "@/lib/i18n";
 import type { PostRow } from "@/lib/posts";
 import { Icon } from "./Icon";
 
@@ -11,11 +12,11 @@ import { Icon } from "./Icon";
    Height: controls 44px (h-11), compact actions 36px (h-9). Type: body 15px, meta 13px, tags 12px. */
 export const card = "rounded-2xl border border-ink/[.07] bg-white shadow-[0_1px_2px_rgba(16,24,40,.04)]";
 export const btn =
-  "inline-flex h-11 items-center justify-center gap-1.5 rounded-xl bg-primary px-5 text-[15px] font-bold text-paper transition hover:brightness-110 active:scale-[.98] disabled:opacity-50";
+  "inline-flex h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl bg-primary px-5 text-[15px] font-bold text-paper transition hover:brightness-110 active:scale-[.98] disabled:opacity-50";
 export const btnGhost =
-  "inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-ink/15 bg-white px-5 text-[15px] font-bold text-primary transition hover:border-primary/40";
-export const pill = "inline-flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-[13px] font-bold transition";
-export const tag = "inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold";
+  "inline-flex h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-ink/15 bg-white px-5 text-[15px] font-bold text-primary transition hover:border-primary/40";
+export const pill = "inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 text-[13px] font-bold transition";
+export const tag = "inline-flex items-center gap-1 whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-semibold";
 export const field =
   "w-full rounded-xl border border-ink/20 bg-white px-3.5 py-2.5 text-base outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10";
 export const labelCls = "mb-1.5 block text-sm font-bold";
@@ -23,17 +24,24 @@ export const labelCls = "mb-1.5 block text-sm font-bold";
 /** Seoul subway line colors: the brand's "many lines, one network" motif. */
 export const LINES = ["#0052A4", "#00A84D", "#EF7C1C", "#00A5DE", "#996CAC", "#E6186C", "#CD7C2F", "#747F00"];
 
-/** Mark: three colored lines run through a dashed border and out the other side. */
-export function Logo({ className = "", size = 28 }: { className?: string; size?: number }) {
+/**
+ * Logo: a speech bubble drawn as four colored arcs that never close (no borders),
+ * with a dot at the center for the person speaking.
+ */
+export function Logo({ className = "", size = 30, word = true }: { className?: string; size?: number; word?: boolean }) {
+  const arcs = [LINES[0], LINES[1], LINES[2], LINES[5]];
   return (
-    <span className={`inline-flex items-center gap-2 font-display text-lg font-extrabold tracking-tight ${className}`}>
-      <svg width={size} height={size} viewBox="0 0 28 28" aria-hidden="true">
-        <circle cx="14" cy="14" r="10" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="3 3" opacity=".7" />
-        <path d="M3 19 L19 3" stroke={LINES[1]} strokeWidth="3" strokeLinecap="round" />
-        <path d="M6 24 L25 5" stroke={LINES[2]} strokeWidth="3" strokeLinecap="round" />
-        <path d="M11 26 L26 11" stroke={LINES[3]} strokeWidth="3" strokeLinecap="round" />
+    <span className={`inline-flex items-center gap-2 ${className}`}>
+      <svg width={size} height={size} viewBox="0 0 36 36" aria-hidden="true" className="shrink-0">
+        <g transform="rotate(-40 18 17)">
+          {arcs.map((c, i) => (
+            <circle key={c} cx="18" cy="17" r="12" fill="none" stroke={c} strokeWidth="5" strokeLinecap="round" pathLength={100} strokeDasharray="14 86" strokeDashoffset={-i * 25} />
+          ))}
+        </g>
+        <path d="M11.5 26.6 L7.5 33.5 L16 29.4 Z" fill={arcs[1]} />
+        <circle cx="18" cy="17" r="3.4" fill="currentColor" />
       </svg>
-      BOUNDLESS
+      {word && <span className="font-display text-[20px] leading-none font-extrabold tracking-[-0.03em]">boundless</span>}
     </span>
   );
 }
@@ -49,6 +57,13 @@ export function Flag({ code, h = 14, round = false, className = "" }: { code: st
       unoptimized
       className={`inline-block shrink-0 object-cover shadow-[0_0_0_1px_rgba(0,0,0,.1)] ${round ? "rounded-full" : "rounded-[3px]"} ${className}`}
     />
+  );
+}
+
+/** The culture's landmark or landscape silhouette (static markup from lib/landmarks). */
+export function Landmark({ culture, className = "" }: { culture: Culture; className?: string }) {
+  return (
+    <svg viewBox="0 0 400 120" preserveAspectRatio="xMidYMax meet" className={className} aria-hidden="true" dangerouslySetInnerHTML={{ __html: landmarkMarkup(culture) }} />
   );
 }
 
@@ -68,15 +83,29 @@ export function Avatar({ code, size = 40 }: { code: string; size?: number }) {
   );
 }
 
-/** A topic drawn as a subway line badge. */
-export function TopicBadge({ id, t, href }: { id: string; t: T; href?: string }) {
+/** Member level (points from answers and helpful votes). */
+export function LevelBadge({ points, t }: { points: number; t: T }) {
+  const l = levelOf(points);
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full px-1.5 py-px text-[11px] font-bold whitespace-nowrap" style={{ background: l.color + "1A", color: l.color }}>
+      <Icon name="sparkles" size={11} />
+      {t(l.ko)}
+    </span>
+  );
+}
+
+/** A board, with its icon on its color. */
+export function BoardBadge({ id, t, href }: { id: string; t: T; href?: string }) {
+  const b = boardOf(id);
   const inner = (
     <>
-      <span className="size-2.5 rounded-full ring-2 ring-white" style={{ background: topicColor(id) }} />
-      {topicLabel(id, t)}
+      <span className="flex size-[18px] items-center justify-center rounded-full text-white" style={{ background: b.color }}>
+        <Icon name={b.icon} size={11} />
+      </span>
+      {t(b.ko)}
     </>
   );
-  const cls = "inline-flex items-center gap-1.5 rounded-full bg-ink/[.05] px-2.5 py-0.5 text-xs font-semibold";
+  const cls = "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-ink/[.05] py-0.5 pr-2.5 pl-0.5 text-xs font-semibold";
   return href ? (
     <Link href={href} className={`${cls} hover:bg-ink/10`}>
       {inner}
@@ -86,12 +115,52 @@ export function TopicBadge({ id, t, href }: { id: string; t: T; href?: string })
   );
 }
 
+/** 말머리, written the way Korean communities do: [질문] */
+export function TagText({ board, tagId, t }: { board: string; tagId: string; t: T }) {
+  return <span className="mr-1 font-bold whitespace-nowrap text-primary">[{t(tagOf(board, tagId).ko)}]</span>;
+}
+
+export function MarketLine({ post, t }: { post: Pick<PostRow, "price" | "deal" | "kind">; t: T }) {
+  if (post.price === null) return null;
+  const deal = DEALS.find((d) => d.id === post.deal) ?? DEALS[0];
+  // Giveaways read as 나눔중 / 나눔완료 instead of 판매중 / 거래완료.
+  const label = post.kind === "free" ? (deal.id === "open" ? "나눔중" : deal.id === "done" ? "나눔완료" : deal.ko) : deal.ko;
+  return (
+    <span className="inline-flex items-center gap-2">
+      <span className="font-display text-base font-extrabold whitespace-nowrap">{post.kind === "free" ? t("나눔") : `${post.price.toLocaleString("ko-KR")}${t("원")}`}</span>
+      <span className={`${tag} ${deal.id === "done" ? "bg-ink/10 text-ink/60" : deal.id === "reserved" ? "bg-amber-100 text-amber-900" : "bg-emerald-100 text-emerald-900"}`}>{t(label)}</span>
+    </span>
+  );
+}
+
+export function EventLine({ post, t }: { post: Pick<PostRow, "starts_on" | "ends_on" | "place">; t: T }) {
+  if (!post.starts_on && !post.place) return null;
+  const d = (s: string) => s.slice(5).replace("-", ".");
+  return (
+    <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] font-semibold">
+      {post.starts_on && (
+        <span className="inline-flex items-center gap-1 whitespace-nowrap" title={t("기간")}>
+          <Icon name="ticket" size={14} />
+          {d(post.starts_on)}
+          {post.ends_on && post.ends_on !== post.starts_on && ` – ${d(post.ends_on)}`}
+        </span>
+      )}
+      {post.place && (
+        <span className="inline-flex items-center gap-1" title={t("장소")}>
+          <Icon name="pin" size={14} />
+          {post.place}
+        </span>
+      )}
+    </span>
+  );
+}
+
 /** Self-declared nationality, colored with that culture's palette. */
 export function NationalityChip({ code, lang, prefix }: { code: string; lang: Lang; prefix?: string }) {
   const c = cultureOf(code).c;
   return (
     <span
-      className="inline-flex max-w-full items-center gap-1.5 rounded-full border py-0.5 pr-2.5 pl-1.5 text-xs font-semibold"
+      className="inline-flex max-w-full items-center gap-1.5 rounded-full border py-0.5 pr-2.5 pl-1.5 text-xs font-semibold whitespace-nowrap"
       style={{ background: c.soft, color: c.ink, borderColor: c.primary + "40" } as CSSProperties}
     >
       <Flag code={code} h={12} />
@@ -111,7 +180,7 @@ export function StationLabel({ children, className = "" }: { children: ReactNode
 }
 
 /** Page banner: soft culture color with the member's pattern fading in from the right. */
-export function PageHead({ line, title, desc }: { line: string; title: string; desc?: string }) {
+export function PageHead({ line, title, desc, children }: { line: string; title: string; desc?: string; children?: ReactNode }) {
   return (
     <header className="relative overflow-hidden bg-soft px-5 pt-6 pb-7 md:mx-4 md:mt-6 md:rounded-3xl md:px-8 md:pt-8 md:pb-9">
       <span
@@ -123,6 +192,7 @@ export function PageHead({ line, title, desc }: { line: string; title: string; d
         <StationLabel className="text-primary">{line}</StationLabel>
         <h1 className="mt-2 font-display text-[28px] leading-tight font-extrabold tracking-tight md:text-4xl">{title}</h1>
         {desc && <p className="mt-2 max-w-xl text-sm leading-relaxed opacity-80 md:text-[15px]">{desc}</p>}
+        {children}
       </div>
     </header>
   );
@@ -152,32 +222,34 @@ export function Notice({ tone = "info", label, title, children }: { tone?: "info
 
 export function Stat({ icon, n, label }: { icon: "helpful" | "comment"; n: number; label: string }) {
   return (
-    <span className="inline-flex items-center gap-1" aria-label={`${label} ${n}`}>
+    <span className="inline-flex items-center gap-1 whitespace-nowrap" aria-label={`${label} ${n}`}>
       <Icon name={icon} size={15} />
       {n}
     </span>
   );
 }
 
-/** Feed card: who asked (anonymous + culture), what, and the most helpful answer so far. */
-export function PostCard({ post, lang, t }: { post: PostRow; lang: Lang; t: T }) {
-  const waiting = post.kind === "question" && post.comments === 0 && !post.solved;
+/** Feed card: who wrote it (anonymous + culture + level), where, what, and the best answer so far. */
+export function PostCard({ post, lang, t, showBoard = true }: { post: PostRow; lang: Lang; t: T; showBoard?: boolean }) {
+  const board = boardOf(post.topic);
+  const asks = board.tags.find((x) => x.id === post.kind)?.asks;
+  const waiting = asks && post.comments === 0 && !post.solved;
   return (
     <Link href={`/posts/${post.id}`} className={`${card} group block p-4 transition hover:-translate-y-0.5 hover:shadow-[0_10px_30px_-12px_rgba(16,24,40,.25)] md:p-5`}>
       <div className="flex gap-3">
         <Avatar code={post.nationality} size={42} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 text-[13px]">
-            <span className="font-bold">{t("이웃")}</span>
-            <span className="truncate opacity-60">
+            <span className="font-bold whitespace-nowrap">{t("이웃")}</span>
+            <LevelBadge points={post.points} t={t} />
+            <span className="min-w-0 truncate opacity-60">
               · {countryName(post.nationality, lang)}
               {post.region && ` · ${regionLabel(post.region, t)}`}
             </span>
             <span className="ml-auto shrink-0 opacity-50">{timeAgo(post.created_at, lang)}</span>
           </div>
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-            <span className={`${tag} ${post.kind === "question" ? "bg-primary text-paper" : "bg-soft text-ink"}`}>{kindLabel(post.kind, t)}</span>
-            <TopicBadge id={post.topic} t={t} />
+            {showBoard && <BoardBadge id={post.topic} t={t} />}
             <span className={`${tag} bg-ink/[.05]`} title={t("원문")}>
               <Icon name="globe" size={12} />
               {langAutonym(post.lang, lang)}
@@ -190,7 +262,13 @@ export function PostCard({ post, lang, t }: { post: PostRow; lang: Lang; t: T })
             )}
             {waiting && <span className={`${tag} border border-extra/40 text-extra`}>{t("답변을 기다려요")}</span>}
           </div>
-          <h3 className="mt-2.5 font-display text-[17px] leading-snug font-bold [overflow-wrap:anywhere] group-hover:underline md:text-lg">{post.title}</h3>
+          <h3 className="mt-2.5 font-display text-[17px] leading-snug font-bold [overflow-wrap:anywhere] group-hover:underline md:text-lg">
+            <TagText board={post.topic} tagId={post.kind} t={t} />
+            {post.title}
+          </h3>
+          {(board.extra === "market" || board.extra === "event") && (
+            <div className="mt-1.5">{board.extra === "market" ? <MarketLine post={post} t={t} /> : <EventLine post={post} t={t} />}</div>
+          )}
           <p className="mt-1 line-clamp-2 text-sm leading-relaxed opacity-70 [overflow-wrap:anywhere]">{post.body}</p>
 
           {post.top_answer && (
@@ -208,7 +286,7 @@ export function PostCard({ post, lang, t }: { post: PostRow; lang: Lang; t: T })
               <Stat icon="helpful" n={post.likes} label={t("도움돼요")} />
               <Stat icon="comment" n={post.comments} label={t("댓글")} />
             </span>
-            {waiting && <span className="ml-auto font-bold text-primary">{t("답변하기")} →</span>}
+            {waiting && <span className="ml-auto font-bold whitespace-nowrap text-primary">{t("답변하기")} →</span>}
           </div>
         </div>
       </div>
@@ -216,13 +294,13 @@ export function PostCard({ post, lang, t }: { post: PostRow; lang: Lang; t: T })
   );
 }
 
-export function SignInRequired({ t, next }: { t: T; next: string }) {
+export function SignInRequired({ t, next, title, desc }: { t: T; next: string; title?: string; desc?: string }) {
   return (
     <div className="mx-auto max-w-3xl p-4 md:pt-8">
       <div className="rounded-2xl border-l-4 border-primary bg-soft/60 p-5">
         <StationLabel className="text-primary">{t("로그인 필요")}</StationLabel>
-        <p className="mt-1.5 font-display text-lg font-bold">{t("로그인하면 볼 수 있어요")}</p>
-        <p className="mt-1 text-sm opacity-80">{t("이 정보는 내 계정에서만 보여요.")}</p>
+        <p className="mt-1.5 font-display text-lg font-bold">{title ?? t("로그인하면 볼 수 있어요")}</p>
+        <p className="mt-1 text-sm opacity-80">{desc ?? t("이 정보는 내 계정에서만 보여요.")}</p>
         <div className="mt-4 flex flex-wrap gap-2">
           <Link href={`/login?next=${encodeURIComponent(next)}`} className={btn}>
             {t("로그인")}
@@ -246,7 +324,7 @@ export function HelpItem({ h, lang, t }: { h: Help; lang: Lang; t: T }) {
       className={`${card} flex items-start gap-3 p-3.5 transition hover:border-primary/40`}
     >
       <span
-        className={`flex h-9 shrink-0 items-center gap-1 rounded-xl px-2.5 font-display text-sm font-extrabold ${h.tel ? "bg-primary text-paper" : "bg-soft text-primary"}`}
+        className={`flex h-9 shrink-0 items-center gap-1 rounded-xl px-2.5 font-display text-sm font-extrabold whitespace-nowrap ${h.tel ? "bg-primary text-paper" : "bg-soft text-primary"}`}
       >
         <Icon name={h.tel ? "phone" : "external"} size={14} />
         {h.tel}

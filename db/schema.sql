@@ -109,3 +109,39 @@ CREATE TABLE IF NOT EXISTS boundless.saves (
   created_at timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (user_id, post_id)
 );
+
+-- Boards, country lounges, marketplace/event fields, translations, member points. Idempotent.
+ALTER TABLE boundless.posts DROP CONSTRAINT IF EXISTS posts_kind_check; -- kind is now the board's 말머리 (tag)
+ALTER TABLE boundless.posts
+  ADD COLUMN IF NOT EXISTS space text NOT NULL DEFAULT 'global', -- 'global', or a country code: that nationality only
+  ADD COLUMN IF NOT EXISTS price int CHECK (price IS NULL OR price >= 0), -- marketplace, KRW
+  ADD COLUMN IF NOT EXISTS deal text, -- marketplace: open | reserved | done
+  ADD COLUMN IF NOT EXISTS place text CHECK (place IS NULL OR char_length(place) <= 80),
+  ADD COLUMN IF NOT EXISTS starts_on date, -- pop-ups and events
+  ADD COLUMN IF NOT EXISTS ends_on date;
+CREATE INDEX IF NOT EXISTS posts_space_topic_idx ON boundless.posts (space, topic, created_at DESC);
+UPDATE boundless.posts SET topic = 'visa' WHERE topic = 'procedures';
+UPDATE boundless.posts SET topic = 'chat' WHERE topic = 'daily';
+UPDATE boundless.posts SET kind = 'review' WHERE kind = 'experience';
+
+ALTER TABLE boundless.users ADD COLUMN IF NOT EXISTS read_lang text; -- translation target; NULL = from nationality
+
+-- ponytail: cache keyed by 'p:<post id>' / 'c:<comment id>'; rows of deleted items linger until a cleanup job exists.
+CREATE TABLE IF NOT EXISTS boundless.translations (
+  item text NOT NULL,
+  lang text NOT NULL,
+  title text,
+  body text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (item, lang)
+);
+
+-- Points = posts + 2 x answers on others' posts + 3 x helpful votes received.
+CREATE OR REPLACE VIEW boundless.member_points AS
+SELECT u.id AS user_id, u.nationality,
+  (SELECT count(*)::int FROM boundless.posts p WHERE p.user_id = u.id AND NOT p.hidden) AS posts,
+  (SELECT count(*)::int FROM boundless.comments c JOIN boundless.posts p ON p.id = c.post_id
+     WHERE c.user_id = u.id AND p.user_id <> u.id AND NOT c.hidden) AS answers,
+  ((SELECT count(*)::int FROM boundless.post_likes l JOIN boundless.posts p ON p.id = l.post_id WHERE p.user_id = u.id)
+   + (SELECT count(*)::int FROM boundless.comment_likes l JOIN boundless.comments c ON c.id = l.comment_id WHERE c.user_id = u.id)) AS helped
+FROM boundless.users u;

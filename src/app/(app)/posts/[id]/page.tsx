@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { addComment, deleteOwn, toggleLike, toggleSave, toggleSolved } from "@/app/actions";
+import { addComment, deleteOwn, setDeal, toggleLike, toggleSave, toggleSolved } from "@/app/actions";
 import { CommentForm } from "@/components/forms";
 import { Icon } from "@/components/Icon";
 import { RightRail } from "@/components/Community";
-import { Avatar, BackLink, HelpItem, NationalityChip, Notice, TopicBadge, pill, tag } from "@/components/ui";
+import { Translatable } from "@/components/Translate";
+import { Avatar, BackLink, BoardBadge, EventLine, Flag, HelpItem, LevelBadge, MarketLine, NationalityChip, Notice, TagText, pill, tag } from "@/components/ui";
 import { getT, getUser } from "@/lib/auth";
+import { boardOf, DEALS } from "@/lib/boards";
 import { helpFor } from "@/lib/guide";
-import { kindLabel, langName, regionLabel, timeAgo, type T } from "@/lib/i18n";
+import { countryName, langName, readLangOf, regionLabel, timeAgo, type T } from "@/lib/i18n";
 import { getComments, getPost, type CommentRow } from "@/lib/posts";
 
 export default async function PostPage(props: PageProps<"/posts/[id]">) {
@@ -15,6 +17,19 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
   const [{ lang, t }, user] = await Promise.all([getT(), getUser()]);
   const post = await getPost(user?.id ?? null, id);
   if (!post) notFound();
+
+  // Country lounges are private to members of that nationality.
+  if (post.space !== "global" && post.space !== user?.nationality) {
+    return (
+      <div className="mx-auto max-w-3xl p-4 md:pt-8">
+        <Notice label={t("접근 제한")} title={t("{country} 이웃만 볼 수 있는 라운지 글이에요", { country: countryName(post.space, lang) })}>
+          <Link href="/feed" className="font-bold text-primary underline">
+            {t("피드로 돌아가기")}
+          </Link>
+        </Notice>
+      </div>
+    );
+  }
 
   if (post.hidden || post.blocked) {
     return (
@@ -34,11 +49,17 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
   const help = helpFor(post.topic);
   const reply = addComment.bind(null, post.id);
   const signIn = `/login?next=/posts/${post.id}`;
+  const board = boardOf(post.topic);
+  const lounge = post.space !== "global";
+  const readLang = readLangOf(user, lang);
+  const target = langName(readLang, lang).split(" · ")[0];
+  const canTranslate = post.lang !== readLang;
+  const asks = board.tags.find((x) => x.id === post.kind)?.asks;
 
   return (
     <div className="grid gap-6 md:px-2 xl:grid-cols-[minmax(0,1fr)_320px] xl:px-6">
       <article className="min-w-0 pb-6">
-        <BackLink href="/feed" label={t("뒤로")} />
+        <BackLink href={lounge ? "/lounge" : `/b/${post.topic}`} label={lounge ? t("{country} 라운지", { country: countryName(post.space, lang) }) : t(board.ko)} />
         <header className="relative overflow-hidden bg-soft px-5 pt-5 pb-6 md:mx-4 md:rounded-3xl md:px-7">
           <span
             className="bg-pattern absolute inset-y-0 right-0 w-1/3 opacity-25 [mask-image:linear-gradient(to_left,black,transparent)]"
@@ -46,12 +67,20 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
             aria-hidden="true"
           />
           <div className="relative flex flex-wrap gap-1.5">
-            <span className={`${tag} bg-primary text-paper`}>{kindLabel(post.kind, t)}</span>
-            <TopicBadge id={post.topic} t={t} href={`/feed?topic=${post.topic}`} />
-            <span className={`${tag} bg-white/70`}>
-              <Icon name="pin" size={12} />
-              {regionLabel(post.region, t)}
-            </span>
+            {lounge ? (
+              <span className={`${tag} bg-ink text-white`}>
+                <Flag code={post.space} h={10} />
+                {t("라운지")}
+              </span>
+            ) : (
+              <BoardBadge id={post.topic} t={t} href={`/b/${post.topic}`} />
+            )}
+            {post.region && (
+              <span className={`${tag} bg-white/70`}>
+                <Icon name="pin" size={12} />
+                {regionLabel(post.region, t)}
+              </span>
+            )}
             {post.solved && (
               <span className={`${tag} bg-emerald-700 text-white`}>
                 <Icon name="check" size={12} />
@@ -60,11 +89,16 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
             )}
           </div>
           <h1 className="relative mt-3 font-display text-2xl leading-tight font-extrabold tracking-tight [overflow-wrap:anywhere] md:text-[32px]">
+            <TagText board={post.topic} tagId={post.kind} t={t} />
             {post.title}
           </h1>
+          {(board.extra === "market" || board.extra === "event") && (
+            <div className="relative mt-3">{board.extra === "market" ? <MarketLine post={post} t={t} /> : <EventLine post={post} t={t} />}</div>
+          )}
           <div className="relative mt-4 flex flex-wrap items-center gap-2 text-xs">
             <Avatar code={post.nationality} size={32} />
             <NationalityChip code={post.nationality} lang={lang} prefix={t("글쓴이")} />
+            <LevelBadge points={post.points} t={t} />
             <span className="opacity-70">
               {timeAgo(post.created_at, lang)}
               {post.updated_at && ` · ${t("수정됨")}`}
@@ -76,7 +110,25 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
           <p className={`${tag} mb-3 bg-ink/5`}>
             {t("원문")} · {langName(post.lang, lang)}
           </p>
-          <div className="text-base leading-[1.75] whitespace-pre-wrap [overflow-wrap:anywhere]">{post.body}</div>
+          {canTranslate ? (
+            <Translatable kind="p" id={post.id} body={post.body} lang={lang} target={target} className="text-base leading-[1.75] whitespace-pre-wrap [overflow-wrap:anywhere]" />
+          ) : (
+            <div className="text-base leading-[1.75] whitespace-pre-wrap [overflow-wrap:anywhere]">{post.body}</div>
+          )}
+          {post.mine && board.extra === "market" && (
+            <div className="mt-4 flex flex-wrap items-center gap-2 rounded-2xl bg-paper p-3 text-sm">
+              <span className="font-bold">{t("거래 상태")}</span>
+              {DEALS.map((d) => (
+                <form key={d.id} action={setDeal}>
+                  <input type="hidden" name="post" value={post.id} />
+                  <input type="hidden" name="deal" value={d.id} />
+                  <button aria-pressed={post.deal === d.id} className={`${pill} ${post.deal === d.id ? "border-primary bg-primary text-paper" : "border-ink/15 bg-white"}`}>
+                    {t(d.ko)}
+                  </button>
+                </form>
+              ))}
+            </div>
+          )}
 
           {/* Action bar: helpful, save, solved — then author or reader tools */}
           <div className="mt-5 flex flex-wrap items-center gap-2">
@@ -96,7 +148,7 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
                     {post.saved ? t("저장됨") : t("저장")}
                   </button>
                 </form>
-                {post.mine && post.kind === "question" && (
+                {post.mine && asks && (
                   <form action={toggleSolved}>
                     <input type="hidden" name="post" value={post.id} />
                     <button className={`${pill} border-emerald-700/40 bg-white text-emerald-800`}>
@@ -150,11 +202,11 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
           <ul className="mt-3 space-y-3">
             {top.map((c) => (
               <li key={c.id}>
-                <Comment c={c} postId={post.id} t={t} lang={lang} signedIn={!!user} />
+                <Comment c={c} postId={post.id} t={t} lang={lang} signedIn={!!user} target={target} />
                 {(repliesOf(c.id).length > 0 || user) && (
                   <div className="mt-2 ml-5 space-y-2 border-l-2 border-ink/10 pl-3">
                     {repliesOf(c.id).map((r) => (
-                      <Comment key={r.id} c={r} postId={post.id} t={t} lang={lang} signedIn={!!user} />
+                      <Comment key={r.id} c={r} postId={post.id} t={t} lang={lang} signedIn={!!user} target={target} />
                     ))}
                     {user && !c.hidden && (
                       <details>
@@ -194,7 +246,7 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
   );
 }
 
-function Comment({ c, postId, t, lang, signedIn }: { c: CommentRow; postId: string; t: T; lang: "ko" | "en"; signedIn: boolean }) {
+function Comment({ c, postId, t, lang, signedIn, target }: { c: CommentRow; postId: string; t: T; lang: "ko" | "en"; signedIn: boolean; target: string }) {
   if (c.hidden) return <p className="rounded-xl bg-white p-3.5 text-sm italic opacity-60">{t("운영 정책에 따라 가려진 댓글이에요")}</p>;
   return (
     <div
@@ -208,9 +260,12 @@ function Comment({ c, postId, t, lang, signedIn }: { c: CommentRow; postId: stri
             {c.anon_no === 0 ? t("글쓴이") : t("이웃 {n}", { n: c.anon_no })}
           </span>
           <NationalityChip code={c.nationality} lang={lang} />
+          <LevelBadge points={c.points} t={t} />
           <span className="opacity-60">{timeAgo(c.created_at, lang)}</span>
         </div>
-        <p className="mt-1.5 text-[15px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere]">{c.body}</p>
+        <div className="mt-1.5">
+          <Translatable kind="c" id={c.id} body={c.body} lang={lang} target={target} small className="text-[15px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere]" />
+        </div>
         <div className="mt-1.5 flex items-center gap-3 text-xs">
           {signedIn ? (
             <form action={toggleLike}>

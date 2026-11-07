@@ -8,7 +8,7 @@ const SESSION = "bl_session";
 const VERIFIED = "bl_verified"; // email proven by code, profile not created yet
 const SESSION_DAYS = 30;
 
-export type User = { id: string; email: string; nationality: string; nationality_changed_at: Date | null; region: string | null; seen_at: Date };
+export type User = { id: string; email: string; nationality: string; nationality_changed_at: Date | null; region: string | null; seen_at: Date; read_lang: string | null };
 
 function secret() {
   const s = process.env.SESSION_SECRET;
@@ -49,7 +49,7 @@ const cookieOpts = (maxAge: number) => ({
 export const getUser = cache(async (): Promise<User | null> => {
   const id = unseal((await cookies()).get(SESSION)?.value);
   if (!id) return null;
-  const rows = await q<User>("SELECT id, email, nationality, nationality_changed_at, region, seen_at FROM boundless.users WHERE id = $1", [id]);
+  const rows = await q<User>("SELECT id, email, nationality, nationality_changed_at, region, seen_at, read_lang FROM boundless.users WHERE id = $1", [id]);
   return rows[0] ?? null;
 });
 

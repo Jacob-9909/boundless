@@ -1,47 +1,109 @@
 import Link from "next/link";
 import { demoLogin } from "@/app/actions";
-import { CULTURES } from "@/lib/cultures";
+import { levelOf, LEVELS } from "@/lib/boards";
+import { CULTURES, DEFAULT_CULTURE } from "@/lib/cultures";
 import { HOTLINES } from "@/lib/guide";
 import { countryName, timeAgo, type Lang, type T } from "@/lib/i18n";
-import { communityStats, hotPosts, listPosts, nationalityCounts, recentActivity } from "@/lib/posts";
+import { hotPosts, listPosts, myPoints, ranking, recentActivity } from "@/lib/posts";
 import { Icon } from "./Icon";
-import { Avatar, Flag, card } from "./ui";
+import { Avatar, LevelBadge, card } from "./ui";
 
-const railTitle = "flex items-center gap-1.5 text-sm font-extrabold";
+const railTitle = "flex items-center gap-1.5 text-sm font-extrabold whitespace-nowrap";
+const MEDALS = ["#E8B23A", "#9AA4B2", "#C27A45"];
 
-/** Right-hand column: who is here, what needs an answer, what is popular, what just happened. */
+/** Right-hand column: who helps the most, my level, what needs an answer, what is popular, what just happened. */
 export async function RightRail({ viewer, lang, t }: { viewer: string | null; lang: Lang; t: T }) {
-  const [stats, counts, waiting, hot, activity] = await Promise.all([
-    communityStats(),
-    nationalityCounts(),
-    listPosts(viewer, { waiting: true, limit: 4 }),
+  const [top, mine, waiting, hot, activity] = await Promise.all([
+    ranking(5),
+    viewer ? myPoints(viewer) : Promise.resolve(null),
+    listPosts(viewer, { waiting: true, limit: 3 }),
     hotPosts(viewer),
-    recentActivity(viewer),
+    recentActivity(viewer, 4),
   ]);
+  const lv = mine ? levelOf(mine.points) : null;
   return (
     <div className="space-y-4">
-      <section className={`${card} p-4`}>
-        <p className={railTitle}>
-          <Icon name="users" size={16} className="text-primary" />
-          {t("{n}개국에서 온 이웃", { n: stats.countries })}
-        </p>
-        <p className="mt-0.5 text-xs opacity-60">{t("글 {posts}개 · 답변 {answers}개", { posts: stats.posts, answers: stats.answers })}</p>
-        <ul className="mt-3 flex flex-wrap gap-1.5">
-          {counts.map((c) => (
-            <li key={c.nationality}>
-              <Link
-                href={`/search?from=${c.nationality}`}
-                title={t("{country} 이웃의 글", { country: countryName(c.nationality, lang) })}
-                aria-label={t("{country} 이웃의 글", { country: countryName(c.nationality, lang) })}
-                className="flex items-center gap-1 rounded-full bg-paper py-0.5 pr-2 pl-0.5 text-xs font-bold transition hover:bg-soft"
-              >
-                <Avatar code={c.nationality} size={24} />
-                {c.n}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
+      {mine && lv && (
+        <section className={`${card} overflow-hidden`}>
+          <div className="bg-pattern relative bg-primary px-4 py-3 text-paper">
+            <span className="absolute inset-0 bg-gradient-to-r from-black/55 to-black/10" aria-hidden="true" />
+            <p className="relative text-xs opacity-90">{t("내 이웃 레벨")}</p>
+            <p className="relative flex items-baseline gap-2">
+              <span className="font-display text-xl font-extrabold">{t(lv.ko)}</span>
+              <span className="text-sm opacity-90">{t("{n}점", { n: mine.points })}</span>
+            </p>
+          </div>
+          <div className="p-4">
+            {lv.next ? (
+              <>
+                <div className="h-2 overflow-hidden rounded-full bg-ink/10" role="progressbar" aria-valuemin={lv.min} aria-valuemax={lv.next.min} aria-valuenow={mine.points}>
+                  <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, ((mine.points - lv.min) / (lv.next.min - lv.min)) * 100)}%` }} />
+                </div>
+                <p className="mt-1.5 text-xs opacity-70">{t("{next}까지 {n}점 남았어요", { next: t(lv.next.ko), n: lv.next.min - mine.points })}</p>
+              </>
+            ) : (
+              <p className="text-xs opacity-70">{t("최고 레벨이에요. 이웃들에게 큰 힘이 되고 있어요.")}</p>
+            )}
+            <dl className="mt-3 grid grid-cols-3 gap-2 text-center">
+              {[
+                [mine.answers, t("답변")],
+                [mine.helped, t("받은 도움돼요")],
+                [mine.rank || "-", t("전체 순위")],
+              ].map(([n, label]) => (
+                <div key={String(label)} className="rounded-xl bg-paper py-2">
+                  <dd className="font-display text-lg font-extrabold">{n}</dd>
+                  <dt className="text-[11px] opacity-60">{label}</dt>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </section>
+      )}
+
+      {top.length > 0 && (
+        <section className={`${card} p-4`}>
+          <p className={railTitle}>
+            <Icon name="trophy" size={16} className="text-[#E8B23A]" />
+            {t("도움왕 랭킹")}
+          </p>
+          <p className="mt-0.5 text-xs opacity-60">{t("답변을 많이 하고 도움돼요를 많이 받은 이웃")}</p>
+          <ol className="mt-3 space-y-2.5">
+            {top.map((r, i) => (
+              <li key={r.user_id} className="flex items-center gap-2.5">
+                <span
+                  className="flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-extrabold text-white"
+                  style={{ background: MEDALS[i] ?? "rgba(20,22,28,.35)" }}
+                >
+                  {i + 1}
+                </span>
+                <Avatar code={r.nationality} size={30} />
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-1.5">
+                    <span className="truncate text-[13px] font-bold">{t("{country} 이웃", { country: countryName(r.nationality, lang) })}</span>
+                  </span>
+                  <span className="flex items-center gap-1.5 text-[11px] opacity-70">
+                    <LevelBadge points={r.points} t={t} />
+                    {t("답변 {a} · 도움 {h}", { a: r.answers, h: r.helped })}
+                  </span>
+                </span>
+                <span className="shrink-0 font-display text-sm font-extrabold text-primary">{r.points}</span>
+              </li>
+            ))}
+          </ol>
+          <details className="mt-3 text-xs">
+            <summary className="cursor-pointer font-bold opacity-60">{t("레벨은 어떻게 오르나요?")}</summary>
+            <p className="mt-1.5 leading-relaxed opacity-70">{t("글 1점, 다른 이웃 글에 답변 2점, 도움돼요를 받으면 3점이에요.")}</p>
+            <ul className="mt-1.5 flex flex-wrap gap-1">
+              {LEVELS.map((l) => (
+                <li key={l.ko}>
+                  <LevelBadge points={l.min} t={t} />
+                  <span className="ml-0.5 opacity-50">{l.min}+</span>
+                </li>
+              ))}
+            </ul>
+          </details>
+        </section>
+      )}
 
       {waiting.length > 0 && (
         <section className={`${card} p-4`}>
@@ -56,7 +118,7 @@ export async function RightRail({ viewer, lang, t }: { viewer: string | null; la
                   <Avatar code={p.nationality} size={26} />
                   <span className="min-w-0">
                     <span className="line-clamp-2 text-[13px] leading-snug font-bold">{p.title}</span>
-                    <span className="text-xs text-primary">{t("답변하기")} →</span>
+                    <span className="text-xs text-primary">{t("답변하고 +2점")} →</span>
                   </span>
                 </Link>
               </li>
@@ -106,7 +168,6 @@ export async function RightRail({ viewer, lang, t }: { viewer: string | null; la
                     <span className="font-bold">{t("{country} 이웃이 답했어요", { country: countryName(a.nationality, lang) })}</span>
                     <span className="opacity-50"> · {timeAgo(a.created_at, lang)}</span>
                     <span className="block truncate opacity-70">“{a.body}”</span>
-                    <span className="block truncate opacity-50">{a.title}</span>
                   </span>
                 </Link>
               </li>
@@ -140,28 +201,43 @@ export async function RightRail({ viewer, lang, t }: { viewer: string | null; la
   );
 }
 
-/** Buttons that enter as a country's sample neighbor (judges, demos). */
-export function DemoSwitch({ t, lang, current, compact = false }: { t: T; lang: Lang; current?: string; compact?: boolean }) {
-  const codes = [...CULTURES.map((c) => c.code), "XX"];
+/** Sample-account switcher: every country with its name, greeting and avatar, current one checked. */
+export function AccountSwitcher({ t, lang, current, up = true }: { t: T; lang: Lang; current: string; up?: boolean }) {
+  const items = [...CULTURES, DEFAULT_CULTURE].map((c) => ({ c, code: c.code === "XX" ? "CA" : c.code }));
   return (
-    <ul className={`grid gap-1.5 ${compact ? "grid-cols-8" : "grid-cols-4 sm:grid-cols-8"}`}>
-      {codes.map((code) => {
-        const flag = code === "XX" ? "CA" : code;
-        const name = code === "XX" ? t("그 밖의 나라 (캐나다)") : countryName(code, lang);
-        return (
-          <li key={code}>
-            <form action={demoLogin.bind(null, code)}>
-              <button
-                title={name}
-                aria-label={t("{country} 샘플 계정으로 입장", { country: name })}
-                className={`flex w-full items-center justify-center rounded-lg border p-1.5 transition hover:border-primary ${current === flag ? "border-primary bg-soft" : "border-ink/10 bg-white"}`}
-              >
-                <Flag code={flag} h={compact ? 12 : 16} />
-              </button>
-            </form>
-          </li>
-        );
-      })}
-    </ul>
+    <details className="group relative">
+      <summary className="flex h-10 list-none items-center gap-2 rounded-xl bg-paper px-3 text-[13px] font-bold text-primary [&::-webkit-details-marker]:hidden">
+        <Icon name="users" size={16} />
+        {t("다른 나라 이웃으로 바꾸기")}
+        <Icon name="down" size={16} className="ml-auto transition group-open:rotate-180" />
+      </summary>
+      <div className={`absolute left-0 z-40 w-[300px] rounded-2xl bg-white p-2 shadow-2xl ring-1 ring-black/10 ${up ? "bottom-full mb-2" : "top-full mt-2"}`}>
+        <p className="px-2 pt-1 pb-2 text-xs opacity-60">{t("나라를 누르면 그 나라 샘플 이웃으로 바로 바뀌어요.")}</p>
+        <ul className="max-h-[60vh] space-y-0.5 overflow-y-auto">
+          {items.map(({ c, code }) => {
+            const on = code === current;
+            return (
+              <li key={c.code}>
+                <form action={demoLogin.bind(null, c.code)}>
+                  <button
+                    aria-current={on ? "true" : undefined}
+                    className={`flex w-full items-center gap-3 rounded-xl px-2 py-1.5 text-left transition ${on ? "bg-soft" : "hover:bg-paper"}`}
+                  >
+                    <Avatar code={code} size={32} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-bold">{c.code === "XX" ? t("그 밖의 나라 (캐나다)") : countryName(code, lang)}</span>
+                      <span className="block truncate font-culture text-xs opacity-70" style={{ fontFamily: `var(${c.font}), var(--font-brand), sans-serif` }}>
+                        {c.hello} · {c.native}
+                      </span>
+                    </span>
+                    {on && <Icon name="check" size={18} className="text-primary" />}
+                  </button>
+                </form>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </details>
   );
 }
