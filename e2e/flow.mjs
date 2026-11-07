@@ -23,7 +23,15 @@ async function newUser() {
 
 async function signIn(page, email, culture) {
   await page.goto(BASE + "/login");
-  if (culture) await page.getByRole("radio", { name: culture }).click();
+  if (culture) {
+    // A click that lands before hydration is dropped (cold dev server in CI); click until the pick sticks.
+    const pick = page.getByRole("radio", { name: culture });
+    for (let i = 0; (await pick.getAttribute("aria-checked")) !== "true"; i++) {
+      assert.ok(i < 20, `culture ${culture} was never selected`);
+      await pick.click();
+      await page.waitForTimeout(300);
+    }
+  }
   await page.getByLabel("Email").fill(email);
   await page.getByRole("button", { name: "Send sign-in code" }).click();
   const code = (await page.locator("b.tracking-widest").textContent()).trim();
