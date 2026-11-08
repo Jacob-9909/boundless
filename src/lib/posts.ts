@@ -8,6 +8,8 @@ export type PostRow = {
   space: string; // 'global' or a country code
   lang: string;
   region: string | null;
+  visa: string | null;
+  accepted_comment_id: string | null;
   title: string;
   body: string;
   price: number | null;
@@ -26,7 +28,7 @@ export type PostRow = {
   liked: boolean;
   saved: boolean;
   mine: boolean;
-  top_answer: { body: string; nationality: string; likes: number } | null;
+  top_answer: { body: string; nationality: string; likes: number; accepted: boolean } | null;
 };
 
 export type CommentRow = {
@@ -52,7 +54,7 @@ const ASKS = `p.kind = ANY('{${ASKING_TAGS.join(",")}}')`;
 const WAITING = `${ASKS} AND NOT p.solved AND NOT EXISTS (SELECT 1 FROM boundless.comments c WHERE c.post_id = p.id AND NOT c.hidden)`;
 
 // $1 is always the viewer's user id (or NULL for visitors).
-const POST_COLS = `p.id, p.topic, p.kind, p.space, p.lang, p.region, p.title, p.body, p.price, p.deal, p.place,
+const POST_COLS = `p.id, p.topic, p.kind, p.space, p.lang, p.region, p.visa, p.accepted_comment_id, p.title, p.body, p.price, p.deal, p.place,
   to_char(p.starts_on, 'YYYY-MM-DD') AS starts_on, to_char(p.ends_on, 'YYYY-MM-DD') AS ends_on,
   p.hidden, p.solved, p.created_at, p.updated_at, u.nationality, ${POINTS("p.user_id")} AS points,
   (SELECT count(*)::int FROM boundless.comments c WHERE c.post_id = p.id AND NOT c.hidden) AS comments,
@@ -60,12 +62,12 @@ const POST_COLS = `p.id, p.topic, p.kind, p.space, p.lang, p.region, p.title, p.
   EXISTS (SELECT 1 FROM boundless.post_likes l WHERE l.post_id = p.id AND l.user_id = $1::uuid) AS liked,
   EXISTS (SELECT 1 FROM boundless.saves s WHERE s.post_id = p.id AND s.user_id = $1::uuid) AS saved,
   (p.user_id = $1::uuid) IS TRUE AS mine,
-  (SELECT json_build_object('body', left(a.body, 160), 'nationality', au.nationality, 'likes', a.likes)
+  (SELECT json_build_object('body', left(a.body, 160), 'nationality', au.nationality, 'likes', a.likes, 'accepted', a.id = p.accepted_comment_id)
      FROM (SELECT c.*, (SELECT count(*)::int FROM boundless.comment_likes l WHERE l.comment_id = c.id) AS likes
            FROM boundless.comments c WHERE c.post_id = p.id AND c.parent_id IS NULL AND NOT c.hidden AND c.user_id <> p.user_id
              AND c.user_id NOT IN (SELECT blocked_id FROM boundless.blocks WHERE user_id = $1::uuid)) a
      JOIN boundless.users au ON au.id = a.user_id
-     ORDER BY a.likes DESC, a.created_at LIMIT 1) AS top_answer`;
+     ORDER BY a.id = p.accepted_comment_id DESC, a.likes DESC, a.created_at LIMIT 1) AS top_answer`;
 const FROM = "FROM boundless.posts p JOIN boundless.users u ON u.id = p.user_id";
 
 // Content from accounts the viewer blocked is never shown to them.
@@ -86,6 +88,8 @@ export function listPosts(
     query?: string;
     nationality?: string;
     region?: string;
+    visa?: string;
+    words?: string[]; // title matches any of these (similar-post hints while writing)
     before?: string;
     sort?: "new" | "likes";
     waiting?: boolean; // questions nobody has answered yet
@@ -109,6 +113,8 @@ export function listPosts(
     );
   if (opts.nationality) add("u.nationality = ?", opts.nationality);
   if (opts.region) add("p.region = ?", opts.region);
+  if (opts.visa) add("p.visa = ?", opts.visa);
+  if (opts.words?.length) add("p.title ILIKE ANY(?)", opts.words.map(likeEscape));
   if (opts.waiting) where.push(WAITING);
   // Cursor for "load more": created_at of the last post on the previous page.
   if (opts.before && !Number.isNaN(Date.parse(opts.before))) add("p.created_at < ?::timestamptz", opts.before);

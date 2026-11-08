@@ -160,3 +160,8 @@ CREATE TABLE IF NOT EXISTS boundless.appeals (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS appeals_post_once ON boundless.appeals (post_id) WHERE post_id IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS appeals_comment_once ON boundless.appeals (comment_id) WHERE comment_id IS NOT NULL;
+
+-- Residence status per post (optional, life boards only) and the answer the author accepted. Idempotent.
+ALTER TABLE boundless.posts
+  ADD COLUMN IF NOT EXISTS visa text, -- VISAS id in src/lib/i18n.ts, NULL = not given
+  ADD COLUMN IF NOT EXISTS accepted_comment_id bigint REFERENCES boundless.comments ON DELETE SET NULL;

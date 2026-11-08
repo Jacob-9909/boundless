@@ -4,6 +4,7 @@ import { moderate, resolveAppeal } from "@/app/actions";
 import { NationalityChip, Notice, PageHead } from "@/components/ui";
 import { canViewQueue, getT, getUser, isAdmin } from "@/lib/auth";
 import { q } from "@/lib/db";
+import { ASKING_TAGS } from "@/lib/boards";
 import { REPORT_REASONS, timeAgo } from "@/lib/i18n";
 
 export const metadata = { title: "Moderation" };
@@ -26,7 +27,7 @@ export default async function AdminPage() {
   // The demo moderator (judges) sees the real queue, but cannot act on it.
   const readOnly = !isAdmin(user);
 
-  const [open, events, appeals] = await Promise.all([
+  const [open, events, appeals, [qa]] = await Promise.all([
     q<Open>(
       `SELECT r.id, r.reason, r.details, r.created_at,
          COALESCE(r.post_id, c.post_id) AS post_id, r.comment_id IS NOT NULL AS is_comment,
@@ -52,6 +53,13 @@ export default async function AdminPage() {
        JOIN boundless.users u ON u.id = a.user_id
        WHERE a.status = 'received' ORDER BY a.created_at LIMIT 50`,
     ),
+    // Success measure: of the questions asked this week, how many the asker marked solved or settled with an accepted answer.
+    q<{ asked: number; solved: number; accepted: number }>(
+      `SELECT count(*)::int AS asked, count(*) FILTER (WHERE solved)::int AS solved,
+         count(*) FILTER (WHERE accepted_comment_id IS NOT NULL)::int AS accepted
+       FROM boundless.posts WHERE created_at > now() - interval '7 days' AND NOT hidden AND kind = ANY($1)`,
+      [ASKING_TAGS],
+    ),
   ]);
 
   return (
@@ -66,6 +74,14 @@ export default async function AdminPage() {
         <section className="rounded-2xl border border-ink/10 bg-white p-4 text-sm">
           <p className="font-bold">{t("최근 7일 이용 지표")}</p>
           <p className="mt-1 opacity-80">{events.length ? events.map((e) => `${e.name} ${e.n}`).join(" · ") : "—"}</p>
+          <p className="mt-1 opacity-80" data-solve-rate>
+            {t("질문 {asked}개 중 해결 {solved}개 ({rate}%), 채택 {accepted}개", {
+              asked: qa.asked,
+              solved: qa.solved,
+              accepted: qa.accepted,
+              rate: qa.asked ? Math.round((qa.solved / qa.asked) * 100) : 0,
+            })}
+          </p>
         </section>
         {appeals.length > 0 && (
           <section>

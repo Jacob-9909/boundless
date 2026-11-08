@@ -21,7 +21,8 @@ import {
 } from "@/lib/auth";
 import { isId, q, track } from "@/lib/db";
 import { boardOf, DEALS, isBoard, LOUNGE } from "@/lib/boards";
-import { isCountry, isLang, isRegion, POST_LANGS, READ_LANGS, readLangOf, REPORT_REASONS } from "@/lib/i18n";
+import { isCountry, isLang, isRegion, isVisa, POST_LANGS, READ_LANGS, readLangOf, REPORT_REASONS } from "@/lib/i18n";
+import { listPosts } from "@/lib/posts";
 import { translateItem } from "@/lib/translate";
 import { sendCodeMail } from "@/lib/mail";
 
@@ -139,6 +140,7 @@ function readPost(f: FormData) {
     body: str(f, "body"),
     lang: str(f, "lang"),
     region: str(f, "region"),
+    visa: str(f, "visa"),
     price: str(f, "price"),
     place: str(f, "place"),
     starts_on: str(f, "starts_on"),
@@ -155,6 +157,7 @@ function readPost(f: FormData) {
   else if (v.body.length < 2 || v.body.length > 5000) error = "본문은 2~5000자로 적어 주세요.";
   else if (!POST_LANGS.includes(v.lang)) error = "원문 언어를 골라 주세요.";
   else if (v.region && !isRegion(v.region)) error = "지역을 다시 골라 주세요.";
+  else if (v.visa && !isVisa(v.visa)) error = "체류자격을 다시 골라 주세요.";
   else if (board.extra === "market" && v.kind !== "free" && !/^\d{1,9}$/.test(v.price.replace(/[,\s]/g, ""))) error = "가격을 숫자로 적어 주세요. 나눔이면 말머리를 '나눔'으로 바꿔 주세요.";
   else if (v.place.length > 80) error = "장소는 80자 이내로 적어 주세요.";
   else if ((v.starts_on && !DATE_RE.test(v.starts_on)) || (v.ends_on && !DATE_RE.test(v.ends_on))) error = "날짜를 다시 골라 주세요.";
@@ -165,6 +168,8 @@ function readPost(f: FormData) {
     place: v.place || null,
     starts_on: board.extra === "event" ? v.starts_on || null : null,
     ends_on: board.extra === "event" ? v.ends_on || null : null,
+    // Only life boards ask for it; anywhere else the field is ignored.
+    visa: !lounge && board.group === "life" ? v.visa || null : null,
   };
   return { values, error, extra, lounge };
 }
@@ -175,10 +180,10 @@ export async function createPost(_: PostState, f: FormData): Promise<PostState> 
   if (error) return { error, values };
   if ((await recentCount("posts", user.id)) >= 5) return { error: "글은 1시간에 5개까지 올릴 수 있어요.", values };
   const rows = await q<{ id: string }>(
-    `INSERT INTO boundless.posts (user_id, space, topic, kind, lang, region, title, body, price, deal, place, starts_on, ends_on)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id`,
+    `INSERT INTO boundless.posts (user_id, space, topic, kind, lang, region, title, body, price, deal, place, starts_on, ends_on, visa)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id`,
     [user.id, lounge ? user.nationality : "global", values.board, values.kind, values.lang, values.region || null, values.title, values.body,
-     extra.price, extra.deal, extra.place, extra.starts_on, extra.ends_on]
+     extra.price, extra.deal, extra.place, extra.starts_on, extra.ends_on, extra.visa]
   );
   track("post", user.id);
   redirect(`/posts/${rows[0].id}`);
@@ -191,10 +196,10 @@ export async function updatePost(postId: string, _: PostState, f: FormData): Pro
   // The space never changes on edit; the board stays inside the same space.
   await q(
     `UPDATE boundless.posts SET topic = $3, kind = $4, lang = $5, region = $6, title = $7, body = $8,
-       price = $9, place = $10, starts_on = $11, ends_on = $12, updated_at = now()
+       price = $9, place = $10, starts_on = $11, ends_on = $12, visa = $13, updated_at = now()
      WHERE id = $1 AND user_id = $2`,
     [postId, user.id, values.board, values.kind, values.lang, values.region || null, values.title, values.body,
-     extra.price, extra.place, extra.starts_on, extra.ends_on]
+     extra.price, extra.place, extra.starts_on, extra.ends_on, extra.visa]
   );
   await q("DELETE FROM boundless.translations WHERE item = $1", [`p:${postId}`]);
   redirect(`/posts/${postId}`);
@@ -231,8 +236,9 @@ export async function addComment(postId: string, _: Result, f: FormData): Promis
 export async function setDeal(f: FormData) {
   const user = await requireUser();
   const deal = str(f, "deal");
-  if (!DEALS.some((d) => d.id === deal)) return;
-  await q("UPDATE boundless.posts SET deal = $3 WHERE id = $1 AND user_id = $2 AND price IS NOT NULL", [str(f, "post"), user.id, deal]);
+  const post = str(f, "post");
+  if (!DEALS.some((d) => d.id === deal) || !isId(post)) return;
+  await q("UPDATE boundless.posts SET deal = $3 WHERE id = $1 AND user_id = $2 AND price IS NOT NULL", [post, user.id, deal]);
   refresh();
 }
 
@@ -261,10 +267,12 @@ export async function setReadLang(f: FormData) {
   refresh();
 }
 
-/** Remove the member's row if it exists, else add it (likes and saves). */
+/** Remove the member's row if it exists, else add it (likes and saves). True when the row was added. */
 async function toggleRow(table: "post_likes" | "comment_likes" | "saves", col: "post_id" | "comment_id", id: string, userId: string) {
   const del = await q(`DELETE FROM boundless.${table} WHERE ${col} = $1 AND user_id = $2 RETURNING 1`, [id, userId]);
-  if (!del.length) await q(`INSERT INTO boundless.${table} (${col}, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`, [id, userId]);
+  if (del.length) return false;
+  await q(`INSERT INTO boundless.${table} (${col}, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`, [id, userId]);
+  return true;
 }
 
 /** 공감 / helpful toggle on a post or a comment. */
@@ -272,9 +280,11 @@ export async function toggleLike(f: FormData) {
   const user = await requireUser();
   const comment = str(f, "comment");
   const post = str(f, "post");
-  if (isId(comment)) await toggleRow("comment_likes", "comment_id", comment, user.id);
-  else if (isId(post)) await toggleRow("post_likes", "post_id", post, user.id);
+  let added: boolean;
+  if (isId(comment)) added = await toggleRow("comment_likes", "comment_id", comment, user.id);
+  else if (isId(post)) added = await toggleRow("post_likes", "post_id", post, user.id);
   else return;
+  if (added) track("helpful", user.id);
   refresh();
 }
 
@@ -290,8 +300,49 @@ export async function toggleSave(f: FormData) {
 /** The author marks a question as solved (or reopens it). */
 export async function toggleSolved(f: FormData) {
   const user = await requireUser();
-  await q("UPDATE boundless.posts SET solved = NOT solved WHERE id = $1 AND user_id = $2", [str(f, "post"), user.id]);
+  const post = str(f, "post");
+  if (!isId(post)) return;
+  // Reopening also drops the accepted answer: an open question has none.
+  const rows = await q<{ solved: boolean }>(
+    `UPDATE boundless.posts SET solved = NOT solved, accepted_comment_id = CASE WHEN solved THEN NULL ELSE accepted_comment_id END
+     WHERE id = $1 AND user_id = $2 RETURNING solved`,
+    [post, user.id]
+  );
+  if (rows[0]?.solved) track("solved", user.id);
   refresh();
+}
+
+/** The author accepts one top-level reply by someone else (and the question counts as solved), or un-accepts it. */
+export async function acceptAnswer(f: FormData) {
+  const user = await requireUser();
+  const post = str(f, "post");
+  const comment = str(f, "comment");
+  if (!isId(post) || !isId(comment)) return;
+  const rows = await q<{ accepted: boolean }>(
+    `UPDATE boundless.posts p SET
+       accepted_comment_id = CASE WHEN p.accepted_comment_id = c.id THEN NULL ELSE c.id END,
+       solved = CASE WHEN p.accepted_comment_id = c.id THEN p.solved ELSE true END
+     FROM boundless.comments c
+     WHERE p.id = $1 AND p.user_id = $2 AND c.id = $3 AND c.post_id = p.id
+       AND c.parent_id IS NULL AND NOT c.hidden AND c.user_id <> p.user_id
+     RETURNING p.accepted_comment_id IS NOT NULL AS accepted`,
+    [post, user.id, comment]
+  );
+  if (rows[0]?.accepted) track("accepted", user.id);
+  refresh();
+}
+
+/** Titles like the one being typed, in the same board and the writer's own space (never another country's lounge). */
+export async function similarPosts(board: string, lounge: boolean, title: string) {
+  const user = await requireUser();
+  if (lounge ? board !== LOUNGE.id : !isBoard(board)) return [];
+  // ponytail: up to 3 longest words, OR-matched on titles; switch to pg_trgm similarity if hints feel noisy.
+  const words = [...new Set(title.normalize("NFC").split(/[\s,.?!·…()"'“”‘’]+/).filter((w) => w.length >= 2))]
+    .sort((a, b) => b.length - a.length)
+    .slice(0, 3);
+  if (!words.length) return [];
+  const rows = await listPosts(user.id, { space: lounge ? user.nationality : "global", board, words, limit: 3 });
+  return rows.map((p) => ({ id: p.id, title: p.title, comments: p.comments, solved: p.solved }));
 }
 
 /** Authors can always remove their own post (with its replies) or reply. */

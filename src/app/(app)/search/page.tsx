@@ -3,7 +3,7 @@ import { NationalityChip, Notice, PageHead, PostCard, btn, btnGhost, field, labe
 import { getT, getUser } from "@/lib/auth";
 import { track } from "@/lib/db";
 import { BOARDS, isBoard } from "@/lib/boards";
-import { isCountry, isRegion, REGIONS } from "@/lib/i18n";
+import { isCountry, isRegion, isVisa, REGIONS, VISAS } from "@/lib/i18n";
 import { listPosts, PAGE } from "@/lib/posts";
 
 export const metadata = { title: "Search" };
@@ -17,13 +17,14 @@ export default async function SearchPage(props: PageProps<"/search">) {
   const topic = isBoard(String(sp.board ?? "")) ? String(sp.board) : "";
   const from = isCountry(String(sp.from ?? "")) ? String(sp.from) : "";
   const region = isRegion(String(sp.region ?? "")) ? String(sp.region) : "";
+  const visa = isVisa(String(sp.visa ?? "")) ? String(sp.visa) : "";
   const sort = sp.sort === "likes" ? "likes" : "new";
   const before = typeof sp.before === "string" && sort === "new" ? sp.before : undefined;
   const [{ lang, t }, user] = await Promise.all([getT(), getUser()]);
-  const searched = Boolean(query || topic || from || region);
-  const posts = searched ? await listPosts(user?.id ?? null, { query, board: topic, nationality: from, region, before, sort }) : [];
+  const searched = Boolean(query || topic || from || region || visa);
+  const posts = searched ? await listPosts(user?.id ?? null, { query, board: topic, nationality: from, region, visa, before, sort }) : [];
   const last = posts.at(-1);
-  const more = new URLSearchParams({ q: query, board: topic, from, region, ...(last ? { before: new Date(last.created_at).toISOString() } : {}) });
+  const more = new URLSearchParams({ q: query, board: topic, from, region, visa, ...(last ? { before: new Date(last.created_at).toISOString() } : {}) });
   if (query) track("search", user?.id ?? null);
 
   return (
@@ -34,7 +35,7 @@ export default async function SearchPage(props: PageProps<"/search">) {
           <div className="flex items-center gap-2 text-sm">
             <input type="hidden" name="from" value={from} />
             <NationalityChip code={from} lang={lang} prefix={t("이웃의 글")} />
-            <Link href={`/search?${new URLSearchParams({ q: query, board: topic, region })}`} className="text-xs text-primary underline">
+            <Link href={`/search?${new URLSearchParams({ q: query, board: topic, region, visa })}`} className="text-xs text-primary underline">
               {t("국적 필터 해제")}
             </Link>
           </div>
@@ -71,6 +72,19 @@ export default async function SearchPage(props: PageProps<"/search">) {
               {REGIONS.map((r) => (
                 <option key={r.id} value={r.id}>
                   {t(r.ko)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="visa" className={labelCls}>
+              {t("체류자격")}
+            </label>
+            <select id="visa" name="visa" defaultValue={visa} className={field}>
+              <option value="">{t("전체 체류자격")}</option>
+              {VISAS.map((x) => (
+                <option key={x.id} value={x.id}>
+                  {t(x.ko)}
                 </option>
               ))}
             </select>

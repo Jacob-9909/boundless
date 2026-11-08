@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useActionState, useEffect, useRef, useState } from "react";
-import { appeal, reportContent, updateNationality, type PostState, type Result } from "@/app/actions";
+import { appeal, reportContent, similarPosts, updateNationality, type PostState, type Result } from "@/app/actions";
 import type { Board } from "@/lib/boards";
-import { REGIONS, REPORT_REASONS } from "@/lib/i18n";
+import { REGIONS, REPORT_REASONS, VISAS } from "@/lib/i18n";
 import { Icon } from "./Icon";
 import { useT } from "./I18n";
 import { Flag, btn, btnGhost, field, labelCls } from "./ui";
@@ -50,7 +50,19 @@ export function WriteForm({
   const [len, setLen] = useState((v.body ?? "").length);
   const form = useRef<HTMLFormElement>(null);
   const [restored, setRestored] = useState(false);
+  const [similar, setSimilar] = useState<Awaited<ReturnType<typeof similarPosts>>>([]);
+  const lookup = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const askVisa = space === "global" && board.group === "life";
   const storeKey = draftKey && `draft:${draftKey}`;
+  // New posts only: while the title is typed, show up to 3 posts with similar titles so the answer may already exist.
+  const findSimilar = (title: string) => {
+    if (!draftKey) return;
+    clearTimeout(lookup.current);
+    if (title.trim().length < 2) return setSimilar([]);
+    lookup.current = setTimeout(() => {
+      similarPosts(board.id, space === "lounge", title).then(setSimilar, () => setSimilar([]));
+    }, 400);
+  };
   const fields = () => {
     const f = form.current?.elements;
     return { title: f?.namedItem("title") as HTMLInputElement | null, body: f?.namedItem("body") as HTMLTextAreaElement | null };
@@ -142,7 +154,34 @@ export function WriteForm({
         <label htmlFor="title" className={labelCls}>
           {t("제목")}
         </label>
-        <input id="title" name="title" required minLength={2} maxLength={120} defaultValue={v.title} placeholder={t(board.titleHint)} className={field} />
+        <input
+          id="title"
+          name="title"
+          required
+          minLength={2}
+          maxLength={120}
+          defaultValue={v.title}
+          placeholder={t(board.titleHint)}
+          onChange={(e) => findSimilar(e.target.value)}
+          className={field}
+        />
+        {similar.length > 0 && (
+          <div role="status" className="mt-2 rounded-xl bg-soft/70 px-3.5 py-2.5 text-sm">
+            <p className="font-bold">{t("비슷한 글이 있어요. 먼저 읽어 보세요.")}</p>
+            <ul className="mt-1 space-y-1">
+              {similar.map((p) => (
+                <li key={p.id}>
+                  <Link href={`/posts/${p.id}`} className="text-primary underline">
+                    {p.title}
+                  </Link>{" "}
+                  <span className="text-xs opacity-70">
+                    {p.solved ? t("해결됨") : t("댓글 {n}", { n: p.comments })}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       {board.extra === "market" && (
@@ -213,8 +252,24 @@ export function WriteForm({
       </div>
 
       <details className="rounded-2xl bg-white p-4 ring-1 ring-ink/[.07]" open={!!state.error}>
-        <summary className="-my-1 cursor-pointer py-2 text-sm font-bold">{t("지역 · 원문 언어")}</summary>
+        <summary className="-my-1 cursor-pointer py-2 text-sm font-bold">{askVisa ? t("지역 · 체류자격 · 원문 언어") : t("지역 · 원문 언어")}</summary>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          {askVisa && (
+            <div className="sm:col-span-2">
+              <label htmlFor="visa" className={labelCls}>
+                {t("체류자격 (선택)")}
+              </label>
+              <select id="visa" name="visa" defaultValue={v.visa ?? ""} className={field}>
+                <option value="">{t("밝히지 않음")}</option>
+                {VISAS.map((x) => (
+                  <option key={x.id} value={x.id}>
+                    {t(x.ko)}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs opacity-70">{t("체류자격에 따라 답이 달라지는 질문에만 골라 주세요. 국적·지역과 함께 보이니 꼭 필요할 때만 밝혀요.")}</p>
+            </div>
+          )}
           <div>
             <label htmlFor="region" className={labelCls}>
               {t("지역")}
