@@ -140,7 +140,8 @@ await b.goto(BASE + "/settings");
 await b.getByText("Received").first().waitFor();
 await b.goto(BASE + `/report?post=${postId}`);
 await b.getByRole("button", { name: "Block author" }).click();
-await b.waitForURL(BASE + "/feed");
+await b.waitForURL(BASE + "/feed?blocked=1");
+await b.getByText("You blocked this author").waitFor();
 assert.equal(await b.getByText(title).count(), 0, "blocked author's post must leave B's feed");
 await b.goto(postUrl);
 await b.getByText("account you blocked").waitFor();
@@ -184,7 +185,8 @@ await judge.waitForURL(BASE + "/feed");
 // Switching to a sample neighbor shows the app in that country's language.
 const VI = JSON.parse(readFileSync("src/lib/locales/vi.json", "utf8"));
 assert.equal(await judge.locator("html").getAttribute("lang"), "vi");
-await judge.getByText(VI["{hello}, 이웃님"].replace("{hello}", "Xin chào")).waitFor();
+// The greeting heading, not getByText: Next's route announcer sometimes copies the same text after navigation.
+await judge.getByRole("heading", { name: VI["{hello}, 이웃님"].replace("{hello}", "Xin chào") }).waitFor();
 
 // Country lounges: the Vietnam lounge is visible to the Vietnamese sample neighbor, not to A (Japan).
 await judge.goto(BASE + "/lounge");

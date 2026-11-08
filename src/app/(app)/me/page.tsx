@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { RightRail } from "@/components/Community";
 import { Icon } from "@/components/Icon";
 import { Notice, PageHead, PostCard, SignInRequired, btn, postList } from "@/components/ui";
 import { getT, getUser } from "@/lib/auth";
@@ -83,6 +84,10 @@ export default async function MePage(props: PageProps<"/me">) {
         ) : (
           <Notice title={t("아직 쓴 글이 없어요")}>{t("내 질문과 답변 수가 여기에 표시돼요.")}</Notice>
         )}
+      </div>
+      {/* Phones and tablets: my level, rank and the helper ranking live in the rail, which they never see beside the feed. */}
+      <div className="px-4 pb-4 xl:hidden">
+        <RightRail viewer={user.id} lang={lang} t={t} />
       </div>
     </div>
   );

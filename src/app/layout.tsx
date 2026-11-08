@@ -18,13 +18,14 @@ export const metadata: Metadata = {
   description: "국경 없이 누구나 어우러지는 한국 생활 커뮤니티 · A borderless community for everyone living in Korea",
 };
 
-export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#1B3A6B" };
+// viewportFit cover: without it iOS reports env(safe-area-inset-*) as 0, so the bottom nav sits on the home indicator in the installed app.
+export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#1B3A6B", viewportFit: "cover" };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const lang = await getLang();
   return (
     <html lang={lang} className={`${brand.variable} ${body.variable} ${noto.variable} ${thai.variable} ${khmer.variable} h-full antialiased`}>
-      <body className="min-h-full font-sans">
+      <body className="min-h-full pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)] font-sans">
         <I18n dict={dictOf(lang)}>{children}</I18n>
       </body>
     </html>

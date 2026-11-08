@@ -38,7 +38,7 @@ export default async function BoardsPage() {
                           {t(b.ko)}
                           {!!c?.today && <span className="rounded-full bg-alert px-1.5 text-[11px] text-white">{t("새 글 {n}", { n: c.today })}</span>}
                         </span>
-                        <span className="mt-0.5 block text-xs leading-relaxed opacity-70">{t(b.desc)}</span>
+                        <span className="mt-0.5 line-clamp-2 text-xs leading-relaxed opacity-70 md:line-clamp-none">{t(b.desc)}</span>
                       </span>
                       <span className="text-xs opacity-70">{c?.n ?? 0}</span>
                     </Link>

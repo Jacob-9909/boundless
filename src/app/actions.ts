@@ -93,8 +93,12 @@ export async function completeSignup(nationality: string, agreed: boolean): Prom
   if (!isCountry(nationality)) return { error: "공개할 국적을 골라 주세요." };
   // ponytail: age floor fixed at 14 (Korean PIPA guardian-consent line) until the team confirms policy P01.
   if (!agreed) return { error: "만 14세 이상 확인과 커뮤니티 규칙 동의가 필요해요." };
+  // Keep the language the person signed up in (the user test: an English reader got switched to Filipino).
+  // The culture's language stays the default only where no language was ever picked, e.g. signing in on a new device.
+  const lang = await getLang();
   const id = await upsertUser(email, nationality);
   await startSession(id);
+  await setLang(lang);
   track("signup", id);
   return { ok: true };
 }
@@ -404,7 +408,8 @@ export async function blockAuthor(f: FormData) {
   if (target && target.owner !== user.id) {
     await q("INSERT INTO boundless.blocks (user_id, blocked_id) VALUES ($1, $2) ON CONFLICT DO NOTHING", [user.id, target.owner]);
   }
-  redirect("/feed");
+  // The feed says the block worked; a silent redirect left testers unsure.
+  redirect("/feed?blocked=1");
 }
 
 export async function unblockAll() {

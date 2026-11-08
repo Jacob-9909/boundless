@@ -219,13 +219,14 @@ export function ranking(limit = 5) {
 }
 
 export async function myPoints(userId: string) {
-  const r = await q<{ posts: number; answers: number; helped: number; points: number; rank: number }>(
-    `SELECT posts, answers, helped, points, rank FROM (
-       SELECT user_id, posts, answers, helped, ${SCORE()} AS points, rank() OVER (ORDER BY ${SCORE()} DESC)::int AS rank
+  const r = await q<{ posts: number; answers: number; helped: number; points: number; rank: number; total: number }>(
+    `SELECT posts, answers, helped, points, rank, total FROM (
+       SELECT user_id, posts, answers, helped, ${SCORE()} AS points, rank() OVER (ORDER BY ${SCORE()} DESC)::int AS rank,
+         count(*) OVER ()::int AS total
        FROM boundless.member_points) x WHERE user_id = $1`,
     [userId]
   );
-  return r[0] ?? { posts: 0, answers: 0, helped: 0, points: 0, rank: 0 };
+  return r[0] ?? { posts: 0, answers: 0, helped: 0, points: 0, rank: 0, total: 0 };
 }
 
 /** Latest public replies across the community, for the "recent activity" rail. */

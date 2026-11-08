@@ -62,7 +62,8 @@ export function Translatable({
         className={`mt-2 inline-flex items-center gap-1 rounded-full font-bold text-primary transition hover:bg-soft disabled:opacity-50 ${small ? "h-7 px-1.5 text-xs" : "h-8 px-2.5 text-[13px] ring-1 ring-primary/25"}`}
       >
         <Icon name="translate" size={small ? 13 : 15} />
-        {pending ? t("번역하는 중…") : showing ? t("원문 보기") : t("{lang}로 번역", { lang: target })}
+        {/* Not "원문 보기": the admin queue uses that key for "Open post", so every language read "open post" here. */}
+        {pending ? t("번역하는 중…") : showing ? t("원문으로 돌아가기") : t("{lang}로 번역", { lang: target })}
       </button>
       {error && (
         <p role="alert" className="mt-1 text-xs text-red-700">

@@ -214,6 +214,13 @@ export const EN: Record<string, string> = {
   "답글 달기": "Post reply",
   "지역": "Area",
   "지역 무관": "Anywhere in Korea",
+  "커뮤니티 소식": "Community updates",
+  "Boundless 소개": "About Boundless",
+  "원문으로 돌아가기": "Show original",
+  "이 작성자를 차단했어요. 이제 이 사람의 글과 댓글은 보이지 않아요. 설정에서 해제할 수 있어요.":
+    "You blocked this author. Their posts and comments are now hidden. You can undo this in Settings.",
+  "고용노동부 고객상담센터": "Ministry of Employment and Labor helpline",
+  "임금 체불, 근로 조건, 산업재해 상담.": "Unpaid wages, working conditions and workplace injuries.",
   "전국": "All of Korea",
   "정렬": "Sort",
   "최신순": "Newest",

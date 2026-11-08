@@ -36,7 +36,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   ];
 
   return (
-    <div style={themeVars(culture)} className={`${cultureFonts} min-h-screen bg-paper text-ink`}>
+    <div style={themeVars(culture)} className={`${cultureFonts} min-h-dvh bg-paper text-ink`}>
       <a href="#main" className="skip-link rounded-xl bg-ink px-4 py-2 text-sm font-bold text-white">
         {t("본문으로 건너뛰기")}
       </a>
@@ -106,12 +106,17 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           </div>
         </div>
 
-        <div className="min-w-0 flex-1 pb-24 lg:pb-12">
-          {/* Phone / tablet header */}
-          <header className="sticky top-0 z-20 border-b border-ink/10 bg-paper/95 backdrop-blur lg:hidden">
+        <div className="min-w-0 flex-1 pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-12">
+          {/* Phone / tablet header. The bottom nav has five slots, so search lives up here. */}
+          <header className="sticky top-0 z-20 border-b border-ink/10 bg-paper/95 pt-[env(safe-area-inset-top)] backdrop-blur lg:hidden">
             <div className="flex items-center gap-2 px-4 py-2.5">
               <Link href="/feed" className="mr-auto text-ink" aria-label="Boundless">
-                <Logo size={26} />
+                {/* Narrow phones (under 360px) keep only the mark so search, language and account still fit. */}
+                <Logo size={26} className="max-[359px]:hidden" />
+                <Logo size={26} word={false} className="min-[360px]:hidden" />
+              </Link>
+              <Link href="/search" className="inline-flex size-9 items-center justify-center rounded-full bg-soft text-ink" aria-label={t("검색")} title={t("검색")}>
+                <Icon name="search" size={18} />
               </Link>
               <LangMenu lang={lang} label={t("화면 언어 바꾸기")} note={t("한국어와 영어 밖의 언어는 기계 번역이라 어색한 문장이 있을 수 있어요. 검수하고 있어요.")} compact />
               {user ? (

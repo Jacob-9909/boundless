@@ -22,24 +22,24 @@ export default async function BoardPage(props: PageProps<"/b/[board]">) {
   return (
     <WithRail viewer={user?.id ?? null} lang={lang} t={t}>
       <div className="min-w-0 space-y-4">
-        <header className="relative overflow-hidden rounded-3xl p-6 text-white md:p-8" style={{ background: `color-mix(in oklab, ${board.color} 72%, black)` }}>
+        <header className="relative overflow-hidden rounded-2xl p-4 text-white md:rounded-3xl md:p-8" style={{ background: `color-mix(in oklab, ${board.color} 72%, black)` }}>
           <span className="absolute -right-6 -bottom-10 opacity-15" aria-hidden="true">
             <Icon name={board.icon} size={200} />
           </span>
-          <div className="relative flex flex-wrap items-end justify-between gap-4">
+          <div className="relative flex flex-wrap items-end justify-between gap-3 md:gap-4">
             <div className="max-w-xl">
               <p className="station-label opacity-90">BOARD · {t(board.ko)}</p>
-              <h1 className="mt-1.5 flex items-center gap-3 font-display text-3xl font-extrabold md:text-4xl">
-                <span className="flex size-11 items-center justify-center rounded-2xl bg-white/20">
-                  <Icon name={board.icon} size={24} />
+              <h1 className="mt-1.5 flex items-center gap-2.5 font-display text-2xl font-extrabold md:gap-3 md:text-4xl">
+                <span className="flex size-9 items-center justify-center rounded-xl bg-white/20 md:size-11 md:rounded-2xl">
+                  <Icon name={board.icon} size={20} />
                 </span>
                 {t(board.ko)}
               </h1>
-              <p className="mt-2 text-sm leading-relaxed opacity-90 md:text-[15px]">{t(board.desc)}</p>
+              <p className="mt-1.5 text-sm leading-relaxed opacity-90 md:mt-2 md:text-[15px]">{t(board.desc)}</p>
             </div>
             <Link
               href={`/write?board=${id}${tag ? `&kind=${tag}` : ""}`}
-              className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-white px-5 text-[15px] font-bold whitespace-nowrap shadow-sm hover:bg-white/90"
+              className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-white px-4 text-sm font-bold whitespace-nowrap shadow-sm hover:bg-white/90 md:h-11 md:px-5 md:text-[15px]"
               style={{ color: `color-mix(in oklab, ${board.color} 72%, black)` }}
             >
               <Icon name="edit" size={17} />

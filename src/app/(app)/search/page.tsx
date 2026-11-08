@@ -122,6 +122,10 @@ export default async function SearchPage(props: PageProps<"/search">) {
             <Link href={`/write?${new URLSearchParams({ title: query, board: topic })}`} className="mt-3 inline-flex h-10 items-center font-bold text-primary underline">
               {t("질문 올리기")}
             </Link>
+            {/* Search only covers posts; someone typing "police" or "112" in a hurry still gets the numbers. */}
+            <Link href="/guide" className="mt-3 ml-4 inline-flex h-10 items-center font-bold text-red-700 underline">
+              112 · 119 · {t("공식 안내")}
+            </Link>
           </Notice>
         )}
       </div>

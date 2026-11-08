@@ -65,7 +65,7 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
     <div className="grid gap-6 md:px-2 xl:grid-cols-[minmax(0,1fr)_320px] xl:px-6">
       <article className="min-w-0 pb-6">
         <BackLink href={lounge ? "/lounge" : `/b/${post.topic}`} label={lounge ? t("{country} 라운지", { country: countryName(post.space, lang) }) : t(board.ko)} />
-        <header className="relative overflow-hidden bg-soft px-5 pt-5 pb-6 md:mx-4 md:rounded-3xl md:px-7">
+        <header className="relative overflow-hidden bg-soft px-4 pt-4 pb-5 md:mx-4 md:rounded-3xl md:px-7 md:pt-5 md:pb-6">
           <span
             className="bg-pattern absolute inset-y-0 right-0 w-1/3 opacity-25 [mask-image:linear-gradient(to_left,black,transparent)]"
             style={{ backgroundColor: "var(--c-primary)" }}
@@ -93,7 +93,7 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
               </span>
             )}
           </div>
-          <h1 className="relative mt-3 font-display text-2xl leading-tight font-extrabold tracking-tight [overflow-wrap:anywhere] md:text-[32px]">
+          <h1 className="relative mt-2.5 font-display text-[22px] leading-tight font-extrabold tracking-tight [overflow-wrap:anywhere] md:mt-3 md:text-[32px]">
             <TagText board={post.topic} tagId={post.kind} t={t} />
             {post.title}
           </h1>

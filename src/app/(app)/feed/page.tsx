@@ -28,13 +28,20 @@ export default async function Home(props: PageProps<"/feed">) {
 
   return (
     <WithRail viewer={viewer} lang={lang} t={t}>
-      <div className="min-w-0 space-y-5">
+      {/* Phones: tighter spacing and a shorter welcome card, so the first posts show on the first screen. */}
+      <div className="min-w-0 space-y-3 md:space-y-5">
+        {sp.blocked === "1" && (
+          <p role="status" className="rounded-2xl bg-soft px-4 py-3 text-sm font-semibold">
+            {t("이 작성자를 차단했어요. 이제 이 사람의 글과 댓글은 보이지 않아요. 설정에서 해제할 수 있어요.")}
+          </p>
+        )}
         {/* Welcome + composer, like a community header with a "create post" bar */}
         <section className={`${card} overflow-hidden`}>
-          <div className="relative overflow-hidden bg-primary px-5 py-5 text-paper md:px-6">
+          <div className="relative overflow-hidden bg-primary px-4 py-4 text-paper md:px-6 md:py-5">
             <span className="bg-pattern absolute inset-0 opacity-30" aria-hidden="true" />
             <span className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/25 to-transparent" aria-hidden="true" />
-            <Landmark culture={culture} className="absolute right-0 bottom-0 h-20 w-auto opacity-80 md:h-24" />
+            {/* On phones the landmark spans the card under the greeting, so it fades back there. */}
+            <Landmark culture={culture} className="absolute right-0 bottom-0 h-20 w-auto opacity-40 sm:opacity-80 md:h-24" />
             <div className="relative max-w-lg [text-shadow:0_1px_6px_rgb(0_0_0/.35)]">
               {user ? (
                 <>
@@ -42,14 +49,14 @@ export default async function Home(props: PageProps<"/feed">) {
                     <Flag code={user.nationality} h={12} />
                     {country}
                   </p>
-                  <h1 className="mt-1 font-culture text-3xl leading-tight text-balance md:text-4xl">{t("{hello}, 이웃님", { hello: culture.hello })}</h1>
+                  <h1 className="mt-1 font-culture text-2xl leading-tight text-balance md:text-4xl">{t("{hello}, 이웃님", { hello: culture.hello })}</h1>
                   <p className="mt-1.5 text-[13px] opacity-90 md:text-sm">
                     {t("오늘 새 글 {today}개 · 답변을 기다리는 질문 {waiting}개", { today: stats.today, waiting: stats.waiting })}
                   </p>
                 </>
               ) : (
                 <>
-                  <h1 className="font-display text-2xl leading-tight font-extrabold md:text-3xl">{t("한국 생활, 혼자 고민하지 마세요")}</h1>
+                  <h1 className="font-display text-[22px] leading-tight font-extrabold md:text-3xl">{t("한국 생활, 혼자 고민하지 마세요")}</h1>
                   <p className="mt-1.5 text-[13px] opacity-90 md:text-sm">{t("{countries}개국 이웃이 남긴 글 {posts}개와 답변 {answers}개가 있어요.", stats)}</p>
                 </>
               )}
@@ -83,9 +90,17 @@ export default async function Home(props: PageProps<"/feed">) {
           )}
         </section>
 
-        {/* Topics as chips on phones and tablets; the desktop sidebar already lists them */}
+        {/* Topics as chips on phones and tablets; the desktop sidebar already lists them.
+            `relative` keeps the badges' absolute sr-only text inside the scroller; without it the page scrolls sideways on days with new posts. */}
         <nav aria-label={t("게시판")} className="lg:hidden">
-          <ul className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:px-0 md:pb-0">
+          <ul className="relative -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:px-0 md:pb-0">
+            {/* Emergency numbers one tap from home: the user test took 7 taps and a dead-end search to reach 112/119. */}
+            <li className="shrink-0">
+              <Link href="/guide" className="inline-flex h-9 items-center gap-1.5 rounded-full bg-red-700 px-3.5 text-[13px] font-bold whitespace-nowrap text-white">
+                <Icon name="phone" size={14} />
+                112 · 119 · {t("공식 안내")}
+              </Link>
+            </li>
             {BOARDS.map((b) => {
               const c = counts.find((x) => x.topic === b.id);
               return (
@@ -116,22 +131,25 @@ export default async function Home(props: PageProps<"/feed">) {
         {/* My country's lounge */}
         {user && (
           <section className={`${card} overflow-hidden`}>
-            <div className="flex items-center gap-3 border-b border-ink/[.06] px-4 py-3">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 border-b border-ink/[.06] px-4 py-2.5 md:gap-x-3 md:py-3">
               <Flag code={user.nationality} h={16} />
-              <p className="flex-1 font-bold">{t("{country} 라운지", { country })}</p>
-              <span className="inline-flex items-center gap-1 text-xs opacity-70">
+              {/* min-w-48: when space runs out the lock note and link wrap below, not the title.
+                  Phones show only the lock icon and the arrow, so the header stays on one line in long languages. */}
+              <p className="min-w-48 flex-1 font-bold">{t("{country} 라운지", { country })}</p>
+              <span className="inline-flex items-center gap-1 text-xs opacity-70" title={t("같은 국적만")}>
                 <Icon name="lock" size={13} />
-                {t("같은 국적만")}
+                <span className="max-sm:sr-only">{t("같은 국적만")}</span>
               </span>
-              <Link href="/lounge" className="inline-flex h-8 items-center text-[13px] font-bold whitespace-nowrap text-primary hover:underline">
-                {t("들어가기")} →
+              <Link href="/lounge" className="inline-flex h-9 min-w-9 items-center justify-center gap-1 text-[13px] font-bold whitespace-nowrap text-primary hover:underline">
+                <span className="max-sm:sr-only">{t("들어가기")}</span>
+                <span aria-hidden="true">→</span>
               </Link>
             </div>
             {lounge.length ? (
               <ul className="divide-y divide-ink/[.06]">
                 {lounge.map((p) => (
                   <li key={p.id}>
-                    <Link href={`/posts/${p.id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-paper">
+                    <Link href={`/posts/${p.id}`} className="flex items-center gap-3 px-4 py-2.5 hover:bg-paper md:py-3">
                       <Avatar code={p.nationality} size={28} />
                       <span className="min-w-0 flex-1 truncate text-sm">
                         <TagText board={p.topic} tagId={p.kind} t={t} />
@@ -143,7 +161,7 @@ export default async function Home(props: PageProps<"/feed">) {
                 ))}
               </ul>
             ) : (
-              <Link href="/write?space=lounge" className="block px-4 py-4 text-sm opacity-70 hover:bg-paper">
+              <Link href="/write?space=lounge" className="block px-4 py-3 text-sm opacity-70 hover:bg-paper md:py-4">
                 {t("라운지가 아직 조용해요. 고향 이웃들에게 첫 인사를 남겨 보세요.")}
               </Link>
             )}
@@ -159,8 +177,8 @@ export default async function Home(props: PageProps<"/feed">) {
             t={t}
             lead={
               <div>
-                <h2 className="font-display text-xl font-extrabold tracking-tight">{t("모두의 광장")}</h2>
-                <p className="text-[13px] opacity-70">{t("모든 나라 이웃이 함께 보는 최신 글")}</p>
+                <h2 className="font-display text-lg font-extrabold tracking-tight md:text-xl">{t("모두의 광장")}</h2>
+                <p className="hidden text-[13px] opacity-70 sm:block">{t("모든 나라 이웃이 함께 보는 최신 글")}</p>
               </div>
             }
           />

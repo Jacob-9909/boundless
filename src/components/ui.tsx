@@ -121,15 +121,22 @@ export function TagText({ board, tagId, t }: { board: string; tagId: string; t: 
   return <span className="mr-1 font-bold whitespace-nowrap text-primary">[{t(tagOf(board, tagId).ko)}]</span>;
 }
 
-export function MarketLine({ post, t }: { post: Pick<PostRow, "price" | "deal" | "kind">; t: T }) {
+export function MarketLine({ post, t }: { post: Pick<PostRow, "price" | "deal" | "kind" | "place">; t: T }) {
   if (post.price === null) return null;
   const deal = DEALS.find((d) => d.id === post.deal) ?? DEALS[0];
   // Giveaways read as 나눔중 / 나눔완료 instead of 판매중 / 거래완료.
   const label = post.kind === "free" ? (deal.id === "open" ? "나눔중" : deal.id === "done" ? "나눔완료" : deal.ko) : deal.ko;
   return (
-    <span className="inline-flex items-center gap-2">
+    <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
       <span className="font-display text-base font-extrabold whitespace-nowrap">{post.kind === "free" ? t("나눔") : `${post.price.toLocaleString("ko-KR")}${t("원")}`}</span>
       <span className={`${tag} ${deal.id === "done" ? "bg-ink/10 text-ink/75" : deal.id === "reserved" ? "bg-amber-100 text-amber-900" : "bg-emerald-100 text-emerald-900"}`}>{t(label)}</span>
+      {/* The meeting spot was saved but never shown, so buyers had to ask where to meet. */}
+      {post.place && (
+        <span className="inline-flex items-center gap-1 text-sm" title={t("거래 희망 동네")}>
+          <Icon name="pin" size={14} />
+          {post.place}
+        </span>
+      )}
     </span>
   );
 }
@@ -183,7 +190,8 @@ export function StationLabel({ children, className = "" }: { children: ReactNode
 /** Page banner: soft culture color with the member's pattern fading in from the right. */
 export function PageHead({ line, title, desc, children }: { line: string; title: string; desc?: string; children?: ReactNode }) {
   return (
-    <header className="relative overflow-hidden bg-soft px-5 pt-6 pb-7 md:mx-4 md:mt-6 md:rounded-3xl md:px-8 md:pt-8 md:pb-9">
+    // Phones: a compact banner (about 120px) so the page's content starts on the first screen.
+    <header className="relative overflow-hidden bg-soft px-4 pt-4 pb-5 md:mx-4 md:mt-6 md:rounded-3xl md:px-8 md:pt-8 md:pb-9">
       <span
         className="bg-pattern absolute inset-y-0 right-0 w-2/5 opacity-25 [mask-image:linear-gradient(to_left,black,transparent)]"
         style={{ backgroundColor: "var(--c-primary)" }}
@@ -191,8 +199,8 @@ export function PageHead({ line, title, desc, children }: { line: string; title:
       />
       <div className="relative">
         <StationLabel className="text-primary">{line}</StationLabel>
-        <h1 className="mt-2 font-display text-[28px] leading-tight font-extrabold tracking-tight md:text-4xl">{title}</h1>
-        {desc && <p className="mt-2 max-w-xl text-sm leading-relaxed opacity-80 md:text-[15px]">{desc}</p>}
+        <h1 className="mt-1.5 font-display text-2xl leading-tight font-extrabold tracking-tight md:mt-2 md:text-4xl">{title}</h1>
+        {desc && <p className="mt-1.5 max-w-xl text-sm leading-relaxed opacity-80 md:mt-2 md:text-[15px]">{desc}</p>}
         {children}
       </div>
     </header>
@@ -236,7 +244,7 @@ export function PostCard({ post, lang, t, showBoard = true }: { post: PostRow; l
   const asks = tagOf(post.topic, post.kind).asks;
   const waiting = asks && post.comments === 0 && !post.solved;
   return (
-    <article className="group relative px-4 py-4 transition-colors hover:bg-paper/70 md:px-5">
+    <article className="group relative px-4 py-3.5 transition-colors hover:bg-paper/70 md:px-5 md:py-4">
       <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px]">
         {showBoard ? (
           <>
@@ -306,7 +314,8 @@ export function PostCard({ post, lang, t, showBoard = true }: { post: PostRow; l
             {t("해결됨")}
           </span>
         ) : (
-          waiting && <span className="ml-auto font-bold whitespace-nowrap text-primary">{t("답변하기")} →</span>
+          // On my own question "Answer →" reads like an instruction to myself; say it is waiting instead.
+          waiting && (post.mine ? <span className="ml-auto whitespace-nowrap opacity-70">{t("답변 대기")}</span> : <span className="ml-auto font-bold whitespace-nowrap text-primary">{t("답변하기")} →</span>)
         )}
       </div>
     </article>
@@ -340,7 +349,7 @@ export function HelpItem({ h, t }: { h: Help; t: T }) {
     <a
       href={href}
       {...(h.url ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-      className={`${card} flex items-start gap-3 p-3.5 transition hover:border-primary/40`}
+      className={`${card} flex flex-wrap items-start gap-x-3 gap-y-2 p-3.5 transition hover:border-primary/40`}
     >
       <span
         className={`flex h-9 shrink-0 items-center gap-1 rounded-xl px-2.5 font-display text-sm font-extrabold whitespace-nowrap ${h.tel ? "bg-primary text-paper" : "bg-soft text-primary"}`}
@@ -348,7 +357,8 @@ export function HelpItem({ h, t }: { h: Help; t: T }) {
         <Icon name={h.tel ? "phone" : "external"} size={14} />
         {h.tel}
       </span>
-      <span className="min-w-0">
+      {/* min-w-44: in a narrow column a long number like 1577-1366 puts the text below it instead of squeezing it into six lines. */}
+      <span className="min-w-44 flex-1">
         <span className="block text-sm font-bold">{t(h.name)}</span>
         <span className="mt-0.5 block text-xs leading-relaxed opacity-75">{t(h.desc)}</span>
         {h.url && <span className="mt-0.5 block truncate text-xs text-primary">{h.url.replace("https://", "")}</span>}

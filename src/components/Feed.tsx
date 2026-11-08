@@ -26,7 +26,7 @@ export function ListControls({ base, tags, tag, sort, t, lead }: { base: string;
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
       {tags ? (
-        <nav className="-mx-4 flex gap-1.5 overflow-x-auto px-4 md:mx-0 md:flex-wrap md:overflow-visible md:px-0" aria-label={t("말머리")}>
+        <nav className="relative -mx-4 flex gap-1.5 overflow-x-auto px-4 md:mx-0 md:flex-wrap md:overflow-visible md:px-0" aria-label={t("말머리")}>
           <Link href={listHref(base, { tag, sort }, { tag: "" })} className={chip(!tag)} aria-current={!tag ? "page" : undefined}>
             {t("전체")}
           </Link>
