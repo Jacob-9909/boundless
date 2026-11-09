@@ -76,14 +76,23 @@ function PhotoPicker({ existing = [], reset }: { existing?: { id: string }[]; re
     if (!files || !input.current) return;
     const chosen = [...files].slice(0, Math.max(0, room));
     setNote(files.length > chosen.length ? t("사진은 4장까지 올릴 수 있어요.") : "");
-    setBusy(true);
-    const small = await Promise.all(chosen.map(shrink));
-    const dt = new DataTransfer();
-    small.forEach((f) => dt.items.add(f));
-    input.current.files = dt.files;
+    const el = input.current;
     previews.forEach((u) => URL.revokeObjectURL(u));
-    setPreviews(small.map((f) => URL.createObjectURL(f)));
-    setBusy(false);
+    setPreviews([]);
+    setBusy(true);
+    try {
+      const small = await Promise.all(chosen.map(shrink));
+      const dt = new DataTransfer();
+      small.forEach((f) => dt.items.add(f));
+      el.files = dt.files;
+      setPreviews(small.map((f) => URL.createObjectURL(f)));
+    } catch {
+      // A format this browser cannot decode (HEIC outside Safari, say): attach nothing rather than the full-size original.
+      el.value = "";
+      setNote(t("사진은 JPG, PNG, WebP, GIF만 올릴 수 있어요."));
+    } finally {
+      setBusy(false);
+    }
   };
   const thumb = "relative size-20 overflow-hidden rounded-xl bg-ink/5 ring-1 ring-ink/10";
   return (

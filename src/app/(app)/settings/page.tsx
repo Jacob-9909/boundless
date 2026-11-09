@@ -27,6 +27,18 @@ export default async function SettingsPage() {
       ])
     : [[], [{ n: 0 }]];
   const status: Record<string, string> = { received: t("접수됨"), actioned: t("조치 완료"), dismissed: t("문제 없음으로 종료") };
+  // Phones have no sidebar, so official help and the intro page are linked here, signed in or not.
+  // (The phone logo goes to the feed; only the desktop logo opens the intro page.)
+  const phoneLinks = (
+    <>
+      <Link href="/guide" className={`${row} font-bold text-primary lg:hidden`}>
+        {t("공식 안내")} <span aria-hidden="true">›</span>
+      </Link>
+      <Link href="/?intro=1" className={`${row} font-bold text-primary lg:hidden`}>
+        {t("Boundless 소개")} <span aria-hidden="true">›</span>
+      </Link>
+    </>
+  );
 
   return (
     <div className="mx-auto max-w-3xl lg:ml-2 pb-6">
@@ -140,14 +152,7 @@ export default async function SettingsPage() {
                     )}
                   </span>
                 </div>
-                {/* Phones have no sidebar: official help and emergency numbers are reached from here. */}
-                <Link href="/guide" className={`${row} font-bold text-primary lg:hidden`}>
-                  {t("공식 안내")} <span aria-hidden="true">›</span>
-                </Link>
-                {/* The desktop logo opens the intro page; the phone logo goes to the feed, so the intro is linked here. */}
-                <Link href="/?intro=1" className={`${row} font-bold text-primary lg:hidden`}>
-                  {t("Boundless 소개")} <span aria-hidden="true">›</span>
-                </Link>
+                {phoneLinks}
                 <Link href="/policy" className={`${row} font-bold text-primary`}>
                   {t("운영 정책")} <span aria-hidden="true">›</span>
                 </Link>
@@ -173,9 +178,12 @@ export default async function SettingsPage() {
             </section>
           </>
         ) : (
-          <Link href="/login?next=/settings" className={btn}>
-            {t("로그인")}
-          </Link>
+          <>
+            <Link href="/login?next=/settings" className={btn}>
+              {t("로그인")}
+            </Link>
+            <div className="mt-4">{phoneLinks}</div>
+          </>
         )}
       </div>
     </div>

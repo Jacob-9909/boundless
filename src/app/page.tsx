@@ -87,7 +87,7 @@ export default async function Landing(props: PageProps<"/">) {
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_50%_at_75%_40%,rgba(79,163,224,.25),transparent),radial-gradient(40%_40%_at_10%_90%,rgba(230,24,108,.18),transparent)]"
           aria-hidden="true"
         />
-        <nav className="relative mx-auto flex max-w-7xl items-center gap-6 px-5 py-5 md:px-8">
+        <nav className="relative mx-auto flex max-w-7xl items-center gap-6 px-5 pt-[calc(1.25rem+env(safe-area-inset-top))] pb-5 md:px-8">
           <Link href="/" className="text-white" aria-label="Boundless">
             <Logo />
           </Link>

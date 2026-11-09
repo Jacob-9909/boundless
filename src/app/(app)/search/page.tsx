@@ -23,7 +23,7 @@ export default async function SearchPage(props: PageProps<"/search">) {
   const searched = Boolean(query || topic || from || region);
   const posts = searched ? await listPosts(user?.id ?? null, { query, board: topic, nationality: from, region, before, sort }) : [];
   const last = posts.at(-1);
-  const more = new URLSearchParams({ q: query, board: topic, from, region, ...(last ? { before: new Date(last.created_at).toISOString() } : {}) });
+  const more = new URLSearchParams({ q: query, board: topic, from, region, ...(last ? { before: new Date(last.listed_at).toISOString() } : {}) });
   if (query) track("search", user?.id ?? null);
 
   return (

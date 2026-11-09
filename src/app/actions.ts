@@ -232,9 +232,11 @@ export async function updatePost(postId: string, _: PostState, f: FormData): Pro
   if (files.error) return { error: files.error, values };
   // Photos the author unticked go; new ones join the rest, four at most.
   const drop = f.getAll("drop_image").map(String).filter(isId);
+  // Counts only the author's own post, so the error never reveals another post's photos.
   const kept = await q<{ n: number }>(
-    "SELECT count(*)::int AS n FROM boundless.post_images WHERE post_id = $1 AND NOT (id = ANY($2::bigint[]))",
-    [postId, drop]
+    `SELECT count(*)::int AS n FROM boundless.post_images i JOIN boundless.posts p ON p.id = i.post_id
+     WHERE i.post_id = $1 AND p.user_id = $2 AND NOT (i.id = ANY($3::bigint[]))`,
+    [postId, user.id, drop]
   );
   if (kept[0].n + files.images!.length > MAX_IMAGES) return { error: "사진은 4장까지 올릴 수 있어요.", values };
   // The space never changes on edit; the board stays inside the same space.
