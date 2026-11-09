@@ -1,19 +1,26 @@
 import Link from "next/link";
+import { unfollow } from "@/app/actions";
 import { RightRail } from "@/components/Community";
 import { Icon } from "@/components/Icon";
-import { Notice, PageHead, PostCard, SignInRequired, btn, postList } from "@/components/ui";
+import { Avatar, LevelBadge, Notice, PageHead, PostCard, SignInRequired, btn, card, postList } from "@/components/ui";
 import { getT, getUser } from "@/lib/auth";
 import { q } from "@/lib/db";
-import { timeAgo } from "@/lib/i18n";
-import { myPosts, newReplies, savedPosts } from "@/lib/posts";
+import { countryName, timeAgo } from "@/lib/i18n";
+import { followedNeighbors, followerCount, listPosts, myPosts, newReplies, savedPosts } from "@/lib/posts";
 
 export const metadata = { title: "My posts" };
 
 export default async function MePage(props: PageProps<"/me">) {
-  const tab = (await props.searchParams).tab === "saved" ? "saved" : "mine";
+  const sp = await props.searchParams;
+  const tab = sp.tab === "saved" || sp.tab === "following" ? sp.tab : "mine";
   const [{ lang, t }, user] = await Promise.all([getT(), getUser()]);
   if (!user) return <SignInRequired t={t} next="/me" />;
-  const [posts, fresh] = await Promise.all([tab === "saved" ? savedPosts(user.id) : myPosts(user.id), newReplies(user.id, user.seen_at)]);
+  const [posts, fresh, followed, followers] = await Promise.all([
+    tab === "saved" ? savedPosts(user.id) : tab === "following" ? listPosts(user.id, { following: true }) : myPosts(user.id),
+    newReplies(user.id, user.seen_at),
+    tab === "following" ? followedNeighbors(user.id) : Promise.resolve([]),
+    followerCount(user.id),
+  ]);
   // Opening this page counts as reading the new replies (clears the nav badge).
   if (fresh.length) await q("UPDATE boundless.users SET seen_at = now() WHERE id = $1", [user.id]);
 
@@ -55,7 +62,48 @@ export default async function MePage(props: PageProps<"/me">) {
             <Icon name="bookmark" size={15} />
             {t("저장한 글")}
           </Link>
+          <Link href="/me?tab=following" className={tabCls(tab === "following")} aria-current={tab === "following" ? "page" : undefined}>
+            <Icon name="following" size={15} />
+            {t("팔로잉")}
+          </Link>
         </div>
+
+        {tab === "following" && (
+          <section className={`${card} overflow-hidden`}>
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b border-ink/[.06] px-4 py-3">
+              <h2 className="font-bold">{t("팔로우한 이웃 {n}명", { n: followed.length })}</h2>
+              {/* Only a count: who follows whom stays private on an anonymous board. */}
+              <p className="text-xs opacity-70">{t("나를 팔로우하는 이웃 {n}명 · 누가 팔로우하는지는 공개되지 않아요", { n: followers })}</p>
+            </div>
+            {followed.length > 0 && (
+              <ul className="divide-y divide-ink/[.06]">
+                {followed.map((f) => (
+                  <li key={f.id} className="flex items-center gap-3 px-4 py-2.5">
+                    <Avatar code={f.nationality} size={34} />
+                    <div className="min-w-0 flex-1">
+                      <p className="flex flex-wrap items-center gap-1.5 text-sm font-bold">
+                        {t("{country} 이웃", { country: countryName(f.nationality, lang) })}
+                        <LevelBadge points={f.points} t={t} />
+                        <span className="text-xs font-medium opacity-70">{t("글 {n}개", { n: f.posts })}</span>
+                      </p>
+                      {f.last_post && (
+                        <Link href={`/posts/${f.last_post}`} className="block truncate text-xs opacity-80 hover:underline">
+                          {f.last_title}
+                        </Link>
+                      )}
+                    </div>
+                    <form action={unfollow}>
+                      <input type="hidden" name="follow" value={f.id} />
+                      <button className="inline-flex h-9 items-center rounded-full px-3 text-xs font-bold text-ink/75 ring-1 ring-ink/15 hover:ring-ink/30">
+                        {t("팔로우 취소")}
+                      </button>
+                    </form>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        )}
 
         {tab === "mine" && (
           <Link href="/write" className={btn}>
@@ -81,6 +129,10 @@ export default async function MePage(props: PageProps<"/me">) {
           </ul>
         ) : tab === "saved" ? (
           <Notice title={t("저장한 글이 없어요")}>{t("글에서 저장을 누르면 여기에 모여요.")}</Notice>
+        ) : tab === "following" ? (
+          <Notice title={followed.length ? t("팔로우한 이웃의 새 글이 아직 없어요") : t("아직 팔로우한 이웃이 없어요")}>
+            {t("도움이 된 글 위쪽의 팔로우를 누르면 그 이웃의 새 글이 여기에 모여요.")}
+          </Notice>
         ) : (
           <Notice title={t("아직 쓴 글이 없어요")}>{t("내 질문과 답변 수가 여기에 표시돼요.")}</Notice>
         )}

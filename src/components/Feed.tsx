@@ -8,11 +8,15 @@ import { Notice, PostCard, btnGhost, postList } from "./ui";
 export type Sort = "new" | "likes" | "waiting";
 export const parseSort = (v: unknown): Sort => (v === "likes" || v === "waiting" ? v : "new");
 
+type ListOpts = { tag?: string; sort?: Sort; board?: string };
+
 /** Builds a URL for the current list with one option changed. */
-export function listHref(base: string, cur: { tag?: string; sort?: Sort }, change: { tag?: string; sort?: Sort; before?: string }) {
+export function listHref(base: string, cur: ListOpts, change: ListOpts & { before?: string }) {
   const p = new URLSearchParams();
   const tag = change.tag ?? cur.tag;
   const sort = change.sort ?? cur.sort ?? "new";
+  const board = change.board ?? cur.board;
+  if (board) p.set("board", board);
   if (tag) p.set("tag", tag);
   if (sort !== "new") p.set("sort", sort);
   if (change.before) p.set("before", change.before);
@@ -20,7 +24,7 @@ export function listHref(base: string, cur: { tag?: string; sort?: Sort }, chang
   return s ? `${base}?${s}` : base;
 }
 
-export function ListControls({ base, tags, tag, sort, t, lead }: { base: string; tags?: Tag[]; tag: string; sort: Sort; t: T; lead?: ReactNode }) {
+export function ListControls({ base, tags, tag, sort, board, t, lead }: { base: string; tags?: Tag[]; tag: string; sort: Sort; board?: string; t: T; lead?: ReactNode }) {
   const chip = (on: boolean) =>
     `inline-flex h-9 shrink-0 items-center rounded-full px-3.5 text-[13px] font-bold whitespace-nowrap transition ${on ? "bg-ink text-white" : "bg-white text-ink/70 ring-1 ring-ink/10 hover:ring-ink/25"}`;
   return (
@@ -49,7 +53,7 @@ export function ListControls({ base, tags, tag, sort, t, lead }: { base: string;
         ).map(([k, label]) => (
           <Link
             key={k}
-            href={listHref(base, { tag, sort }, { sort: k })}
+            href={listHref(base, { tag, sort, board }, { sort: k })}
             role="tab"
             aria-selected={sort === k}
             className={`inline-flex h-8 items-center rounded-full px-3 text-[13px] font-bold whitespace-nowrap transition ${sort === k ? "bg-white text-ink shadow-sm" : "text-ink/75 hover:text-ink"}`}
@@ -97,7 +101,7 @@ export function FeedList({
         ))}
       </ul>
       {moreHref && posts.length === PAGE && (
-        <Link href={moreHref(new Date(last.created_at).toISOString())} className={`${btnGhost} mt-3 w-full`}>
+        <Link href={moreHref(new Date(last.listed_at).toISOString())} className={`${btnGhost} mt-3 w-full`}>
           {t("이전 글 더 보기")}
         </Link>
       )}

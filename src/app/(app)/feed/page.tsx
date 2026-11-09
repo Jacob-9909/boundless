@@ -4,21 +4,25 @@ import { FeedList, ListControls, listHref, parseSort } from "@/components/Feed";
 import { Icon } from "@/components/Icon";
 import { Avatar, Flag, Landmark, TagText, btn, btnGhost, card } from "@/components/ui";
 import { getT, getUser } from "@/lib/auth";
-import { BOARDS } from "@/lib/boards";
+import { BOARDS, isBoard } from "@/lib/boards";
 import { cultureOf, DEFAULT_CULTURE } from "@/lib/cultures";
 import { countryName, timeAgo } from "@/lib/i18n";
 import { boardCounts, communityStats, listPosts } from "@/lib/posts";
 
 export const metadata = { title: "Home" };
 
+const chip = (on: boolean) =>
+  `inline-flex h-9 items-center gap-2 rounded-full text-[13px] font-bold whitespace-nowrap transition ${on ? "bg-ink text-white" : "bg-white ring-1 ring-ink/10 hover:ring-ink/25"}`;
+
 export default async function Home(props: PageProps<"/feed">) {
   const sp = await props.searchParams;
   const sort = parseSort(sp.sort);
   const before = typeof sp.before === "string" && sort === "new" ? sp.before : undefined;
+  const board = typeof sp.board === "string" && isBoard(sp.board) ? sp.board : undefined;
   const [{ lang, t }, user] = await Promise.all([getT(), getUser()]);
   const viewer = user?.id ?? null;
   const [posts, stats, counts, lounge] = await Promise.all([
-    listPosts(viewer, { before, sort: sort === "likes" ? "likes" : "new", waiting: sort === "waiting" }),
+    listPosts(viewer, { board, before, sort: sort === "likes" ? "likes" : "new", waiting: sort === "waiting" }),
     communityStats(),
     boardCounts(),
     user ? listPosts(viewer, { space: user.nationality, limit: 3 }) : Promise.resolve([]),
@@ -90,10 +94,9 @@ export default async function Home(props: PageProps<"/feed">) {
           )}
         </section>
 
-        {/* Topics as chips on phones and tablets; the desktop sidebar already lists them.
-            `relative` keeps the badges' absolute sr-only text inside the scroller; without it the page scrolls sideways on days with new posts. */}
-        <nav aria-label={t("게시판")} className="lg:hidden">
-          <ul className="relative -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:px-0 md:pb-0">
+        {/* Phones and tablets: help numbers and the board directory. Boards themselves are the square's category chips below. */}
+        <nav aria-label={t("공식 안내")} className="lg:hidden">
+          <ul className="flex flex-wrap items-center gap-2">
             {/* Emergency numbers one tap from home: the user test took 7 taps and a dead-end search to reach 112/119. */}
             <li className="shrink-0">
               <Link href="/guide" className="inline-flex h-9 items-center gap-1.5 rounded-full bg-red-700 px-3.5 text-[13px] font-bold whitespace-nowrap text-white">
@@ -101,28 +104,9 @@ export default async function Home(props: PageProps<"/feed">) {
                 112 · 119 · {t("공식 안내")}
               </Link>
             </li>
-            {BOARDS.map((b) => {
-              const c = counts.find((x) => x.topic === b.id);
-              return (
-                <li key={b.id} className="shrink-0">
-                  <Link href={`/b/${b.id}`} className="inline-flex h-9 items-center gap-2 rounded-full bg-white pr-3.5 pl-1.5 text-[13px] font-bold whitespace-nowrap ring-1 ring-ink/10 transition hover:ring-ink/25">
-                    <span className="flex size-6 items-center justify-center rounded-full text-white" style={{ background: b.color }}>
-                      <Icon name={b.icon} size={13} />
-                    </span>
-                    {t(b.ko)}
-                    {!!c?.today && (
-                      <span className="rounded-full bg-alert px-1.5 text-[11px] leading-[18px] text-white">
-                        <span aria-hidden="true">{c.today}</span>
-                        <span className="sr-only">{t("새 글 {n}", { n: c.today })}</span>
-                      </span>
-                    )}
-                  </Link>
-                </li>
-              );
-            })}
             <li className="shrink-0">
               <Link href="/boards" className="inline-flex h-9 items-center rounded-full px-3 text-[13px] font-bold whitespace-nowrap text-primary hover:underline">
-                {t("전체 보기")} →
+                {t("게시판 전체 보기")} →
               </Link>
             </li>
           </ul>
@@ -174,6 +158,7 @@ export default async function Home(props: PageProps<"/feed">) {
             base="/feed"
             tag=""
             sort={sort}
+            board={board}
             t={t}
             lead={
               <div>
@@ -182,13 +167,43 @@ export default async function Home(props: PageProps<"/feed">) {
               </div>
             }
           />
+          {/* Categories at the top of the square, on every screen: filter here without leaving home.
+              `relative` keeps the badges' absolute sr-only text inside the scroller; without it the page scrolls sideways on days with new posts. */}
+          <nav aria-label={t("게시판")}>
+            <ul className="relative -mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:px-0 md:pb-0">
+              <li className="shrink-0">
+                <Link href={listHref("/feed", { sort }, { board: "" })} aria-current={!board ? "page" : undefined} className={`${chip(!board)} px-3.5`}>
+                  {t("전체")}
+                </Link>
+              </li>
+              {BOARDS.map((b) => {
+                const today = counts.find((x) => x.topic === b.id)?.today ?? 0;
+                return (
+                  <li key={b.id} className="shrink-0">
+                    <Link href={listHref("/feed", { sort }, { board: b.id })} aria-current={board === b.id ? "page" : undefined} className={`${chip(board === b.id)} pr-3.5 pl-1.5`}>
+                      <span className="flex size-6 items-center justify-center rounded-full text-white" style={{ background: b.color }}>
+                        <Icon name={b.icon} size={13} />
+                      </span>
+                      {t(b.ko)}
+                      {!!today && (
+                        <span className="rounded-full bg-alert px-1.5 text-[11px] leading-[18px] text-white">
+                          <span aria-hidden="true">{today}</span>
+                          <span className="sr-only">{t("새 글 {n}", { n: today })}</span>
+                        </span>
+                      )}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
           <FeedList
             posts={posts}
             lang={lang}
             t={t}
-            emptyTitle={sort === "waiting" ? t("모든 질문에 답변이 달렸어요") : t("아직 글이 없어요")}
+            emptyTitle={sort === "waiting" ? t("모든 질문에 답변이 달렸어요") : board ? t("이 게시판에는 아직 글이 없어요") : t("아직 글이 없어요")}
             emptyBody={t("첫 글을 남겨 이웃들과 이야기를 시작해 보세요.")}
-            moreHref={sort === "new" ? (b) => listHref("/feed", { sort }, { before: b }) : undefined}
+            moreHref={sort === "new" ? (b) => listHref("/feed", { sort, board }, { before: b }) : undefined}
           />
         </section>
       </div>

@@ -14,7 +14,7 @@ export default async function ReportPage(props: PageProps<"/report">) {
 
   return (
     <div className="mx-auto max-w-3xl lg:ml-2 pb-6">
-      <BackLink href={post ? `/posts/${post}` : "/"} label={t("뒤로")} />
+      <BackLink href={post ? `/posts/${post}` : "/feed"} label={t("뒤로")} />
       <PageHead line="LINE 08 · REPORT" title={comment ? t("댓글 신고") : t("글 신고")} desc={t("신고 내용은 공개되지 않아요. 운영자가 검토해요.")} />
       <div className="space-y-4 p-4">
         <ReportForm post={post} comment={comment} />

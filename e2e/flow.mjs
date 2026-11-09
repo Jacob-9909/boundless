@@ -77,10 +77,22 @@ await a.waitForURL(/board=housing/);
 let title = `E2E recycling question ${run}`;
 await a.getByLabel("Title").fill(title);
 await a.getByLabel("Post text").fill("Which day are boxes collected in Mapo?");
+// One photo: the browser shrinks it to JPEG, the server checks its bytes, the post shows it.
+const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
+await a.locator('input[name="images"]').setInputFiles({ name: "dot.png", mimeType: "image/png", buffer: png });
+await a.locator('img[src^="blob:"]').waitFor();
 await a.getByRole("button", { name: "Post", exact: true }).click();
 await a.waitForURL(/\/posts\/\d+$/);
 const postUrl = a.url();
 const postId = postUrl.split("/").pop();
+await a.waitForFunction(() => {
+  const img = document.querySelector('img[alt="Attached photo 1"]');
+  return img?.complete && img.naturalWidth > 0;
+});
+// The word filter stops profanity before it is saved.
+await a.getByLabel("Comment").fill("what the fuck");
+await a.getByRole("button", { name: "Reply" }).click();
+await a.getByText("contains profanity or hate speech").waitFor();
 await comment(a, "Author follow-up");
 
 // B and C reply: per-post anonymous handles.
@@ -104,6 +116,13 @@ await b.getByRole("button", { name: "Save" }).click();
 await b.getByRole("button", { name: "Saved" }).waitFor();
 await b.goto(BASE + "/me?tab=saved");
 await b.getByText(title).waitFor();
+// Following an author gathers their posts on the Following tab.
+await b.goto(postUrl);
+await b.getByRole("button", { name: "Follow", exact: true }).click();
+await b.getByRole("button", { name: "Following", exact: true }).waitFor();
+await b.goto(BASE + "/me?tab=following");
+await b.getByText("Following 1 neighbors").waitFor();
+await b.getByRole("link", { name: title }).first().waitFor();
 await b.goto(postUrl);
 const thread = b.locator("li", { hasText: "Author follow-up" });
 await thread.locator("summary", { hasText: "Reply" }).click();
@@ -119,7 +138,8 @@ await a.goto(BASE + "/me");
 await a.getByText(/\d+ new replies/).waitFor();
 await a.goto(postUrl);
 await a.getByRole("button", { name: "Mark as solved" }).click();
-await a.getByText("Solved", { exact: true }).waitFor();
+// Solved reads as neighbors from different countries solving it together (A: Japan, B: Vietnam).
+await a.getByText(/^Solved together · \d+ countries$/).first().waitFor();
 await a.getByRole("link", { name: "Edit" }).click();
 title = `E2E recycling question (edited) ${run}`;
 await a.getByLabel("Title").fill(title);

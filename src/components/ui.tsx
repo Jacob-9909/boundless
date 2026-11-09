@@ -229,6 +229,57 @@ export function Notice({ tone = "info", label, title, children }: { tone?: "info
   );
 }
 
+/** Countries that solved a question: the asker's first, then those of the neighbors who answered. */
+const solvedBy = (p: Pick<PostRow, "nationality" | "helpers">) => [...new Set([p.nationality, ...(p.helpers ?? [])])];
+
+/** "Solved", told as neighbors from different countries working it out together. */
+export function SolvedBadge({ post, t, className = "" }: { post: Pick<PostRow, "nationality" | "helpers">; t: T; className?: string }) {
+  const all = solvedBy(post);
+  const together = !!post.helpers?.length;
+  return (
+    <span className={`${tag} bg-emerald-700 text-white ${className}`}>
+      {together ? (
+        <span className="flex -space-x-1" aria-hidden="true">
+          {all.slice(0, 4).map((c) => (
+            <Flag key={c} code={c} h={12} round className="ring-1 ring-emerald-700" />
+          ))}
+        </span>
+      ) : (
+        <Icon name="check" size={12} />
+      )}
+      {!together ? t("해결됨") : all.length > 1 ? t("{n}개국 이웃이 함께 해결", { n: all.length }) : t("이웃과 함께 해결")}
+    </span>
+  );
+}
+
+/** Under a solved question: who solved it, by country, and a nudge to thank them or write the answer down. */
+export function SolvedNote({ post, lang, t }: { post: Pick<PostRow, "nationality" | "helpers">; lang: Lang; t: T }) {
+  const all = solvedBy(post);
+  const together = !!post.helpers?.length;
+  const names = all.map((c) => countryName(c, lang)).join(" · ");
+  return (
+    <div role="note" className="mt-4 flex items-center gap-3 rounded-2xl border border-emerald-700/20 bg-emerald-50 p-4 text-emerald-950">
+      <span className="flex shrink-0 -space-x-2" aria-hidden="true">
+        {all.slice(0, 5).map((c) => (
+          <Avatar key={c} code={c} size={34} />
+        ))}
+      </span>
+      <div className="min-w-0">
+        <p className="font-bold">
+          {!together
+            ? t("글쓴이가 해결됐다고 표시한 질문이에요")
+            : all.length > 1
+              ? t("{countries}, {n}개국 이웃이 국경을 넘어 함께 해결했어요", { countries: names, n: all.length })
+              : t("{country} 이웃끼리 서로 도와 해결했어요", { country: names })}
+        </p>
+        <p className="mt-0.5 text-sm opacity-80">
+          {together ? t("도움이 된 답변에 ‘도움돼요’를 눌러 고마움을 전해 보세요.") : t("어떻게 해결했는지 댓글로 남기면 다음 이웃에게 큰 도움이 돼요.")}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 /** Container for a list of posts: one surface, items split by hairlines (forum/Reddit style). */
 export const postList = `${card} divide-y divide-ink/[.07] overflow-hidden`;
 
@@ -262,21 +313,52 @@ export function PostCard({ post, lang, t, showBoard = true }: { post: PostRow; l
         )}
         <span className={`whitespace-nowrap ${showBoard ? "" : "font-bold"}`}>{t("{country} 이웃", { country: countryName(post.nationality, lang) })}</span>
         <LevelBadge points={post.points} t={t} />
-        <span className="whitespace-nowrap opacity-70">
-          {post.region && `· ${regionLabel(post.region, t)} `}· {timeAgo(post.created_at, lang)}
-        </span>
+        {post.following && (
+          <span className="inline-flex items-center gap-0.5 rounded-full bg-ink px-1.5 py-px text-[11px] font-bold whitespace-nowrap text-white">
+            <Icon name="following" size={11} />
+            {t("팔로잉")}
+          </span>
+        )}
+        {/* The region is how readers judge whether an answer applies to them, so it stands out from the time. */}
+        {post.region && (
+          <span className="inline-flex items-center gap-0.5 font-bold whitespace-nowrap">
+            <Icon name="pin" size={12} className="text-primary" />
+            {regionLabel(post.region, t)}
+          </span>
+        )}
+        <span className="whitespace-nowrap opacity-70">· {timeAgo(post.created_at, lang)}</span>
+        {waiting && post.bumped_at && (
+          <span className={`${tag} bg-amber-100 text-amber-900`}>
+            <Icon name="lift" size={12} />
+            {t("도움 요청")}
+          </span>
+        )}
       </div>
 
-      <h2 className="mt-2 font-display text-[17px] leading-snug font-bold [overflow-wrap:anywhere] md:text-lg">
-        <Link href={`/posts/${post.id}`} className="after:absolute after:inset-0 after:z-10 group-hover:underline">
-          <TagText board={post.topic} tagId={post.kind} t={t} />
-          {post.title}
-        </Link>
-      </h2>
-      {(board.extra === "market" || board.extra === "event") && (
-        <div className="mt-1.5">{board.extra === "market" ? <MarketLine post={post} t={t} /> : <EventLine post={post} t={t} />}</div>
-      )}
-      <p className="mt-1 line-clamp-2 text-sm leading-relaxed opacity-75 [overflow-wrap:anywhere]">{post.body}</p>
+      <div className="mt-2 flex gap-3">
+        <div className="min-w-0 flex-1">
+          <h2 className="font-display text-[17px] leading-snug font-bold [overflow-wrap:anywhere] md:text-lg">
+            <Link href={`/posts/${post.id}`} className="after:absolute after:inset-0 after:z-10 group-hover:underline">
+              <TagText board={post.topic} tagId={post.kind} t={t} />
+              {post.title}
+            </Link>
+          </h2>
+          {(board.extra === "market" || board.extra === "event") && (
+            <div className="mt-1.5">{board.extra === "market" ? <MarketLine post={post} t={t} /> : <EventLine post={post} t={t} />}</div>
+          )}
+          <p className="mt-1 line-clamp-2 text-sm leading-relaxed opacity-75 [overflow-wrap:anywhere]">{post.body}</p>
+        </div>
+        {post.image && (
+          <Image
+            src={`/api/img/${post.image}`}
+            alt=""
+            width={88}
+            height={88}
+            unoptimized
+            className="size-[72px] shrink-0 rounded-xl bg-ink/5 object-cover ring-1 ring-ink/10 md:size-[88px]"
+          />
+        )}
+      </div>
 
       {post.top_answer && (
         <div className="mt-3 flex gap-2.5 border-l-2 border-primary/40 pl-3">
@@ -304,15 +386,16 @@ export function PostCard({ post, lang, t, showBoard = true }: { post: PostRow; l
           <Icon name="comment" size={15} />
           {post.comments}
         </span>
+        <span className={`${action} px-2 font-medium opacity-70`} aria-label={t("조회 {n}", { n: post.views })}>
+          <Icon name="eye" size={15} />
+          {post.views}
+        </span>
         <span className={`${action} px-2 font-medium opacity-70`} title={t("원문")}>
           <Icon name="globe" size={13} />
           {langAutonym(post.lang, lang)}
         </span>
         {post.solved ? (
-          <span className={`${tag} ml-auto bg-emerald-700 text-white`}>
-            <Icon name="check" size={12} />
-            {t("해결됨")}
-          </span>
+          <SolvedBadge post={post} t={t} className="ml-auto" />
         ) : (
           // On my own question "Answer →" reads like an instruction to myself; say it is waiting instead.
           waiting && (post.mine ? <span className="ml-auto whitespace-nowrap opacity-70">{t("답변 대기")}</span> : <span className="ml-auto font-bold whitespace-nowrap text-primary">{t("답변하기")} →</span>)

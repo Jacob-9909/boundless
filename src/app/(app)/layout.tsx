@@ -32,7 +32,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   const navEnd: NavItem[] = [
     { href: "/guide", icon: "info", label: t("공식 안내") },
     { href: "/settings", icon: "sliders", label: t("설정") },
-    ...(canViewQueue(user) ? [{ href: "/admin", icon: "flag" as const, label: t("운영 큐") }] : []),
+    ...(canViewQueue(user) ? [{ href: "/admin", icon: "siren" as const, label: t("운영 큐") }] : []),
   ];
 
   return (

@@ -36,7 +36,7 @@ export default async function PolicyPage() {
     },
     {
       id: "reports",
-      icon: "flag",
+      icon: "siren",
       title: t("신고와 처리"),
       lines: [
         t("개인정보 노출, 혐오·차별, 사기·불법 거래, 광고·도배는 글과 댓글마다 신고할 수 있어요."),

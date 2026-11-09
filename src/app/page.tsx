@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { demoLogin } from "@/app/actions";
 import { LangMenu } from "@/components/LangMenu";
@@ -56,8 +57,10 @@ const sectionTitle = "mt-2 font-display text-3xl text-balance font-extrabold tra
 export default async function Landing(props: PageProps<"/">) {
   const sp = await props.searchParams;
   const [{ lang, t }, user] = await Promise.all([getT(), getUser()]);
-  // Members go straight to their feed; the logo's "?intro=1" link brings them back here.
-  if (user && !sp.intro) redirect("/feed");
+  // Members opening the site go straight to their feed; the logo's "?intro=1" link brings them back here.
+  // Not when Back lands here from inside the app (a client fetch, Sec-Fetch-Dest "empty", not a page load):
+  // redirecting then sent Back straight to the feed again, so Back seemed to do nothing after a sample sign-in.
+  if (user && !sp.intro && (await headers()).get("sec-fetch-dest") !== "empty") redirect("/feed");
   const [stats, latest, activity] = await Promise.all([communityStats(), listPosts(null, { limit: 3 }), recentActivity(null, 2)]);
   const demo = demoEnabled();
   const hellos = [DEFAULT_CULTURE, ...CULTURES].map((c) => ({ code: c.code, hello: c.hello, font: c.font, color: c.c.accent }));
@@ -71,7 +74,7 @@ export default async function Landing(props: PageProps<"/">) {
   ];
   const safety: { icon: IconName; title: string; body: string }[] = [
     { icon: "lock", title: t("국적만 공개"), body: t("이메일은 로그인에만 써요. 글마다 다른 익명 호칭이 붙어요.") },
-    { icon: "flag", title: t("신고 · 차단 · 운영자 검토"), body: t("개인정보 노출, 혐오, 사기 글은 신고하면 운영자가 확인해요.") },
+    { icon: "siren", title: t("신고 · 차단 · 운영자 검토"), body: t("개인정보 노출, 혐오, 사기 글은 신고하면 운영자가 확인해요.") },
     { icon: "alert", title: t("도배 방지"), body: t("글·댓글·로그인 코드에 시간당 횟수 제한이 있어요.") },
     { icon: "phone", title: t("공식 정보와 함께"), body: t("비자·의료·법률 문제는 글 아래에 관련 공식 기관 안내를 보여 줘요.") },
   ];
@@ -499,7 +502,7 @@ export default async function Landing(props: PageProps<"/">) {
               <form action={demoLogin.bind(null, "MOD")}>
                 <button className="flex w-full items-center gap-4 rounded-2xl bg-[#14161C] p-4 text-left text-white transition hover:-translate-y-0.5 hover:shadow-lg">
                   <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-white/10">
-                    <Icon name="flag" size={22} />
+                    <Icon name="siren" size={22} />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-[15px] font-extrabold">{t("운영자 화면 보기 (읽기 전용)")}</span>
