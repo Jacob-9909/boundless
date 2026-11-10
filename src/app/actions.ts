@@ -21,9 +21,10 @@ import {
   verifiedEmail,
 } from "@/lib/auth";
 import { isId, q, track } from "@/lib/db";
-import { aiEnabled, checkDraft, summarizeThread, type DraftCheck, type Summary } from "@/lib/ai";
+import { aiEnabled, checkDraft, summarizeThread, SUMMARY_VERSION, type DraftCheck, type Summary } from "@/lib/ai";
 import { ASKING_TAGS, BOARDS, boardOf, DEALS, isBoard, LOUNGE } from "@/lib/boards";
 import { isCountry, isLang, isRegion, langName, POST_LANGS, READ_LANGS, readLangOf, REPORT_REASONS } from "@/lib/i18n";
+import { EN } from "@/lib/en";
 import { isAbusive } from "@/lib/moderation";
 import { stripPII } from "@/lib/pii";
 import { BUMP_AFTER_H } from "@/lib/posts";
@@ -340,7 +341,7 @@ export async function aiSummary(postId: string): Promise<SummaryView | null> {
   if (!cs.some((c) => c.anon_no !== 0)) return null;
   const post = { title: stripPII(p.title), body: stripPII(p.body).slice(0, 3000) };
   const lines = cs.map((c) => ({ text: stripPII(c.body).slice(0, 600), helpful: c.likes, author: c.anon_no === 0 }));
-  const basis = createHash("sha256").update(JSON.stringify([post, lines])).digest("hex");
+  const basis = createHash("sha256").update(JSON.stringify([SUMMARY_VERSION, post, lines])).digest("hex");
   const hit = await q<{ summary: Summary }>("SELECT summary FROM boundless.post_summaries WHERE post_id = $1 AND lang = $2 AND basis = $3", [
     postId,
     lang,
@@ -349,7 +350,11 @@ export async function aiSummary(postId: string): Promise<SummaryView | null> {
   let s: Summary | null = hit[0]?.summary ?? null;
   if (!s) {
     s = await summarizeThread(post, lines, langName(lang, "en"));
-    if (!s) return null;
+    if (!s) {
+      // No cited steps (or the AI failed): drop an outdated summary rather than keep quoting old text.
+      await q("DELETE FROM boundless.post_summaries WHERE post_id = $1 AND lang = $2", [postId, lang]);
+      return null;
+    }
     await q(
       `INSERT INTO boundless.post_summaries (post_id, lang, basis, summary) VALUES ($1, $2, $3, $4)
        ON CONFLICT (post_id, lang) DO UPDATE SET basis = EXCLUDED.basis, summary = EXCLUDED.summary, created_at = now()`,
@@ -373,7 +378,8 @@ export async function aiCheckDraft(d: { title: string; body: string; board: stri
   if (used[0].n >= 20) return { error: "AI 점검은 1시간에 20번까지 쓸 수 있어요." };
   track("ai_check", user.id);
   const global = d.space !== "lounge" && isBoard(d.board);
-  const boards = global ? BOARDS.map((b) => ({ id: b.id, about: `${b.ko}. ${b.desc}` })) : [];
+  // English board names: with the Korean ones in the prompt the model wrote Korean titles for English drafts.
+  const boards = global ? BOARDS.map((b) => ({ id: b.id, about: `${EN[b.ko] ?? b.ko}. ${EN[b.desc] ?? b.desc}` })) : [];
   const check = await checkDraft({ title: stripPII(title), body: stripPII(body), board: global ? d.board : "" }, boards, langName(await getLang(), "en"));
   return check ? { check } : { error: "AI 점검을 지금은 쓸 수 없어요. 잠시 뒤 다시 시도해 주세요." };
 }

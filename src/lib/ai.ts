@@ -48,6 +48,8 @@ const strings = { type: "array", items: { type: "string" } };
 /* ---------- summary of a solved thread ---------- */
 
 export type Summary = { situation: string; steps: string[]; documents: string[]; contacts: string[]; sources: number[] };
+/** Part of the cache key: bump it when the prompt or parser changes so old summaries are made again. */
+export const SUMMARY_VERSION = 2;
 export type ThreadLine = { text: string; helpful: number; author: boolean };
 
 export function threadText(post: { title: string; body: string }, lines: ThreadLine[]) {
@@ -55,12 +57,20 @@ export function threadText(post: { title: string; body: string }, lines: ThreadL
   return `QUESTION: ${post.title}\n${post.body}\n\nANSWERS:\n${answers.join("\n")}`;
 }
 
-/** Contacts survive only when their numbers and web addresses appear in the thread: the AI must not invent a phone number. */
+/**
+ * Every step must name the answer it comes from, and steps without a real answer number are dropped, so a
+ * thread whose answers never say how it was solved gets no card (the model otherwise fills in generic advice).
+ * Contacts survive only when their numbers and web addresses appear in the thread.
+ */
 export function parseSummary(raw: unknown, thread: string, answers: number): Summary | null {
   const o = raw as Record<string, unknown> | null;
   const situation = clip(o?.situation, 240);
-  const steps = list(o?.steps, 4, 200);
-  if (!situation || !steps.length) return null;
+  const cited = (Array.isArray(o?.steps) ? o.steps : [])
+    .map((s: { text?: unknown; answer?: unknown }) => ({ text: clip(s?.text, 200), answer: s?.answer }))
+    .filter((s): s is { text: string; answer: number } => Boolean(s.text) && Number.isInteger(s.answer) && (s.answer as number) >= 1 && (s.answer as number) <= answers)
+    .slice(0, 4);
+  if (!situation || !cited.length) return null;
+  const steps = cited.map((s) => s.text);
   const digits = thread.replace(/[\s-]/g, "");
   const lower = thread.toLowerCase();
   const contacts = list(o?.contacts, 4, 120).filter((c) => {
@@ -68,8 +78,7 @@ export function parseSummary(raw: unknown, thread: string, answers: number): Sum
     const hosts = c.toLowerCase().match(/[a-z0-9-]+(?:\.[a-z0-9-]+)+/g) ?? [];
     return nums.length + hosts.length > 0 && nums.every((n) => digits.includes(n)) && hosts.every((h) => lower.includes(h));
   });
-  const nums = Array.isArray(o?.sources) ? o.sources.filter((n): n is number => Number.isInteger(n) && n >= 1 && n <= answers) : [];
-  return { situation, steps, documents: list(o?.documents, 5, 80), contacts, sources: [...new Set(nums)].slice(0, 5) };
+  return { situation, steps, documents: list(o?.documents, 5, 80), contacts, sources: [...new Set(cited.map((s) => s.answer))] };
 }
 
 export async function summarizeThread(post: { title: string; body: string }, lines: ThreadLine[], language: string) {
@@ -80,16 +89,21 @@ export async function summarizeThread(post: { title: string; body: string }, lin
       "You summarize solved questions from an online community of foreigners living in Korea. " +
       "Use only facts stated in the thread. Never add advice, phone numbers, places or rules that are not in it. Reply with JSON only.",
     user:
-      `Write every field in ${language}. Summarize how the asker's problem was solved, so a newcomer with the same problem knows what to do next.\n` +
+      `Write every text field in ${language}. Summarize how the asker's problem was solved, so a newcomer with the same problem knows what to do next.\n` +
       "situation: the asker's problem in one sentence.\n" +
-      "steps: 1-4 short steps that solved it, in order.\n" +
-      "documents: papers or items those steps need (empty if none).\n" +
-      "contacts: phone numbers or websites from the thread that helped (empty if none).\n" +
-      `sources: the numbers of the answers you used.\n\n${thread}`,
+      "steps: up to 4 steps that solved it, in order. Each step must be said in one of the numbered answers; give that answer's number. " +
+      "If no answer explains what to do, return an empty list. Do not use general knowledge.\n" +
+      "documents: papers or items the answers say are needed (empty if none).\n" +
+      `contacts: phone numbers or websites written in the answers (empty if none).\n\n${thread}`,
     schema: {
       type: "object",
-      properties: { situation: { type: "string" }, steps: strings, documents: strings, contacts: strings, sources: { type: "array", items: { type: "integer" } } },
-      required: ["situation", "steps", "documents", "contacts", "sources"],
+      properties: {
+        situation: { type: "string" },
+        steps: { type: "array", items: { type: "object", properties: { text: { type: "string" }, answer: { type: "integer" } }, required: ["text", "answer"] } },
+        documents: strings,
+        contacts: strings,
+      },
+      required: ["situation", "steps", "documents", "contacts"],
     },
     maxTokens: 700,
   });
@@ -118,7 +132,7 @@ export async function checkDraft(d: { title: string; body: string; board: string
       (boards.length
         ? `board: the best board id for this post from the list below (now "${d.board}").\n${boards.map((b) => `${b.id}: ${b.about}`).join("\n")}\n`
         : 'board: always "".\n') +
-      "title: a clearer title in the same language as the draft, under 60 characters, or \"\" if the title is already clear.\n" +
+      'title: a clearer title written in the language of DRAFT TEXT (never another language), under 60 characters, or "" if the title is already clear.\n' +
       `missing: up to 3 short suggestions in ${language} for details neighbors would need to answer (visa type, region, dates, budget...) that the draft lacks; empty if nothing important is missing.\n` +
       `privacy: up to 3 short warnings in ${language} if the draft reveals a real name, an exact home address, or a photo of a face or ID card; empty otherwise.\n\n` +
       `DRAFT TITLE: ${d.title}\nDRAFT TEXT:\n${d.body}`,

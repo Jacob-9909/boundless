@@ -18,18 +18,18 @@ const thread = threadText({ title: "Wage not paid", body: "My boss did not pay M
 const s = parseSummary(
   {
     situation: "Unpaid wages",
-    steps: ["Call 1350", ""],
+    steps: [{ text: "Call 1350", answer: 1 }, { text: "", answer: 1 }, { text: "Use general knowledge", answer: 7 }, { text: "No number" }],
     documents: ["pay slip"],
     contacts: ["1350 (Ministry of Labor)", "www.moel.go.kr", "02-9999-9999 (invented)", "the labor office"],
-    sources: [1, 1, 2, 7, 0, "2"],
   },
   thread,
   2
 );
 assert.deepEqual(s.steps, ["Call 1350"]);
 assert.deepEqual(s.contacts, ["1350 (Ministry of Labor)", "www.moel.go.kr"], "invented numbers and contacts without a number are dropped");
-assert.deepEqual(s.sources, [1, 2]);
+assert.deepEqual(s.sources, [1], "sources are the answers the kept steps cite");
 assert.equal(parseSummary({ situation: "x", steps: [] }, thread, 2), null);
+assert.equal(parseSummary({ situation: "x", steps: [{ text: "Generic advice", answer: 0 }] }, thread, 2), null, "no cited step, no card");
 assert.equal(parseSummary(null, thread, 2), null);
 
 const c = parseCheck({ board: "visa", title: "  Clearer title ", missing: ["visa type?", "", "region?", "a", "b"], privacy: [] }, ["visa", "work"], "work");
