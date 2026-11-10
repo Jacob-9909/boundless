@@ -76,7 +76,11 @@ await a.getByRole("link", { name: /Housing/ }).first().click();
 await a.waitForURL(/board=housing/);
 let title = `E2E recycling question ${run}`;
 await a.getByLabel("Title").fill(title);
+// A phone number in the text gets a warning while typing (no AI involved), and it goes once removed.
+await a.getByLabel("Post text").fill("Which day are boxes collected in Mapo? Text me 010-1234-5678");
+await a.getByText("Personal details showing: phone number. Please remove them before posting.").waitFor();
 await a.getByLabel("Post text").fill("Which day are boxes collected in Mapo?");
+await a.getByText(/Personal details showing/).waitFor({ state: "detached" });
 // One photo: the browser shrinks it to JPEG, the server checks its bytes, the post shows it.
 const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
 await a.locator('input[name="images"]').setInputFiles({ name: "dot.png", mimeType: "image/png", buffer: png });

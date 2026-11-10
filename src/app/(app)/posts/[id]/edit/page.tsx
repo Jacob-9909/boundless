@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { updatePost } from "@/app/actions";
 import { WriteForm } from "@/components/forms";
 import { BackLink, SignInRequired } from "@/components/ui";
+import { aiEnabled } from "@/lib/ai";
 import { getT, getUser } from "@/lib/auth";
 import { boardOf } from "@/lib/boards";
 import { countryName, langName, POST_LANGS } from "@/lib/i18n";
@@ -39,6 +40,7 @@ export default async function EditPage(props: PageProps<"/posts/[id]/edit">) {
         nationality={user.nationality}
         countryLabel={countryName(user.nationality, lang)}
         images={images}
+        ai={aiEnabled()}
       />
     </div>
   );

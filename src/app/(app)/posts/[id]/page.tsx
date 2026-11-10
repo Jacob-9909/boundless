@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { addComment, bumpPost, deleteOwn, setDeal, toggleFollow, toggleLike, toggleSave, toggleSolved } from "@/app/actions";
+import { AiSummary } from "@/components/AiSummary";
 import { CommentForm, AppealForm, ViewCount } from "@/components/forms";
 import { ShareButton } from "@/components/Share";
 import { Icon } from "@/components/Icon";
@@ -9,6 +10,7 @@ import { RightRail } from "@/components/Community";
 import { LinkCards, Linkify } from "@/components/RichText";
 import { Translatable } from "@/components/Translate";
 import { Avatar, BackLink, BoardBadge, EventLine, Flag, HelpItem, LevelBadge, MarketLine, NationalityChip, Notice, SolvedBadge, SolvedNote, TagText, btn, card, pill, tag } from "@/components/ui";
+import { aiEnabled } from "@/lib/ai";
 import { getT, getUser } from "@/lib/auth";
 import { isId } from "@/lib/db";
 import { boardOf, DEALS, tagOf } from "@/lib/boards";
@@ -168,6 +170,7 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
             <LinkCards text={post.body} label={t("첨부 링크")} />
           </section>
           {post.solved && <SolvedNote post={post} lang={lang} t={t} />}
+          {post.solved && aiEnabled() && comments.some((c) => c.anon_no !== 0 && !c.hidden) && <AiSummary postId={post.id} />}
           {unanswered && (
             <div className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-amber-950">
               <Icon name="lift" size={20} />
@@ -330,7 +333,8 @@ function Comment({ c, postId, t, lang, signedIn, target }: { c: CommentRow; post
   return (
     <div
       data-comment
-      className={`flex gap-3 rounded-2xl border-l-4 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,.04)] ${c.anon_no === 0 ? "border-primary" : "border-transparent"}`}
+      id={`c-${c.id}`}
+      className={`flex scroll-mt-24 gap-3 rounded-2xl border-l-4 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,.04)] ${c.anon_no === 0 ? "border-primary" : "border-transparent"}`}
     >
       <Avatar code={c.nationality} size={34} />
       <div className="min-w-0 flex-1">

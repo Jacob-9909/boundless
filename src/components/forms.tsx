@@ -1,10 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState } from "react";
-import { appeal, countView, reportContent, updateNationality, type PostState, type Result } from "@/app/actions";
-import type { Board } from "@/lib/boards";
+import { aiCheckDraft, appeal, countView, reportContent, updateNationality, type PostState, type Result } from "@/app/actions";
+import type { DraftCheck } from "@/lib/ai";
+import { boardOf, type Board } from "@/lib/boards";
 import { REGIONS, REPORT_REASONS } from "@/lib/i18n";
+import { findPII } from "@/lib/pii";
 import { Icon } from "./Icon";
 import { useT } from "./I18n";
 import { Flag, btn, btnGhost, field, labelCls } from "./ui";
@@ -136,6 +139,104 @@ function PhotoPicker({ existing = [], reset }: { existing?: { id: string }[]; re
 }
 
 /** New post and edit share this form; the server action decides which. Fields adapt to the board. */
+/** Before posting: the AI suggests a board or a clearer title, asks for missing details, warns about privacy. */
+function AiCheck({
+  board,
+  space,
+  canMove,
+  read,
+  setTitle,
+}: {
+  board: Board;
+  space: string;
+  canMove: boolean; // new posts only: the draft can follow to another board
+  read: () => { title: string; body: string };
+  setTitle: (v: string) => void;
+}) {
+  const t = useT();
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [res, setRes] = useState<{ check?: DraftCheck; error?: string } | null>(null);
+  const run = async () => {
+    setBusy(true);
+    try {
+      setRes(await aiCheckDraft({ ...read(), board: board.id, space }));
+    } catch {
+      setRes({ error: "AI 점검을 지금은 쓸 수 없어요. 잠시 뒤 다시 시도해 주세요." });
+    } finally {
+      setBusy(false);
+    }
+  };
+  // The write page restores a draft saved under the new board's key, so the text comes along.
+  const move = (to: string) => {
+    try {
+      localStorage.setItem(`draft:global:${to}`, JSON.stringify(read()));
+    } catch {}
+    router.push(`/write?board=${to}`);
+  };
+  const c = res?.check;
+  const board2 = canMove ? c?.board : null;
+  const clean = c && !board2 && !c.title && !c.missing.length && !c.privacy.length;
+  const box = "mt-3 text-sm [overflow-wrap:anywhere]";
+  return (
+    <div className="rounded-2xl border border-violet-200 bg-violet-50/60 p-4 text-violet-950">
+      <button
+        type="button"
+        onClick={run}
+        disabled={busy}
+        className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-white px-4 text-sm font-bold text-violet-800 ring-1 ring-violet-300 hover:ring-violet-500 disabled:opacity-60"
+      >
+        <Icon name="sparkles" size={16} />
+        {busy ? t("점검하는 중…") : t("AI로 질문 점검하기")}
+      </button>
+      <p className="mt-2 text-xs opacity-75">{t("AI 점검은 글을 NVIDIA AI로 보내요. 전화번호·등록번호·이메일은 지우고 보내요.")}</p>
+      <div aria-live="polite">
+        {res?.error && <p className={`${box} font-bold text-red-700`}>{t(res.error)}</p>}
+        {clean && <p className={`${box} font-bold`}>{t("좋아요. 이대로 올려도 충분해요.")}</p>}
+        {c && c.privacy.length > 0 && (
+          <div className={`${box} rounded-xl bg-red-50 p-3 text-red-900`}>
+            <p className="font-bold">{t("올리기 전에 확인해 주세요")}</p>
+            <ul className="mt-1 list-disc space-y-0.5 pl-5">
+              {c.privacy.map((x, i) => (
+                <li key={i}>{x}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {board2 && (
+          <p className={`${box} flex flex-wrap items-center gap-2`}>
+            {t("이 내용은 {board} 게시판에 더 잘 맞아요.", { board: t(boardOf(board2).ko) })}
+            <button type="button" onClick={() => move(board2)} className="h-9 rounded-lg bg-white px-3 font-bold text-primary ring-1 ring-ink/15">
+              {t("옮기기")}
+            </button>
+          </p>
+        )}
+        {c?.title && (
+          <div className={box}>
+            <p className="font-bold">{t("제목 제안")}</p>
+            <p className="mt-1 flex flex-wrap items-center gap-2">
+              <span className="rounded-lg bg-white px-2.5 py-1.5 ring-1 ring-violet-200">{c.title}</span>
+              <button type="button" onClick={() => setTitle(c.title!)} className="h-9 rounded-lg px-3 font-bold text-primary hover:bg-white">
+                {t("이 제목 쓰기")}
+              </button>
+            </p>
+          </div>
+        )}
+        {c && c.missing.length > 0 && (
+          <div className={box}>
+            <p className="font-bold">{t("이런 정보를 더하면 답을 받기 쉬워요")}</p>
+            <ul className="mt-1 list-disc space-y-0.5 pl-5">
+              {c.missing.map((x, i) => (
+                <li key={i}>{x}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function WriteForm({
   action: serverAction,
   submitLabel,
@@ -148,6 +249,7 @@ export function WriteForm({
   countryLabel,
   draftKey,
   images,
+  ai,
 }: {
   action: (s: PostState, f: FormData) => Promise<PostState>;
   submitLabel: string;
@@ -160,9 +262,11 @@ export function WriteForm({
   countryLabel: string;
   draftKey?: string; // new posts only: title and body autosave on this device
   images?: { id: string }[]; // edit: photos already attached
+  ai?: boolean; // the server has an AI key: offer the draft check
 }) {
   const t = useT();
   const [state, action, pending] = useActionState(serverAction, {});
+  const [pii, setPii] = useState<string[]>([]);
   const v: Record<string, string> = state.values ?? initial;
   const [tagId, setTagId] = useState(v.kind || board.tags[0].id);
   const [len, setLen] = useState((v.body ?? "").length);
@@ -203,7 +307,17 @@ export function WriteForm({
     } catch {}
   };
   return (
-    <form ref={form} action={action} onInput={saveDraft} onSubmit={dropDraft} className="space-y-5 px-4 py-4 md:px-4">
+    <form
+      ref={form}
+      action={action}
+      onInput={() => {
+        saveDraft();
+        const { title, body } = fields();
+        setPii(findPII(`${title?.value ?? ""}\n${body?.value ?? ""}`));
+      }}
+      onSubmit={dropDraft}
+      className="space-y-5 px-4 py-4 md:px-4"
+    >
       <input type="hidden" name="board" value={board.id} />
       {restored && (
         <p role="status" className="flex flex-wrap items-center gap-x-2 rounded-xl bg-soft/70 px-3.5 py-2 text-sm">
@@ -328,7 +442,30 @@ export function WriteForm({
           <span>{t("이름, 연락처, 상세 주소는 적지 마세요.")}</span>
           <span className="tabular-nums">{len} / 5000</span>
         </p>
+        {pii.length > 0 && (
+          <p role="alert" className="mt-2 flex items-start gap-1.5 rounded-xl bg-red-50 px-3 py-2 text-sm font-bold text-red-800">
+            <Icon name="alert" size={16} className="mt-0.5" />
+            {t("개인정보가 보여요: {kinds}. 올리기 전에 지워 주세요.", { kinds: pii.map((k) => t(k)).join(", ") })}
+          </p>
+        )}
       </div>
+
+      {ai && (
+        <AiCheck
+          board={board}
+          space={space}
+          canMove={Boolean(storeKey)}
+          read={() => {
+            const { title, body } = fields();
+            return { title: title?.value ?? "", body: body?.value ?? "" };
+          }}
+          setTitle={(v) => {
+            const { title } = fields();
+            if (title) title.value = v;
+            saveDraft();
+          }}
+        />
+      )}
 
       <PhotoPicker existing={images} reset={state} />
 

@@ -187,3 +187,14 @@ CREATE TABLE IF NOT EXISTS boundless.follows (
   CHECK (user_id <> followee_id)
 );
 CREATE INDEX IF NOT EXISTS follows_followee_idx ON boundless.follows (followee_id);
+
+-- AI summaries of solved threads (src/lib/ai.ts), one per reading language. basis = hash of the text sent to the
+-- AI, so an edit or a new answer gets a fresh summary. Deleting or hiding text removes the rows (actions.ts).
+CREATE TABLE IF NOT EXISTS boundless.post_summaries (
+  post_id bigint NOT NULL REFERENCES boundless.posts ON DELETE CASCADE,
+  lang text NOT NULL,
+  basis text NOT NULL,
+  summary jsonb NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (post_id, lang)
+);

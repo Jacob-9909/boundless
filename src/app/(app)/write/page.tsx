@@ -3,6 +3,7 @@ import { createPost } from "@/app/actions";
 import { WriteForm } from "@/components/forms";
 import { Icon } from "@/components/Icon";
 import { BackLink, Flag, Landmark, PageHead, SignInRequired } from "@/components/ui";
+import { aiEnabled } from "@/lib/ai";
 import { getT, getUser } from "@/lib/auth";
 import { BOARDS, boardOf, GROUPS, isBoard, LOUNGE } from "@/lib/boards";
 import { cultureOf } from "@/lib/cultures";
@@ -85,6 +86,7 @@ export default async function WritePage(props: PageProps<"/write">) {
     <div className="mx-auto max-w-3xl lg:ml-2 pb-6">
       <BackLink href={lounge ? "/lounge" : `/b/${board.id}`} label={t("뒤로")} />
       <WriteForm
+        key={board.id} // a fresh form per board, so a draft moved here by the AI check is restored
         action={createPost}
         submitLabel={t("올리기")}
         board={board}
@@ -95,6 +97,7 @@ export default async function WritePage(props: PageProps<"/write">) {
         nationality={user.nationality}
         countryLabel={country}
         draftKey={`${lounge ? "lounge" : "global"}:${board.id}`}
+        ai={aiEnabled()}
       />
     </div>
   );

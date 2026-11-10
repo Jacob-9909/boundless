@@ -1,5 +1,6 @@
 "use server";
 
+import { createHash } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect, RedirectType } from "next/navigation";
 import { refresh } from "next/cache";
@@ -20,9 +21,11 @@ import {
   verifiedEmail,
 } from "@/lib/auth";
 import { isId, q, track } from "@/lib/db";
-import { ASKING_TAGS, boardOf, DEALS, isBoard, LOUNGE } from "@/lib/boards";
-import { isCountry, isLang, isRegion, POST_LANGS, READ_LANGS, readLangOf, REPORT_REASONS } from "@/lib/i18n";
+import { aiEnabled, checkDraft, summarizeThread, type DraftCheck, type Summary } from "@/lib/ai";
+import { ASKING_TAGS, BOARDS, boardOf, DEALS, isBoard, LOUNGE } from "@/lib/boards";
+import { isCountry, isLang, isRegion, langName, POST_LANGS, READ_LANGS, readLangOf, REPORT_REASONS } from "@/lib/i18n";
 import { isAbusive } from "@/lib/moderation";
+import { stripPII } from "@/lib/pii";
 import { BUMP_AFTER_H } from "@/lib/posts";
 import { translateItem } from "@/lib/translate";
 import { sendCodeMail } from "@/lib/mail";
@@ -310,6 +313,71 @@ export async function translate(kind: "p" | "c", id: string): Promise<{ title?: 
   return out ?? { error: "지금은 번역할 수 없어요. 잠시 뒤 다시 시도해 주세요." };
 }
 
+/* ---------- AI helpers (src/lib/ai.ts) ---------- */
+
+export type SummaryView = Summary & { refs: { id: string; no: number }[] };
+
+/**
+ * The AI summary of a solved thread, in the reader's language. Cached per language until the post or its
+ * answers change (basis = hash of the text sent). ponytail: one summary for everyone, so a reply from someone
+ * the viewer blocked can still shape it; per-viewer summaries would cost one AI call per reader.
+ */
+export async function aiSummary(postId: string): Promise<SummaryView | null> {
+  if (!isId(postId) || !aiEnabled()) return null;
+  const [user, ui] = await Promise.all([getUser(), getLang()]);
+  const lang = readLangOf(user, ui);
+  const rows = await q<{ title: string; body: string; space: string; hidden: boolean; solved: boolean }>(
+    "SELECT title, body, space, hidden, solved FROM boundless.posts WHERE id = $1",
+    [postId]
+  );
+  const p = rows[0];
+  if (!p || p.hidden || !p.solved || (p.space !== "global" && p.space !== user?.nationality)) return null;
+  const cs = await q<{ id: string; anon_no: number; body: string; likes: number }>(
+    `SELECT c.id, c.anon_no, c.body, (SELECT count(*)::int FROM boundless.comment_likes l WHERE l.comment_id = c.id) AS likes
+     FROM boundless.comments c WHERE c.post_id = $1 AND NOT c.hidden ORDER BY c.created_at LIMIT 30`,
+    [postId]
+  );
+  if (!cs.some((c) => c.anon_no !== 0)) return null;
+  const post = { title: stripPII(p.title), body: stripPII(p.body).slice(0, 3000) };
+  const lines = cs.map((c) => ({ text: stripPII(c.body).slice(0, 600), helpful: c.likes, author: c.anon_no === 0 }));
+  const basis = createHash("sha256").update(JSON.stringify([post, lines])).digest("hex");
+  const hit = await q<{ summary: Summary }>("SELECT summary FROM boundless.post_summaries WHERE post_id = $1 AND lang = $2 AND basis = $3", [
+    postId,
+    lang,
+    basis,
+  ]);
+  let s: Summary | null = hit[0]?.summary ?? null;
+  if (!s) {
+    s = await summarizeThread(post, lines, langName(lang, "en"));
+    if (!s) return null;
+    await q(
+      `INSERT INTO boundless.post_summaries (post_id, lang, basis, summary) VALUES ($1, $2, $3, $4)
+       ON CONFLICT (post_id, lang) DO UPDATE SET basis = EXCLUDED.basis, summary = EXCLUDED.summary, created_at = now()`,
+      [postId, lang, basis, JSON.stringify(s)]
+    );
+  }
+  return { ...s, refs: s.sources.map((n) => ({ id: cs[n - 1].id, no: cs[n - 1].anon_no })) };
+}
+
+/** Before posting: a better board or title, missing details, privacy warnings. Never an answer. */
+export async function aiCheckDraft(d: { title: string; body: string; board: string; space: string }): Promise<{ check?: DraftCheck; error?: string }> {
+  const user = await requireUser();
+  if (!aiEnabled()) return { error: "AI 점검을 지금은 쓸 수 없어요. 잠시 뒤 다시 시도해 주세요." };
+  const title = String(d.title ?? "").normalize("NFC").trim().slice(0, 120);
+  const body = String(d.body ?? "").normalize("NFC").trim().slice(0, 5000);
+  if (body.length < 10) return { error: "본문을 조금 더 적은 뒤 점검해 주세요." };
+  const used = await q<{ n: number }>(
+    "SELECT count(*)::int AS n FROM boundless.events WHERE name = 'ai_check' AND user_id = $1 AND created_at > now() - interval '1 hour'",
+    [user.id]
+  );
+  if (used[0].n >= 20) return { error: "AI 점검은 1시간에 20번까지 쓸 수 있어요." };
+  track("ai_check", user.id);
+  const global = d.space !== "lounge" && isBoard(d.board);
+  const boards = global ? BOARDS.map((b) => ({ id: b.id, about: `${b.ko}. ${b.desc}` })) : [];
+  const check = await checkDraft({ title: stripPII(title), body: stripPII(body), board: global ? d.board : "" }, boards, langName(await getLang(), "en"));
+  return check ? { check } : { error: "AI 점검을 지금은 쓸 수 없어요. 잠시 뒤 다시 시도해 주세요." };
+}
+
 export async function setReadLang(f: FormData) {
   const user = await requireUser();
   const v = str(f, "read_lang");
@@ -387,6 +455,8 @@ export async function deleteOwn(f: FormData) {
          WHERE c.id = own.id OR c.parent_id = own.id)`,
       [comment, user.id]
     );
+    // So does the AI summary that quoted it (made again on the next visit).
+    await q("DELETE FROM boundless.post_summaries WHERE post_id = (SELECT post_id FROM boundless.comments WHERE id = $1 AND user_id = $2)", [comment, user.id]);
     await q("DELETE FROM boundless.comments WHERE id = $1 AND user_id = $2", [comment, user.id]);
     refresh();
     return;
@@ -424,6 +494,8 @@ async function targetOwner(f: FormData) {
 async function setHidden(t: { post_id: string | null; comment_id: string | null }, hidden: boolean) {
   if (t.comment_id) await q("UPDATE boundless.comments SET hidden = $2 WHERE id = $1", [t.comment_id, hidden]);
   else await q("UPDATE boundless.posts SET hidden = $2 WHERE id = $1", [t.post_id, hidden]);
+  // An AI summary may quote hidden text; it is made again from what stays visible.
+  await q("DELETE FROM boundless.post_summaries WHERE post_id = COALESCE($1, (SELECT post_id FROM boundless.comments WHERE id = $2))", [t.post_id, t.comment_id]);
 }
 
 export async function reportContent(_: Result, f: FormData): Promise<Result> {
@@ -548,6 +620,7 @@ export async function deleteAccount(f: FormData) {
        UNION SELECT 'c:' || c.id FROM boundless.comments c JOIN boundless.posts p ON p.id = c.post_id WHERE c.user_id = $1 OR p.user_id = $1)`,
     [user.id]
   );
+  await q("DELETE FROM boundless.post_summaries WHERE post_id IN (SELECT post_id FROM boundless.comments WHERE user_id = $1)", [user.id]);
   await q("DELETE FROM boundless.users WHERE id = $1", [user.id]);
   await endSession();
   redirect("/");
