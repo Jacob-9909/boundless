@@ -233,6 +233,9 @@ export async function RightRail({ viewer, lang, t }: { viewer: string | null; la
           {t("게시판")}
         </Link>
         {" · © 2026 Boundless"}
+        <span className="block">
+          {t("버전")} {process.env.APP_BUILD}
+        </span>
       </p>
     </div>
   );

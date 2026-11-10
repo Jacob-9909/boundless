@@ -7,7 +7,7 @@ import { Avatar, PageHead, btn, btnGhost, field } from "@/components/ui";
 import { AccountSwitcher } from "@/components/Community";
 import { canViewQueue, demoEnabled, getT, getUser } from "@/lib/auth";
 import { q } from "@/lib/db";
-import { langName, READ_LANGS, REGIONS, REPORT_REASONS, sortedCountries, timeAgo } from "@/lib/i18n";
+import { countryName, langName, READ_LANGS, REGIONS, REPORT_REASONS, sortedCountries, timeAgo } from "@/lib/i18n";
 
 export const metadata = { title: "Settings" };
 
@@ -44,6 +44,26 @@ export default async function SettingsPage() {
     <div className="mx-auto max-w-3xl lg:ml-2 pb-6">
       <PageHead line="LINE 05 · SETTINGS" title={t("설정")} />
       <div className="space-y-6 px-4 py-4">
+        {/* The member's profile comes first: avatar, public nationality and level, one tap from editing. */}
+        {user && (
+          <Link
+            id="profile"
+            href="/settings/avatar"
+            className="group flex items-center gap-4 rounded-3xl bg-white p-4 ring-1 ring-ink/10 transition hover:ring-ink/25"
+          >
+            <Avatar code={user.nationality} size={64} look={user.avatar} />
+            <span className="min-w-0 flex-1">
+              <span className="block font-display text-lg font-extrabold">{t("내 프로필")}</span>
+              <span className="block text-sm leading-snug opacity-75">
+                {countryName(user.nationality, lang)} ·{" "}
+                {user.avatar ? (user.avatar_public ? t("내 글과 댓글에도 보여요") : t("나에게만 보여요")) : t("사람이나 동물 캐릭터를 만들어요")}
+              </span>
+            </span>
+            <span className="shrink-0 text-sm font-bold text-primary group-hover:underline">
+              {user.avatar ? t("바꾸기") : t("아바타 만들기")} <span aria-hidden="true">›</span>
+            </span>
+          </Link>
+        )}
         <section>
           <h2 className="font-display text-lg font-extrabold">{t("환경 설정")}</h2>
           <div className="mt-1 border-l-4 border-primary/30 pl-3">
@@ -74,20 +94,6 @@ export default async function SettingsPage() {
             <section>
               <h2 className="font-display text-lg font-extrabold">{t("계정")}</h2>
               <div className="mt-1 space-y-1 border-l-4 border-primary/30 pl-3">
-                <Link href="/settings/avatar" className={`${row} group`}>
-                  <span className="flex items-center gap-3">
-                    <Avatar code={user.nationality} size={44} look={user.avatar} />
-                    <span>
-                      <span className="block font-bold">{t("내 아바타")}</span>
-                      <span className="block text-xs opacity-70">
-                        {user.avatar ? (user.avatar_public ? t("내 글과 댓글에도 보여요") : t("나에게만 보여요")) : t("사람이나 동물 캐릭터를 만들어요")}
-                      </span>
-                    </span>
-                  </span>
-                  <span className="text-sm font-bold text-primary group-hover:underline">
-                    {user.avatar ? t("바꾸기") : t("만들기")} <span aria-hidden="true">›</span>
-                  </span>
-                </Link>
                 <div className="py-3">
                   <NationalityForm current={user.nationality} countries={sortedCountries(lang)} />
                 </div>
@@ -199,6 +205,9 @@ export default async function SettingsPage() {
             <div className="mt-4">{phoneLinks}</div>
           </>
         )}
+        <p className="pt-2 text-center text-xs opacity-60">
+          Boundless · {t("버전")} {process.env.APP_BUILD}
+        </p>
       </div>
     </div>
   );

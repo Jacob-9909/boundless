@@ -726,5 +726,10 @@
   "이 답변 채택": "Acceptez cette réponse",
   "채택 취소": "Refuser",
   "비슷한 글이 있어요. 먼저 읽어 보세요.": "Des postes similaires existent. Jetez un oeil d'abord.",
-  "질문 {asked}개 중 해결 {solved}개 ({rate}%), 채택 {accepted}개": "{asked} questions : {solved} résolues ({rate}%), {accepted} avec une réponse acceptée"
+  "질문 {asked}개 중 해결 {solved}개 ({rate}%), 채택 {accepted}개": "{asked} questions : {solved} résolues ({rate}%), {accepted} avec une réponse acceptée",
+  "버전": "Version",
+  "내 프로필": "Mon profil",
+  "아바타 만들기": "Créer un avatar",
+  "가입을 환영해요! 내 아바타를 만들어 보세요": "Bienvenue ! Créez votre avatar",
+  "나중에 할게요": "Passer pour l'instant"
 }

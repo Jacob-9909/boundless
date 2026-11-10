@@ -726,5 +726,10 @@
   "이 답변 채택": "Bu javobni qabul qiling",
   "채택 취소": "Qabul qilmaslik",
   "비슷한 글이 있어요. 먼저 읽어 보세요.": "Shunga o'xshash postlar mavjud. Avval qarang.",
-  "질문 {asked}개 중 해결 {solved}개 ({rate}%), 채택 {accepted}개": "{asked} savol: {solved} yechilgan ({rate}%), {accepted} javob qabul qilingan"
+  "질문 {asked}개 중 해결 {solved}개 ({rate}%), 채택 {accepted}개": "{asked} savol: {solved} yechilgan ({rate}%), {accepted} javob qabul qilingan",
+  "버전": "Versiya",
+  "내 프로필": "Mening profilim",
+  "아바타 만들기": "Avatar yarating",
+  "가입을 환영해요! 내 아바타를 만들어 보세요": "Xush kelibsiz! O'z avataringizni yarating",
+  "나중에 할게요": "Hozircha o'tkazib yuboring"
 }

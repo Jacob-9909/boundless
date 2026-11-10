@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import { removeAvatar, saveAvatar } from "@/app/actions";
 import {
@@ -28,8 +29,9 @@ import { btn, btnGhost, labelCls } from "./ui";
 
 const pressed = "outline-3 outline-offset-2 outline-[var(--c-primary)]";
 
-export function AvatarBuilder({ initial, shown, soft }: { initial: Look | null; shown: boolean; soft: string }) {
+export function AvatarBuilder({ initial, shown, soft, doneHref }: { initial: Look | null; shown: boolean; soft: string; doneHref?: string }) {
   const t = useT();
+  const router = useRouter();
   const [kind, setKind] = useState<Look["kind"]>(initial?.kind ?? "person");
   const [person, setPerson] = useState<Person>(initial?.kind === "person" ? initial : DEFAULT_PERSON);
   const [animal, setAnimal] = useState<Animal>(initial?.kind === "animal" ? initial : DEFAULT_ANIMAL);
@@ -43,6 +45,8 @@ export function AvatarBuilder({ initial, shown, soft }: { initial: Look | null; 
     start(async () => {
       const r = await saveAvatar(look, show);
       setSaved(r.error ? t(r.error) : t("저장했어요"));
+      // Sign-up's first step: once saved, carry on to where the person was going.
+      if (!r.error && doneHref) router.push(doneHref);
     });
   const ANIMAL_NAMES: Record<string, string> = {
     cat: t("고양이"),

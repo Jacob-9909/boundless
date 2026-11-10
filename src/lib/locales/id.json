@@ -726,5 +726,10 @@
   "이 답변 채택": "Terima jawaban ini",
   "채택 취소": "Tidak diterima",
   "비슷한 글이 있어요. 먼저 읽어 보세요.": "Ada postingan serupa. Coba lihat dulu.",
-  "질문 {asked}개 중 해결 {solved}개 ({rate}%), 채택 {accepted}개": "{asked} pertanyaan: {solved} terselesaikan ({rate}%), {accepted} dengan jawaban yang diterima"
+  "질문 {asked}개 중 해결 {solved}개 ({rate}%), 채택 {accepted}개": "{asked} pertanyaan: {solved} terselesaikan ({rate}%), {accepted} dengan jawaban yang diterima",
+  "버전": "Versi",
+  "내 프로필": "Profil saya",
+  "아바타 만들기": "Buat avatar",
+  "가입을 환영해요! 내 아바타를 만들어 보세요": "Selamat datang! Buat avatar Anda",
+  "나중에 할게요": "Lewati untuk saat ini"
 }
