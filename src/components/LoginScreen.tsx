@@ -90,7 +90,9 @@ export function LoginScreen({
     run(async () => {
       const r = await completeSignup(nationality, agreed);
       if (r.error) return setError(r.error);
-      done();
+      // New members set up their profile first: the avatar step can be skipped, and then they go on to `next`.
+      router.replace(`/settings/avatar?welcome=1&next=${encodeURIComponent(next)}`);
+      router.refresh();
     });
 
   return (

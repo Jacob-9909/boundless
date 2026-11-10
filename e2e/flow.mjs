@@ -47,6 +47,9 @@ async function signIn(page, email, culture) {
     await page.getByText("Please confirm you are 14 or older").waitFor();
     await page.getByRole("checkbox").check();
     await page.getByRole("button", { name: "Finish sign-up" }).click();
+    // New members land on a skippable avatar step first.
+    await page.getByRole("heading", { name: "Welcome! Create your avatar" }).waitFor();
+    await page.getByRole("link", { name: "Skip for now" }).click();
     await page.waitForURL(BASE + "/feed");
   }
 }

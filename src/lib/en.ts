@@ -794,4 +794,10 @@ export const EN: Record<string, string> = {
   "채택 취소": "Unaccept",
   "비슷한 글이 있어요. 먼저 읽어 보세요.": "Similar posts exist. Have a look first.",
   "질문 {asked}개 중 해결 {solved}개 ({rate}%), 채택 {accepted}개": "{asked} questions: {solved} solved ({rate}%), {accepted} with an accepted answer",
+  // profile entry points, version
+  "버전": "Version",
+  "내 프로필": "My profile",
+  "아바타 만들기": "Create an avatar",
+  "가입을 환영해요! 내 아바타를 만들어 보세요": "Welcome! Create your avatar",
+  "나중에 할게요": "Skip for now",
 };

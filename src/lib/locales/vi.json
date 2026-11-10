@@ -726,5 +726,10 @@
   "이 답변 채택": "Chấp nhận câu trả lời này",
   "채택 취소": "Không chấp nhận",
   "비슷한 글이 있어요. 먼저 읽어 보세요.": "Bài viết tương tự tồn tại. Hãy xem trước.",
-  "질문 {asked}개 중 해결 {solved}개 ({rate}%), 채택 {accepted}개": "{asked} câu hỏi: {solved} đã được giải quyết ({rate}%), {accepted} với câu trả lời được chấp nhận"
+  "질문 {asked}개 중 해결 {solved}개 ({rate}%), 채택 {accepted}개": "{asked} câu hỏi: {solved} đã được giải quyết ({rate}%), {accepted} với câu trả lời được chấp nhận",
+  "버전": "Phiên bản",
+  "내 프로필": "Hồ sơ của tôi",
+  "아바타 만들기": "Tạo hình đại diện",
+  "가입을 환영해요! 내 아바타를 만들어 보세요": "Chào mừng! Tạo hình đại diện của bạn",
+  "나중에 할게요": "Bỏ qua bây giờ"
 }

@@ -71,12 +71,15 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
                 {t("운영 정책")}
               </Link>
               {" · © 2026 Boundless"}
+              <span className="block">
+                {t("버전")} {process.env.APP_BUILD}
+              </span>
             </p>
           </div>
 
           <div className="space-y-2 border-t border-ink/[.07] p-3">
             {user ? (
-              <Link href="/settings" title={t("내 공개 국적")} className="block overflow-hidden rounded-2xl border border-ink/[.07] bg-white transition hover:border-ink/20">
+              <Link href={user.avatar ? "/settings" : "/settings/avatar"} title={t("내 프로필")} className="block overflow-hidden rounded-2xl border border-ink/[.07] bg-white transition hover:border-ink/20">
                 <div className="bg-pattern h-1.5 bg-primary bg-[length:auto_24px]" aria-hidden="true" />
                 <div className="flex items-center gap-2.5 px-3 py-2.5">
                   <Avatar code={user.nationality} size={36} look={user.avatar} />
@@ -86,6 +89,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
                       <span className="truncate">{countryName(user.nationality, lang)}</span>
                     </p>
                     {points && <LevelBadge points={points.points} t={t} />}
+                    {!user.avatar && <p className="mt-0.5 text-xs font-bold text-primary">{t("아바타 만들기")} ›</p>}
                   </div>
                 </div>
               </Link>

@@ -726,5 +726,10 @@
   "이 답변 채택": "Tanggapin ang sagot na ito",
   "채택 취소": "Hindi tanggapin",
   "비슷한 글이 있어요. 먼저 읽어 보세요.": "May mga katulad na post. Tingnan mo muna.",
-  "질문 {asked}개 중 해결 {solved}개 ({rate}%), 채택 {accepted}개": "{asked} mga tanong: {solved} nalutas ({rate}%), {accepted} na may tinanggap na sagot"
+  "질문 {asked}개 중 해결 {solved}개 ({rate}%), 채택 {accepted}개": "{asked} mga tanong: {solved} nalutas ({rate}%), {accepted} na may tinanggap na sagot",
+  "버전": "Bersyon",
+  "내 프로필": "Aking profile",
+  "아바타 만들기": "Gumawa ng avatar",
+  "가입을 환영해요! 내 아바타를 만들어 보세요": "Maligayang pagdating! Lumikha ng iyong avatar",
+  "나중에 할게요": "Laktawan sa ngayon"
 }
