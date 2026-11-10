@@ -12,7 +12,7 @@ export default async function AvatarPage() {
   return (
     <div className="mx-auto max-w-3xl pb-8 lg:ml-2">
       <BackLink href="/settings" label={t("설정")} />
-      <PageHead line="ME · AVATAR" title={t("내 아바타")} desc={t("부품을 골라 만드는 캐릭터예요. 사진으로 피부색과 머리색을 채울 수도 있어요.")} />
+      <PageHead line="ME · AVATAR" title={t("내 아바타")} desc={t("사람이나 동물 캐릭터를 골라요. 사람은 사진으로 피부색과 머리색을 채울 수도 있어요.")} />
       <AvatarBuilder initial={parseLook(user.avatar)} shown={user.avatar_public} soft={cultureOf(user.nationality).c.soft} />
     </div>
   );

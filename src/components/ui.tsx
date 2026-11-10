@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 import { boardOf, DEALS, levelOf, tagOf } from "@/lib/boards";
-import { lookUri, parseLook } from "@/lib/avatar";
+import { lookStyle, parseLook } from "@/lib/avatar";
 import { cultureOf, landmarkMarkup, patternUrl, type Culture } from "@/lib/cultures";
 import type { Help } from "@/lib/guide";
 import { countryName, langAutonym, regionLabel, timeAgo, type Lang, type T } from "@/lib/i18n";
@@ -81,7 +81,7 @@ export function Avatar({ code, size = 40, look }: { code: string; size?: number;
         data-look={l ? "" : undefined}
         style={
           l
-            ? { backgroundColor: c.c.soft, backgroundImage: `url("${lookUri(l)}")`, backgroundSize: "112%", backgroundPosition: "center 30%" }
+            ? lookStyle(l, c.c.soft)
             : { backgroundColor: c.c.primary, backgroundImage: patternUrl(c), backgroundSize: `${Math.round(size * 0.85)}px`, backgroundPosition: "center" }
         }
       />

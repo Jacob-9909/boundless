@@ -80,7 +80,7 @@ export default async function SettingsPage() {
                     <span>
                       <span className="block font-bold">{t("내 아바타")}</span>
                       <span className="block text-xs opacity-70">
-                        {user.avatar ? (user.avatar_public ? t("내 글과 댓글에도 보여요") : t("나에게만 보여요")) : t("사진이나 부품으로 캐릭터를 만들어요")}
+                        {user.avatar ? (user.avatar_public ? t("내 글과 댓글에도 보여요") : t("나에게만 보여요")) : t("사람이나 동물 캐릭터를 만들어요")}
                       </span>
                     </span>
                   </span>

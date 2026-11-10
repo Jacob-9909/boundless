@@ -2,64 +2,130 @@
 
 import { useRef, useState, useTransition } from "react";
 import { removeAvatar, saveAvatar } from "@/app/actions";
-import { BEARDS, COLORS, COVERS, DEFAULT_LOOK, GLASSES, HAIRS, lookUri, nearest, SKINS, TOPS, type Look } from "@/lib/avatar";
+import {
+  ANIMALS,
+  BACKDROPS,
+  BEARDS,
+  COLORS,
+  COVERS,
+  DEFAULT_ANIMAL,
+  DEFAULT_PERSON,
+  FACES,
+  GLASSES,
+  HAIRS,
+  lookStyle,
+  nearest,
+  OUTFITS,
+  SKINS,
+  TOPS,
+  type Animal,
+  type Look,
+  type Person,
+} from "@/lib/avatar";
 import { Icon } from "./Icon";
 import { useT } from "./I18n";
 import { btn, btnGhost, labelCls } from "./ui";
 
-const face = (l: Look) => ({
-  backgroundImage: `url("${lookUri(l)}")`,
-  backgroundSize: "112%",
-  backgroundPosition: "center 30%",
-});
+const pressed = "outline-3 outline-offset-2 outline-[var(--c-primary)]";
 
 export function AvatarBuilder({ initial, shown, soft }: { initial: Look | null; shown: boolean; soft: string }) {
   const t = useT();
-  const [look, setLook] = useState<Look>(initial ?? DEFAULT_LOOK);
+  const [kind, setKind] = useState<Look["kind"]>(initial?.kind ?? "person");
+  const [person, setPerson] = useState<Person>(initial?.kind === "person" ? initial : DEFAULT_PERSON);
+  const [animal, setAnimal] = useState<Animal>(initial?.kind === "animal" ? initial : DEFAULT_ANIMAL);
   const [show, setShow] = useState(shown);
-  const [saved, setSaved] = useState<string>("");
+  const [saved, setSaved] = useState("");
   const [pending, start] = useTransition();
-  const set = (k: keyof Look) => (v: string) => {
-    setLook((l) => ({ ...l, [k]: v }));
-    setSaved("");
-  };
+  const look: Look = kind === "person" ? person : animal;
+  const setP = (k: keyof Person) => (v: string) => (setPerson((l) => ({ ...l, [k]: v })), setSaved(""));
+  const setA = (k: keyof Animal) => (v: string) => (setAnimal((l) => ({ ...l, [k]: v })), setSaved(""));
   const save = () =>
     start(async () => {
       const r = await saveAvatar(look, show);
       setSaved(r.error ? t(r.error) : t("저장했어요"));
     });
+  const ANIMAL_NAMES: Record<string, string> = {
+    cat: t("고양이"),
+    dog: t("강아지"),
+    fox: t("여우"),
+    bear: t("곰"),
+    panda: t("판다"),
+    rabbit: t("토끼"),
+    tiger: t("호랑이"),
+    koala: t("코알라"),
+    owl: t("부엉이"),
+    penguin: t("펭귄"),
+    monkey: t("원숭이"),
+    lion: t("사자"),
+  };
 
   return (
     <div className="grid gap-6 px-4 py-4 md:grid-cols-[220px_minmax(0,1fr)]">
       <div className="md:sticky md:top-20 md:self-start">
-        <div className="mx-auto size-40 rounded-full ring-1 ring-black/5 md:size-52" style={{ ...face(look), backgroundColor: soft }} role="img" aria-label={t("내 아바타 미리 보기")} />
-        <PhotoMatch
-          onColors={(skin, hair) => {
-            setLook((l) => ({ ...l, skin, hair }));
-            setSaved("");
-          }}
-        />
+        <div className="mx-auto size-40 rounded-full ring-1 ring-black/5 md:size-52" style={lookStyle(look, soft)} role="img" aria-label={t("내 아바타 미리 보기")} />
+        {kind === "person" && (
+          <PhotoMatch
+            onColors={(skin, hair) => {
+              setPerson((l) => ({ ...l, skin, hair }));
+              setSaved("");
+            }}
+          />
+        )}
       </div>
 
       <div className="space-y-5">
-        <Swatches label={t("피부색")} list={SKINS} value={look.skin} onPick={set("skin")} />
-        <Parts
-          label={t("머리 모양")}
-          list={TOPS}
-          field="top"
-          look={look}
-          soft={soft}
-          onPick={set("top")}
-          names={{ hijab: t("히잡"), turban: t("터번"), hat: t("모자"), winterHat1: t("털모자") }}
-        />
-        {COVERS.includes(look.top) ? (
-          <Swatches label={t("히잡·모자 색")} list={COLORS} value={look.cover} onPick={set("cover")} />
+        <div role="radiogroup" aria-label={t("아바타 종류")} className="inline-flex rounded-full bg-white p-1 ring-1 ring-ink/10">
+          {(["person", "animal"] as const).map((k) => (
+            <button
+              key={k}
+              type="button"
+              role="radio"
+              aria-checked={kind === k}
+              onClick={() => (setKind(k), setSaved(""))}
+              className={`h-10 rounded-full px-5 text-sm font-bold transition ${kind === k ? "bg-primary text-paper" : "text-ink/70 hover:text-ink"}`}
+            >
+              {k === "person" ? t("사람") : t("동물")}
+            </button>
+          ))}
+        </div>
+
+        {kind === "person" ? (
+          <>
+            <Swatches label={t("피부색")} list={SKINS} value={person.skin} onPick={setP("skin")} />
+            <Parts
+              label={t("머리 모양")}
+              list={TOPS}
+              field="top"
+              look={person}
+              soft={soft}
+              onPick={setP("top")}
+              names={{ hijab: t("히잡"), turban: t("터번"), hat: t("모자"), winterHat1: t("털모자") }}
+            />
+            {COVERS.includes(person.top) ? (
+              <Swatches label={t("히잡·모자 색")} list={COLORS} value={person.cover} onPick={setP("cover")} />
+            ) : (
+              <Swatches label={t("머리색")} list={HAIRS} value={person.hair} onPick={setP("hair")} />
+            )}
+            <Parts
+              label={t("표정")}
+              list={Object.keys(FACES)}
+              field="face"
+              look={person}
+              soft={soft}
+              onPick={setP("face")}
+              names={{ smile: t("웃는 얼굴"), happy: t("신난 얼굴"), wink: t("윙크"), calm: t("차분한 얼굴") }}
+            />
+            <Parts label={t("안경")} list={GLASSES} field="glasses" look={person} soft={soft} onPick={setP("glasses")} />
+            <Parts label={t("수염")} list={BEARDS} field="beard" look={person} soft={soft} onPick={setP("beard")} />
+            <Parts label={t("옷 모양")} list={OUTFITS} field="outfit" look={person} soft={soft} onPick={setP("outfit")} />
+            <Swatches label={t("옷 색")} list={COLORS} value={person.clothes} onPick={setP("clothes")} />
+          </>
         ) : (
-          <Swatches label={t("머리색")} list={HAIRS} value={look.hair} onPick={set("hair")} />
+          <>
+            <Parts label={t("동물")} list={ANIMALS} field="animal" look={animal} soft={soft} onPick={setA("animal")} names={ANIMAL_NAMES} />
+            <Swatches label={t("배경색")} list={BACKDROPS} value={animal.backdrop} onPick={setA("backdrop")} />
+          </>
         )}
-        <Parts label={t("안경")} list={GLASSES} field="glasses" look={look} soft={soft} onPick={set("glasses")} />
-        <Parts label={t("수염")} list={BEARDS} field="beard" look={look} soft={soft} onPick={set("beard")} />
-        <Swatches label={t("옷 색")} list={COLORS} value={look.clothes} onPick={set("clothes")} />
 
         <label className="flex items-start gap-3 rounded-2xl bg-white p-4 ring-1 ring-ink/10">
           <input type="checkbox" checked={show} onChange={(e) => (setShow(e.target.checked), setSaved(""))} className="mt-0.5 size-5 shrink-0 accent-[var(--c-primary)]" />
@@ -82,7 +148,7 @@ export function AvatarBuilder({ initial, shown, soft }: { initial: Look | null; 
             {saved}
           </span>
         </div>
-        <p className="text-xs opacity-60">{t("캐릭터 디자인")}: Avataaars (Pablo Stanley) · DiceBear</p>
+        <p className="text-xs opacity-60">{t("캐릭터 디자인")}: Avataaars (Pablo Stanley) · DiceBear · Boundless</p>
       </div>
     </div>
   );
@@ -101,7 +167,7 @@ function Swatches({ label, list, value, onPick }: { label: string; list: string[
             aria-label={t("색 {n}", { n: i + 1 })}
             aria-pressed={value === hex}
             onClick={() => onPick(hex)}
-            className={`size-10 rounded-full ring-1 ring-black/15 transition ${value === hex ? "outline-3 outline-offset-2 outline-[var(--c-primary)]" : ""}`}
+            className={`size-10 rounded-full ring-1 ring-black/15 transition ${value === hex ? pressed : ""}`}
             style={{ backgroundColor: `#${hex}` }}
           />
         ))}
@@ -110,7 +176,7 @@ function Swatches({ label, list, value, onPick }: { label: string; list: string[
   );
 }
 
-function Parts({
+function Parts<L extends Look>({
   label,
   list,
   field,
@@ -121,13 +187,14 @@ function Parts({
 }: {
   label: string;
   list: string[];
-  field: keyof Look;
-  look: Look;
+  field: keyof L & string;
+  look: L;
   soft: string;
   onPick: (v: string) => void;
-  names?: Record<string, string>; // parts worth naming for screen readers (head coverings)
+  names?: Record<string, string>; // parts worth naming for screen readers (head coverings, faces, animals)
 }) {
   const t = useT();
+  const current = (look as Record<string, string>)[field];
   return (
     <fieldset>
       <legend className={labelCls}>{label}</legend>
@@ -137,10 +204,10 @@ function Parts({
             key={v}
             type="button"
             aria-label={names[v] ?? (v === "none" ? t("없음") : t("모양 {n}", { n: i + 1 }))}
-            aria-pressed={look[field] === v}
+            aria-pressed={current === v}
             onClick={() => onPick(v)}
-            className={`rounded-full ring-1 ring-black/10 transition ${look[field] === v ? "outline-3 outline-offset-2 outline-[var(--c-primary)]" : "hover:ring-black/30"}`}
-            style={{ ...face({ ...look, [field]: v }), width: 52, height: 52, backgroundColor: soft }}
+            className={`rounded-full ring-1 ring-black/10 transition ${current === v ? pressed : "hover:ring-black/30"}`}
+            style={{ ...lookStyle({ ...look, [field]: v } as Look, soft), width: 52, height: 52 }}
           />
         ))}
       </div>
