@@ -6,6 +6,8 @@ export type Help = { name: string; desc: string; url?: string; tel?: string; top
 export const HOTLINES: Help[] = [
   { name: "경찰", tel: "112", desc: "범죄·위급 상황. 통역을 연결해 줘요.", topics: [] },
   { name: "화재·구급", tel: "119", desc: "화재, 응급 환자. 통역을 연결해 줘요.", topics: ["health"] },
+  // Checked 2026-11-10: 24 hours, free, mainly Korean; the crisis card pairs it with 1577-1366 (13 languages).
+  { name: "자살예방 상담전화", tel: "109", desc: "죽고 싶을 만큼 힘들 때 24시간 무료 상담. 한국어 중심이에요.", topics: [] },
   { name: "외국인종합안내센터", tel: "1345", desc: "비자·체류·외국인등록 상담. 여러 언어로 안내해요.", topics: ["visa", "work"] },
   // Wage arrears are the most common problem on the work board; 132 (legal aid) alone was not enough.
   { name: "고용노동부 고객상담센터", tel: "1350", desc: "임금 체불, 근로 조건, 산업재해 상담.", topics: ["work"] },
@@ -31,3 +33,17 @@ export const SITES: Help[] = [
 export const APPS = [{ name: "안전디딤돌", desc: "재난 문자와 대피소 안내를 여러 언어로 받는 정부 앱." }];
 
 export const helpFor = (topic: string) => [...HOTLINES, ...SITES].filter((h) => h.topics.includes(topic)).slice(0, 3);
+
+// What the AI can flag when a post is filed (classifyPost in src/lib/ai.ts, which uses the same ids).
+// The card with these numbers is shown to the author only; moderators see the flag in the queue.
+export const ALERTS = [
+  { id: "self_harm", ko: "자해·자살 위기", crisis: true, tels: ["109", "1577-1366", "119"] },
+  { id: "abuse", ko: "가정폭력·성폭력", crisis: true, tels: ["112", "1577-1366"] },
+  { id: "confined", ko: "감금·여권 압수·강제 노동", crisis: true, tels: ["112", "1350", "1577-1366"] },
+  { id: "violence", ko: "폭행·위협", crisis: false, tels: ["112"] },
+  { id: "medical", ko: "응급 의료", crisis: false, tels: ["119"] },
+  { id: "wage", ko: "임금 체불·산업재해", crisis: false, tels: ["1350", "132"] },
+  { id: "scam", ko: "사기 피해", crisis: false, tels: ["112", "132"] },
+];
+export const alertOf = (id: string | null) => ALERTS.find((a) => a.id === id) ?? null;
+export const hotline = (tel: string) => HOTLINES.find((h) => h.tel === tel);

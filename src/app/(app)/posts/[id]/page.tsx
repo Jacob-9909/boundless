@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { addComment, bumpPost, deleteOwn, setDeal, toggleFollow, toggleLike, toggleSave, toggleSolved } from "@/app/actions";
+import { addComment, bumpPost, clearAiVisa, deleteOwn, setDeal, toggleFollow, toggleLike, toggleSave, toggleSolved } from "@/app/actions";
 import { AiSummary } from "@/components/AiSummary";
 import { CommentForm, AppealForm, ViewCount } from "@/components/forms";
 import { ShareButton } from "@/components/Share";
@@ -14,7 +14,7 @@ import { aiEnabled } from "@/lib/ai";
 import { getT, getUser } from "@/lib/auth";
 import { isId } from "@/lib/db";
 import { boardOf, DEALS, tagOf } from "@/lib/boards";
-import { helpFor } from "@/lib/guide";
+import { alertOf, helpFor, hotline } from "@/lib/guide";
 import { countryName, langName, readLangOf, regionLabel, timeAgo, type Lang, type T } from "@/lib/i18n";
 import { BUMP_AFTER_H, canBump, getComments, getPost, postImages, type CommentRow } from "@/lib/posts";
 
@@ -94,6 +94,21 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
                 {regionLabel(post.region, t)}
               </span>
             )}
+            {post.ai_visa && (
+              <span className={`${tag} bg-white/70`} title={t("AI가 글에서 읽은 비자 종류예요")}>
+                <Icon name="idcard" size={12} />
+                {post.ai_visa}
+                <span className="opacity-60">· AI</span>
+                {post.mine && (
+                  <form action={clearAiVisa} className="-my-1 -mr-1.5 inline-flex">
+                    <input type="hidden" name="post" value={post.id} />
+                    <button aria-label={t("AI가 붙인 비자 태그 지우기")} className="inline-flex size-6 items-center justify-center rounded-md hover:bg-ink/10">
+                      ×
+                    </button>
+                  </form>
+                )}
+              </span>
+            )}
             {post.solved && <SolvedBadge post={post} t={t} />}
             {post.bumped_at && !post.solved && post.comments === 0 && (
               <span className={`${tag} bg-amber-100 text-amber-900`}>
@@ -136,6 +151,7 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
             </span>
           </div>
         </header>
+        {post.mine && post.alert && <AlertCard id={post.alert} t={t} />}
 
         <div className="px-4 py-5">
           {/* The text in its own card, so it reads apart from the header, the tools and the replies. */}
@@ -319,6 +335,36 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
         </div>
       </aside>
     </div>
+  );
+}
+
+/** Author only: numbers to call when the AI read an emergency or a crisis in the post (ALERTS in src/lib/guide.ts). */
+function AlertCard({ id, t }: { id: string; t: T }) {
+  const a = alertOf(id);
+  if (!a) return null;
+  const lines = a.tels.map(hotline).filter((h) => h !== undefined);
+  return (
+    <section
+      aria-label={t(a.ko)}
+      className={`mx-4 mt-4 rounded-2xl border p-4 md:p-5 ${a.crisis ? "border-rose-200 bg-rose-50 text-rose-950" : "border-amber-300 bg-amber-50 text-amber-950"}`}
+    >
+      <p className="flex items-center gap-2 font-bold">
+        <Icon name={a.crisis ? "heart" : "alert"} size={18} />
+        {a.crisis ? t("혼자 감당하지 않아도 돼요") : t("급한 상황이면 먼저 연락하세요")}
+      </p>
+      <p className="mt-1 text-sm leading-relaxed opacity-90">
+        {a.crisis ? t("글에서 힘든 상황이 느껴져서 도움받을 수 있는 곳을 먼저 알려 드려요.") : t("이웃의 답을 기다리는 동안 바로 도움받을 수 있는 곳이에요.")}{" "}
+        {t("이 안내는 나에게만 보여요.")}
+      </p>
+      <ul className="mt-3 space-y-2">
+        {lines.map((h) => (
+          <li key={h.tel}>
+            <HelpItem h={h} t={t} />
+          </li>
+        ))}
+      </ul>
+      <p className="mt-3 text-xs opacity-75">{t("AI가 글을 읽고 보여 준 안내라 틀릴 수 있어요.")}</p>
+    </section>
   );
 }
 

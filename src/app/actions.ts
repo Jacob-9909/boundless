@@ -21,9 +21,9 @@ import {
   verifiedEmail,
 } from "@/lib/auth";
 import { isId, q, track } from "@/lib/db";
-import { aiEnabled, checkDraft, summarizeThread, SUMMARY_VERSION, type DraftCheck, type Summary } from "@/lib/ai";
+import { aiEnabled, checkDraft, classifyPost, crisisFallback, summarizeThread, SUMMARY_VERSION, type DraftCheck, type Summary } from "@/lib/ai";
 import { ASKING_TAGS, BOARDS, boardOf, DEALS, isBoard, LOUNGE } from "@/lib/boards";
-import { isCountry, isLang, isRegion, langName, POST_LANGS, READ_LANGS, readLangOf, REPORT_REASONS } from "@/lib/i18n";
+import { isCountry, isLang, isRegion, langName, POST_LANGS, READ_LANGS, readLangOf, REGIONS, REPORT_REASONS } from "@/lib/i18n";
 import { EN } from "@/lib/en";
 import { isAbusive } from "@/lib/moderation";
 import { stripPII } from "@/lib/pii";
@@ -224,8 +224,33 @@ export async function createPost(_: PostState, f: FormData): Promise<PostState> 
      extra.price, extra.deal, extra.place, extra.starts_on, extra.ends_on]
   );
   await saveImages(rows[0].id, files.images!);
+  await classify(rows[0].id, values.title, values.body, !values.region);
   track("post", user.id);
   redirect(`/posts/${rows[0].id}`);
+}
+
+/**
+ * Reads a filed post once for the visa it mentions, its region and an emergency or crisis (src/lib/ai.ts).
+ * The region is filled in only when the author left it empty on a new post; an author-removed visa ('') stays removed.
+ * Without the AI, plain words of suicide still raise the crisis card.
+ */
+async function classify(postId: string, title: string, body: string, fillRegion: boolean) {
+  const regions = REGIONS.map((r) => ({ id: r.id, name: EN[r.ko] ?? r.ko }));
+  const c = aiEnabled() ? await classifyPost({ title: stripPII(title), body: stripPII(body).slice(0, 3000) }, regions) : null;
+  const alert = c?.alert ?? crisisFallback(`${title}\n${body}`);
+  await q(
+    `UPDATE boundless.posts SET alert = $2, ai_visa = CASE WHEN ai_visa = '' THEN '' ELSE $3 END, region = COALESCE(region, $4)
+     WHERE id = $1`,
+    [postId, alert, c?.visa ?? null, fillRegion ? (c?.region ?? null) : null]
+  );
+  if (alert) track(`alert_${alert}`);
+}
+
+/** The author removes the visa tag the AI read from the post. */
+export async function clearAiVisa(f: FormData) {
+  const user = await requireUser();
+  await q("UPDATE boundless.posts SET ai_visa = '' WHERE id = $1 AND user_id = $2", [str(f, "post"), user.id]);
+  refresh();
 }
 
 export async function updatePost(postId: string, _: PostState, f: FormData): Promise<PostState> {
@@ -254,6 +279,7 @@ export async function updatePost(postId: string, _: PostState, f: FormData): Pro
   if (rows.length) {
     await q("DELETE FROM boundless.post_images WHERE post_id = $1 AND id = ANY($2::bigint[])", [postId, drop]);
     await saveImages(postId, files.images!);
+    await classify(postId, values.title, values.body, false);
   }
   await q("DELETE FROM boundless.translations WHERE item = $1", [`p:${postId}`]);
   redirect(`/posts/${postId}`);

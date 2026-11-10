@@ -4,6 +4,7 @@ import { moderate, resolveAppeal } from "@/app/actions";
 import { NationalityChip, Notice, PageHead } from "@/components/ui";
 import { canViewQueue, getT, getUser, isAdmin } from "@/lib/auth";
 import { q } from "@/lib/db";
+import { ALERTS, alertOf } from "@/lib/guide";
 import { REPORT_REASONS, timeAgo } from "@/lib/i18n";
 
 export const metadata = { title: "Moderation" };
@@ -26,7 +27,7 @@ export default async function AdminPage() {
   // The demo moderator (judges) sees the real queue, but cannot act on it.
   const readOnly = !isAdmin(user);
 
-  const [open, events, appeals] = await Promise.all([
+  const [open, events, appeals, flagged] = await Promise.all([
     q<Open>(
       `SELECT r.id, r.reason, r.details, r.created_at,
          COALESCE(r.post_id, c.post_id) AS post_id, r.comment_id IS NOT NULL AS is_comment,
@@ -52,6 +53,14 @@ export default async function AdminPage() {
        JOIN boundless.users u ON u.id = a.user_id
        WHERE a.status = 'received' ORDER BY a.created_at LIMIT 50`,
     ),
+    // Posts the AI flagged when they were filed (src/lib/ai.ts): crises first, then the newest.
+    q<{ id: string; alert: string; created_at: Date; excerpt: string; nationality: string }>(
+      `SELECT p.id, p.alert, p.created_at, left(p.title || ' — ' || p.body, 160) AS excerpt, u.nationality
+       FROM boundless.posts p JOIN boundless.users u ON u.id = p.user_id
+       WHERE p.alert IS NOT NULL AND NOT p.hidden AND p.created_at > now() - interval '7 days'
+       ORDER BY p.alert = ANY($1::text[]) DESC, p.created_at DESC LIMIT 30`,
+      [ALERTS.filter((a) => a.crisis).map((a) => a.id)]
+    ),
   ]);
 
   return (
@@ -67,6 +76,32 @@ export default async function AdminPage() {
           <p className="font-bold">{t("최근 7일 이용 지표")}</p>
           <p className="mt-1 opacity-80">{events.length ? events.map((e) => `${e.name} ${e.n}`).join(" · ") : "—"}</p>
         </section>
+        {flagged.length > 0 && (
+          <section>
+            <h2 className="font-display text-lg font-extrabold">{t("AI 우선 확인 {n}건", { n: flagged.length })}</h2>
+            <p className="mb-2 text-xs opacity-75">{t("최근 7일 동안 AI가 긴급·위기 신호를 읽은 글이에요. 글쓴이에게는 상담 번호가 안내됐어요.")}</p>
+            <ul className="space-y-2">
+              {flagged.map((f) => {
+                const a = alertOf(f.alert);
+                return (
+                  <li key={f.id} className={`rounded-2xl border-l-4 bg-white p-4 text-sm ${a?.crisis ? "border-rose-500" : "border-amber-400"}`}>
+                    <div className="flex flex-wrap items-center gap-2 text-xs">
+                      <span className={`rounded px-2 py-0.5 font-bold ${a?.crisis ? "bg-rose-50 text-rose-800" : "bg-amber-50 text-amber-900"}`}>
+                        {a ? t(a.ko) : f.alert}
+                      </span>
+                      <NationalityChip code={f.nationality} lang={lang} />
+                      <span className="ml-auto opacity-70">{timeAgo(f.created_at, lang)}</span>
+                    </div>
+                    <p className="mt-2 whitespace-pre-wrap opacity-80">{f.excerpt}</p>
+                    <Link href={`/posts/${f.id}`} className="mt-1 inline-flex h-8 items-center text-xs text-primary underline">
+                      {t("원문 보기")}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
         {appeals.length > 0 && (
           <section>
             <h2 className="mb-2 font-display text-lg font-extrabold">{t("재심 요청 {n}건", { n: appeals.length })}</h2>
