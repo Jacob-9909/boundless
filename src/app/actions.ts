@@ -27,6 +27,7 @@ import { isCountry, isLang, isRegion, langName, POST_LANGS, READ_LANGS, readLang
 import { EN } from "@/lib/en";
 import { isAbusive } from "@/lib/moderation";
 import { stripPII } from "@/lib/pii";
+import { parseLook } from "@/lib/avatar";
 import { BUMP_AFTER_H } from "@/lib/posts";
 import { translateItem } from "@/lib/translate";
 import { sendCodeMail } from "@/lib/mail";
@@ -639,6 +640,22 @@ export async function setRegion(f: FormData) {
   const region = str(f, "region");
   await q("UPDATE boundless.users SET region = $2 WHERE id = $1", [user.id, isRegion(region) ? region : null]);
   refresh();
+}
+
+/** Saves the cartoon avatar: only listed parts (parseLook), never a photo. `show` = also on my posts and comments. */
+export async function saveAvatar(look: unknown, show: boolean): Promise<Result> {
+  const user = await requireUser();
+  const l = parseLook(look);
+  if (!l) return { error: "아바타를 저장하지 못했어요. 다시 골라 주세요." };
+  await q("UPDATE boundless.users SET avatar = $2, avatar_public = $3 WHERE id = $1", [user.id, JSON.stringify(l), show === true]);
+  refresh();
+  return { ok: true };
+}
+
+export async function removeAvatar() {
+  const user = await requireUser();
+  await q("UPDATE boundless.users SET avatar = NULL, avatar_public = false WHERE id = $1", [user.id]);
+  redirect("/settings");
 }
 
 export async function deleteAccount(f: FormData) {

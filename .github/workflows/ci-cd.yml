@@ -31,6 +31,7 @@ jobs:
       - run: node scripts/i18n-check.mjs
       - run: node --no-warnings scripts/moderation-check.mjs
       - run: node --no-warnings scripts/ai-check.mjs
+      - run: node --no-warnings scripts/avatar-check.mjs
       - run: npm run build
       - run: node scripts/db.mjs db/schema.sql db/seed.sql
       # e2e runs against the dev server: without SMTP it shows the sign-in code on screen.

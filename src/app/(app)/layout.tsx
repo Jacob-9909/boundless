@@ -79,7 +79,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
               <Link href="/settings" title={t("내 공개 국적")} className="block overflow-hidden rounded-2xl border border-ink/[.07] bg-white transition hover:border-ink/20">
                 <div className="bg-pattern h-1.5 bg-primary bg-[length:auto_24px]" aria-hidden="true" />
                 <div className="flex items-center gap-2.5 px-3 py-2.5">
-                  <Avatar code={user.nationality} size={36} />
+                  <Avatar code={user.nationality} size={36} look={user.avatar} />
                   <div className="min-w-0">
                     <p className="flex items-center gap-1.5 text-sm font-bold">
                       <Flag code={user.nationality} h={11} />
@@ -121,7 +121,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
               <LangMenu lang={lang} label={t("화면 언어 바꾸기")} note={t("한국어와 영어 밖의 언어는 기계 번역이라 어색한 문장이 있을 수 있어요. 검수하고 있어요.")} compact />
               {user ? (
                 <Link href="/settings" className="inline-flex h-9 items-center rounded-full bg-soft px-1.5" title={t("내 공개 국적")} aria-label={t("내 공개 국적")}>
-                  <Avatar code={user.nationality} size={26} />
+                  <Avatar code={user.nationality} size={26} look={user.avatar} />
                 </Link>
               ) : (
                 <Link href="/login" className="inline-flex h-9 items-center rounded-full bg-primary px-4 text-[13px] font-bold text-paper">

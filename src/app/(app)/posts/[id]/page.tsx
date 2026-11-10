@@ -125,7 +125,7 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
             <div className="relative mt-3">{board.extra === "market" ? <MarketLine post={post} t={t} /> : <EventLine post={post} t={t} />}</div>
           )}
           <div className="relative mt-4 flex flex-wrap items-center gap-2 text-xs">
-            <Avatar code={post.nationality} size={32} />
+            <Avatar code={post.nationality} size={32} look={post.avatar} />
             <NationalityChip code={post.nationality} lang={lang} prefix={t("글쓴이")} />
             <LevelBadge points={post.points} t={t} />
             {/* Follow a neighbor whose tips keep helping. They only ever see a follower count, never who. */}
@@ -382,7 +382,7 @@ function Comment({ c, postId, t, lang, signedIn, target }: { c: CommentRow; post
       id={`c-${c.id}`}
       className={`flex scroll-mt-24 gap-3 rounded-2xl border-l-4 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,.04)] ${c.anon_no === 0 ? "border-primary" : "border-transparent"}`}
     >
-      <Avatar code={c.nationality} size={34} />
+      <Avatar code={c.nationality} size={34} look={c.avatar} />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="font-bold" data-handle>

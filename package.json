@@ -12,6 +12,8 @@
     "e2e": "node e2e/flow.mjs"
   },
   "dependencies": {
+    "@dicebear/avataaars": "9.4.2",
+    "@dicebear/core": "9.4.2",
     "next": "16.4.5",
     "nodemailer": "^10.3.1",
     "pg": "^8.23.1",

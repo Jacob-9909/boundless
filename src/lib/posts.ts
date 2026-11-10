@@ -33,6 +33,7 @@ export type PostRow = {
   following: boolean; // the viewer follows this author
   helpers: string[] | null; // solved posts: nationalities of the neighbors who answered
   top_answer: { body: string; nationality: string; likes: number } | null;
+  avatar: unknown; // the author's cartoon avatar when they chose to show it on posts (src/lib/avatar.ts)
   ai_visa: string | null; // visa code the AI read from the text; '' = the author removed it
   alert: string | null; // ALERTS id (src/lib/guide.ts), only ever selected for the author
 };
@@ -46,6 +47,7 @@ export type CommentRow = {
   created_at: Date;
   nationality: string;
   points: number;
+  avatar: unknown; // shown only when the commenter chose to show it on posts
   likes: number;
   liked: boolean;
   mine: boolean;
@@ -69,7 +71,7 @@ const POST_COLS = `p.id, p.topic, p.kind, p.space, p.lang, p.region, p.title, p.
   to_char(p.starts_on, 'YYYY-MM-DD') AS starts_on, to_char(p.ends_on, 'YYYY-MM-DD') AS ends_on,
   p.hidden, p.solved, p.created_at, p.updated_at, p.bumped_at, ${LISTED} AS listed_at, p.views,
   (SELECT i.id FROM boundless.post_images i WHERE i.post_id = p.id ORDER BY i.id LIMIT 1) AS image,
-  u.nationality, ${POINTS("p.user_id")} AS points,
+  u.nationality, ${POINTS("p.user_id")} AS points, CASE WHEN u.avatar_public THEN u.avatar END AS avatar,
   (SELECT count(*)::int FROM boundless.comments c WHERE c.post_id = p.id AND NOT c.hidden) AS comments,
   (SELECT count(*)::int FROM boundless.post_likes l WHERE l.post_id = p.id) AS likes,
   EXISTS (SELECT 1 FROM boundless.post_likes l WHERE l.post_id = p.id AND l.user_id = $1::uuid) AS liked,
@@ -200,6 +202,7 @@ export async function followerCount(userId: string) {
 export function getComments(viewer: string | null, postId: string) {
   return q<CommentRow>(
     `SELECT c.id, c.parent_id, c.anon_no, c.body, c.hidden, c.created_at, u.nationality, ${POINTS("c.user_id")} AS points,
+       CASE WHEN u.avatar_public THEN u.avatar END AS avatar,
        (SELECT count(*)::int FROM boundless.comment_likes l WHERE l.comment_id = c.id) AS likes,
        EXISTS (SELECT 1 FROM boundless.comment_likes l WHERE l.comment_id = c.id AND l.user_id = $1::uuid) AS liked,
        (c.user_id = $1::uuid) IS TRUE AS mine,

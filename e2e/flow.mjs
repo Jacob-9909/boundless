@@ -193,6 +193,22 @@ await appealItem.waitFor({ state: "detached" });
 await visitor.goto(postUrl);
 await visitor.getByRole("heading", { level: 1, name: title }).waitFor();
 
+// A builds an avatar with a hijab. It stays private until A shows it on posts.
+const authorAvatar = visitor.locator("header [data-look]");
+await a.goto(BASE + "/settings/avatar");
+await a.getByRole("button", { name: "Hijab", exact: true }).click();
+await a.getByText("Hijab or hat color").waitFor();
+await a.getByRole("button", { name: "Save", exact: true }).click();
+await a.getByRole("status").filter({ hasText: "Saved" }).waitFor();
+await visitor.goto(postUrl);
+await visitor.getByRole("heading", { level: 1, name: title }).waitFor();
+assert.equal(await authorAvatar.count(), 0, "a private avatar stays off posts");
+await a.getByLabel("Use this avatar on my posts and comments too").check();
+await a.getByRole("button", { name: "Save", exact: true }).click();
+await a.getByRole("status").filter({ hasText: "Saved" }).waitFor();
+await visitor.reload();
+await authorAvatar.first().waitFor();
+
 // C deletes the account; signing in again starts a fresh sign-up.
 await c.goto(BASE + "/settings");
 await c.getByText("Delete account").click();
