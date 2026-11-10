@@ -205,3 +205,9 @@ ALTER TABLE boundless.posts
   ADD COLUMN IF NOT EXISTS ai_visa text,
   ADD COLUMN IF NOT EXISTS alert text;
 CREATE INDEX IF NOT EXISTS posts_alert_idx ON boundless.posts (created_at DESC) WHERE alert IS NOT NULL;
+
+-- Cartoon avatar (src/lib/avatar.ts): the chosen parts only, never a photo. avatar_public = also on my posts and
+-- comments (it links them, so it is off unless the member turns it on).
+ALTER TABLE boundless.users
+  ADD COLUMN IF NOT EXISTS avatar jsonb,
+  ADD COLUMN IF NOT EXISTS avatar_public boolean NOT NULL DEFAULT false;

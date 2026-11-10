@@ -69,7 +69,7 @@ export default async function Home(props: PageProps<"/feed">) {
           {user ? (
             <div className="flex items-center gap-3 p-3 md:px-4">
               <span className="hidden sm:contents">
-                <Avatar code={user.nationality} size={36} />
+                <Avatar code={user.nationality} size={36} look={user.avatar} />
               </span>
               <Link
                 href="/write"

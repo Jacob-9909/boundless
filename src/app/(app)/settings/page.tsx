@@ -3,7 +3,7 @@ import { LangMenu } from "@/components/LangMenu";
 import { deleteAccount, setReadLang, setRegion, signOut, unblockAll } from "@/app/actions";
 import { NationalityForm } from "@/components/forms";
 import { Icon } from "@/components/Icon";
-import { PageHead, btn, btnGhost, field } from "@/components/ui";
+import { Avatar, PageHead, btn, btnGhost, field } from "@/components/ui";
 import { AccountSwitcher } from "@/components/Community";
 import { canViewQueue, demoEnabled, getT, getUser } from "@/lib/auth";
 import { q } from "@/lib/db";
@@ -74,6 +74,20 @@ export default async function SettingsPage() {
             <section>
               <h2 className="font-display text-lg font-extrabold">{t("계정")}</h2>
               <div className="mt-1 space-y-1 border-l-4 border-primary/30 pl-3">
+                <Link href="/settings/avatar" className={`${row} group`}>
+                  <span className="flex items-center gap-3">
+                    <Avatar code={user.nationality} size={44} look={user.avatar} />
+                    <span>
+                      <span className="block font-bold">{t("내 아바타")}</span>
+                      <span className="block text-xs opacity-70">
+                        {user.avatar ? (user.avatar_public ? t("내 글과 댓글에도 보여요") : t("나에게만 보여요")) : t("사진이나 부품으로 캐릭터를 만들어요")}
+                      </span>
+                    </span>
+                  </span>
+                  <span className="text-sm font-bold text-primary group-hover:underline">
+                    {user.avatar ? t("바꾸기") : t("만들기")} <span aria-hidden="true">›</span>
+                  </span>
+                </Link>
                 <div className="py-3">
                   <NationalityForm current={user.nationality} countries={sortedCountries(lang)} />
                 </div>

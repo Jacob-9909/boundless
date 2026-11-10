@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 import { boardOf, DEALS, levelOf, tagOf } from "@/lib/boards";
+import { lookUri, parseLook } from "@/lib/avatar";
 import { cultureOf, landmarkMarkup, patternUrl, type Culture } from "@/lib/cultures";
 import type { Help } from "@/lib/guide";
 import { countryName, langAutonym, regionLabel, timeAgo, type Lang, type T } from "@/lib/i18n";
@@ -69,13 +70,20 @@ export function Landmark({ culture, className = "" }: { culture: Culture; classN
 }
 
 /** Anonymous avatar: the author's culture pattern in a circle, with their flag as a badge. */
-export function Avatar({ code, size = 40 }: { code: string; size?: number }) {
+/** The culture pattern with a flag, or the member's cartoon avatar (src/lib/avatar.ts) with the same flag. */
+export function Avatar({ code, size = 40, look }: { code: string; size?: number; look?: unknown }) {
   const c = cultureOf(code);
+  const l = look ? parseLook(look) : null;
   return (
     <span className="relative inline-block shrink-0" style={{ width: size, height: size }}>
       <span
         className="block size-full rounded-full ring-1 ring-black/5"
-        style={{ backgroundColor: c.c.primary, backgroundImage: patternUrl(c), backgroundSize: `${Math.round(size * 0.85)}px`, backgroundPosition: "center" }}
+        data-look={l ? "" : undefined}
+        style={
+          l
+            ? { backgroundColor: c.c.soft, backgroundImage: `url("${lookUri(l)}")`, backgroundSize: "112%", backgroundPosition: "center 30%" }
+            : { backgroundColor: c.c.primary, backgroundImage: patternUrl(c), backgroundSize: `${Math.round(size * 0.85)}px`, backgroundPosition: "center" }
+        }
       />
       <span className="absolute -right-0.5 -bottom-0.5 flex rounded-full bg-white p-[1.5px]">
         <Flag code={code} h={Math.max(12, Math.round(size * 0.38))} round />
@@ -309,7 +317,7 @@ export function PostCard({ post, lang, t, showBoard = true }: { post: PostRow; l
             <Flag code={post.nationality} h={11} />
           </>
         ) : (
-          <Avatar code={post.nationality} size={22} />
+          <Avatar code={post.nationality} size={22} look={post.avatar} />
         )}
         <span className={`whitespace-nowrap ${showBoard ? "" : "font-bold"}`}>{t("{country} 이웃", { country: countryName(post.nationality, lang) })}</span>
         <LevelBadge points={post.points} t={t} />
