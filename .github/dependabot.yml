@@ -14,6 +14,15 @@ updates:
         patterns: ["next", "eslint-config-next"]
       minor-and-patch:
         update-types: [minor, patch]
+    # Major versions of the toolchain wait for a deliberate upgrade: TypeScript 7 broke lint
+    # (typescript-eslint did not support it yet, #5). Security updates still come through.
+    ignore:
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
+      - dependency-name: eslint
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
