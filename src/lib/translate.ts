@@ -23,8 +23,17 @@ function chunks(text: string, max = 400) {
   return out;
 }
 
+// MyMemory sometimes returns Vietnamese tone marks as separate combining characters wrapped in spaces
+// ("Ky ́ tư ̣ … đê ́ n Cuô ́ i"). A space before a combining mark is never real text, so: where a split mark is followed
+// by a lone syllable ending (n, i, ng…), glue both back ("đến", "Cuối"); drop any other space before a mark; compose (NFC).
+const tidy = (s: string) =>
+  s
+    .replace(/\s+([̀-ͯ]+)\s+(ch|ng|nh|[cmnptiyou])(?=[\s.,!?;:)\]"'”’]|$)/g, "$1$2")
+    .replace(/\s+(?=[̀-ͯ])/g, "")
+    .normalize("NFC");
+
 const decode = (s: string) =>
-  s.replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n))).replace(/&quot;/g, '"').replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+  tidy(s.replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n))).replace(/&quot;/g, '"').replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">"));
 
 async function translateText(text: string, from: string, to: string): Promise<string | null> {
   const parts: string[] = [];
@@ -53,7 +62,8 @@ async function translateText(text: string, from: string, to: string): Promise<st
 /** Translate a post (title + body) or a comment (body) into `to`, using the cache when possible. */
 export async function translateItem(item: string, src: { title?: string; body: string; lang: string }, to: string) {
   const hit = await q<{ title: string | null; body: string }>("SELECT title, body FROM boundless.translations WHERE item = $1 AND lang = $2", [item, to]);
-  if (hit[0]) return hit[0];
+  // Rows cached before tidy() existed may still hold split tone marks.
+  if (hit[0]) return { title: hit[0].title && tidy(hit[0].title), body: tidy(hit[0].body) };
   const [title, body] = await Promise.all([src.title ? translateText(src.title, src.lang, to) : Promise.resolve(null), translateText(src.body, src.lang, to)]);
   if (body === null || (src.title && title === null)) return null;
   await q("INSERT INTO boundless.translations (item, lang, title, body) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING", [item, to, title, body]);

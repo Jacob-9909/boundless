@@ -76,11 +76,27 @@ await a.getByRole("link", { name: /Housing/ }).first().click();
 await a.waitForURL(/board=housing/);
 let title = `E2E recycling question ${run}`;
 await a.getByLabel("Title").fill(title);
+// A phone number in the text gets a warning while typing (no AI involved), and it goes once removed.
+await a.getByLabel("Post text").fill("Which day are boxes collected in Mapo? Text me 010-1234-5678");
+await a.getByText("Personal details showing: phone number. Please remove them before posting.").waitFor();
 await a.getByLabel("Post text").fill("Which day are boxes collected in Mapo?");
+await a.getByText(/Personal details showing/).waitFor({ state: "detached" });
+// One photo: the browser shrinks it to JPEG, the server checks its bytes, the post shows it.
+const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
+await a.locator('input[name="images"]').setInputFiles({ name: "dot.png", mimeType: "image/png", buffer: png });
+await a.locator('img[src^="blob:"]').waitFor();
 await a.getByRole("button", { name: "Post", exact: true }).click();
 await a.waitForURL(/\/posts\/\d+$/);
 const postUrl = a.url();
 const postId = postUrl.split("/").pop();
+await a.waitForFunction(() => {
+  const img = document.querySelector('img[alt="Attached photo 1"]');
+  return img?.complete && img.naturalWidth > 0;
+});
+// The word filter stops profanity before it is saved.
+await a.getByLabel("Comment").fill("what the fuck");
+await a.getByRole("button", { name: "Reply" }).click();
+await a.getByText("contains profanity or hate speech").waitFor();
 await comment(a, "Author follow-up");
 
 // B and C reply: per-post anonymous handles.
@@ -104,6 +120,13 @@ await b.getByRole("button", { name: "Save" }).click();
 await b.getByRole("button", { name: "Saved" }).waitFor();
 await b.goto(BASE + "/me?tab=saved");
 await b.getByText(title).waitFor();
+// Following an author gathers their posts on the Following tab.
+await b.goto(postUrl);
+await b.getByRole("button", { name: "Follow", exact: true }).click();
+await b.getByRole("button", { name: "Following", exact: true }).waitFor();
+await b.goto(BASE + "/me?tab=following");
+await b.getByText("Following 1 neighbors").waitFor();
+await b.getByRole("link", { name: title }).first().waitFor();
 await b.goto(postUrl);
 const thread = b.locator("li", { hasText: "Author follow-up" });
 await thread.locator("summary", { hasText: "Reply" }).click();
@@ -119,7 +142,8 @@ await a.goto(BASE + "/me");
 await a.getByText(/\d+ new replies/).waitFor();
 await a.goto(postUrl);
 await a.getByRole("button", { name: "Mark as solved" }).click();
-await a.getByText("Solved", { exact: true }).waitFor();
+// Solved reads as neighbors from different countries solving it together (A: Japan, B: Vietnam).
+await a.getByText(/^Solved together · \d+ countries$/).first().waitFor();
 await a.getByRole("link", { name: "Edit" }).click();
 title = `E2E recycling question (edited) ${run}`;
 await a.getByLabel("Title").fill(title);
@@ -140,7 +164,8 @@ await b.goto(BASE + "/settings");
 await b.getByText("Received").first().waitFor();
 await b.goto(BASE + `/report?post=${postId}`);
 await b.getByRole("button", { name: "Block author" }).click();
-await b.waitForURL(BASE + "/feed");
+await b.waitForURL(BASE + "/feed?blocked=1");
+await b.getByText("You blocked this author").waitFor();
 assert.equal(await b.getByText(title).count(), 0, "blocked author's post must leave B's feed");
 await b.goto(postUrl);
 await b.getByText("account you blocked").waitFor();
@@ -184,7 +209,8 @@ await judge.waitForURL(BASE + "/feed");
 // Switching to a sample neighbor shows the app in that country's language.
 const VI = JSON.parse(readFileSync("src/lib/locales/vi.json", "utf8"));
 assert.equal(await judge.locator("html").getAttribute("lang"), "vi");
-await judge.getByText(VI["{hello}, 이웃님"].replace("{hello}", "Xin chào")).waitFor();
+// The greeting heading, not getByText: Next's route announcer sometimes copies the same text after navigation.
+await judge.getByRole("heading", { name: VI["{hello}, 이웃님"].replace("{hello}", "Xin chào") }).waitFor();
 
 // Country lounges: the Vietnam lounge is visible to the Vietnamese sample neighbor, not to A (Japan).
 await judge.goto(BASE + "/lounge");

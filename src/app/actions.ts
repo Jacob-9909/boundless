@@ -1,7 +1,8 @@
 "use server";
 
+import { createHash } from "node:crypto";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+import { redirect, RedirectType } from "next/navigation";
 import { refresh } from "next/cache";
 import {
   consumeCode,
@@ -20,8 +21,13 @@ import {
   verifiedEmail,
 } from "@/lib/auth";
 import { isId, q, track } from "@/lib/db";
-import { boardOf, DEALS, isBoard, LOUNGE } from "@/lib/boards";
-import { isCountry, isLang, isRegion, POST_LANGS, READ_LANGS, readLangOf, REPORT_REASONS } from "@/lib/i18n";
+import { aiEnabled, checkDraft, summarizeThread, SUMMARY_VERSION, type DraftCheck, type Summary } from "@/lib/ai";
+import { ASKING_TAGS, BOARDS, boardOf, DEALS, isBoard, LOUNGE } from "@/lib/boards";
+import { isCountry, isLang, isRegion, langName, POST_LANGS, READ_LANGS, readLangOf, REPORT_REASONS } from "@/lib/i18n";
+import { EN } from "@/lib/en";
+import { isAbusive } from "@/lib/moderation";
+import { stripPII } from "@/lib/pii";
+import { BUMP_AFTER_H } from "@/lib/posts";
 import { translateItem } from "@/lib/translate";
 import { sendCodeMail } from "@/lib/mail";
 
@@ -93,8 +99,12 @@ export async function completeSignup(nationality: string, agreed: boolean): Prom
   if (!isCountry(nationality)) return { error: "공개할 국적을 골라 주세요." };
   // ponytail: age floor fixed at 14 (Korean PIPA guardian-consent line) until the team confirms policy P01.
   if (!agreed) return { error: "만 14세 이상 확인과 커뮤니티 규칙 동의가 필요해요." };
+  // Keep the language the person signed up in (the user test: an English reader got switched to Filipino).
+  // The culture's language stays the default only where no language was ever picked, e.g. signing in on a new device.
+  const lang = await getLang();
   const id = await upsertUser(email, nationality);
   await startSession(id);
+  await setLang(lang);
   track("signup", id);
   return { ok: true };
 }
@@ -112,7 +122,8 @@ export async function demoLogin(code: string) {
   await startSession(await upsertUser(email, nationality));
   // Switching sample neighbors shows each country in its own language.
   (await cookies()).delete("lang");
-  redirect(mod ? "/admin" : "/feed");
+  // Replace, not push: Back from the feed would land on the intro page, which sends members straight back to the feed.
+  redirect(mod ? "/admin" : "/feed", RedirectType.replace);
 }
 
 export async function signOut() {
@@ -130,6 +141,35 @@ export async function setLang(lang: string) {
 export type PostState = Result & { values?: Record<string, string> };
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const MAX_IMAGES = 4;
+
+/** JPEG, PNG, WebP or GIF, judged by the first bytes (the browser's declared type is only a guess). */
+function sniff(b: Buffer) {
+  if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return "image/jpeg";
+  if (b.toString("latin1", 0, 8) === "\x89PNG\r\n\x1a\n") return "image/png";
+  if (b.toString("latin1", 0, 4) === "RIFF" && b.toString("latin1", 8, 12) === "WEBP") return "image/webp";
+  if (/^GIF8[79]a$/.test(b.toString("latin1", 0, 6))) return "image/gif";
+  return null;
+}
+
+/** Photos attached to the post form. The browser shrinks them first (forms.tsx), so 600 KB is generous. */
+async function readImages(f: FormData) {
+  const images: { mime: string; data: Buffer }[] = [];
+  for (const v of f.getAll("images")) {
+    if (!(v instanceof File) || v.size === 0) continue;
+    if (v.size > 600_000) return { error: "사진은 한 장에 600KB까지 올릴 수 있어요." };
+    const data = Buffer.from(await v.arrayBuffer());
+    const mime = sniff(data);
+    if (!mime) return { error: "사진은 JPG, PNG, WebP, GIF만 올릴 수 있어요." };
+    images.push({ mime, data });
+  }
+  if (images.length > MAX_IMAGES) return { error: "사진은 4장까지 올릴 수 있어요." };
+  return { images };
+}
+
+async function saveImages(postId: string, images: { mime: string; data: Buffer }[]) {
+  for (const im of images) await q("INSERT INTO boundless.post_images (post_id, mime, data) VALUES ($1, $2, $3)", [postId, im.mime, im.data]);
+}
 
 function readPost(f: FormData) {
   const values = {
@@ -159,6 +199,7 @@ function readPost(f: FormData) {
   else if (v.place.length > 80) error = "장소는 80자 이내로 적어 주세요.";
   else if ((v.starts_on && !DATE_RE.test(v.starts_on)) || (v.ends_on && !DATE_RE.test(v.ends_on))) error = "날짜를 다시 골라 주세요.";
   else if (v.starts_on && v.ends_on && v.ends_on < v.starts_on) error = "끝나는 날이 시작하는 날보다 빨라요.";
+  else if (isAbusive(`${v.title}\n${v.body}\n${v.place}`)) error = "욕설이나 혐오 표현이 있어서 올릴 수 없어요. 표현을 고친 뒤 다시 올려 주세요.";
   const extra = {
     price: board.extra === "market" ? (v.kind === "free" ? 0 : Number(v.price.replace(/[,\s]/g, "")) || 0) : null,
     deal: board.extra === "market" ? "open" : null,
@@ -173,6 +214,8 @@ export async function createPost(_: PostState, f: FormData): Promise<PostState> 
   const user = await requireUser();
   const { values, error, extra, lounge } = readPost(f);
   if (error) return { error, values };
+  const files = await readImages(f);
+  if (files.error) return { error: files.error, values };
   if ((await recentCount("posts", user.id)) >= 5) return { error: "글은 1시간에 5개까지 올릴 수 있어요.", values };
   const rows = await q<{ id: string }>(
     `INSERT INTO boundless.posts (user_id, space, topic, kind, lang, region, title, body, price, deal, place, starts_on, ends_on)
@@ -180,6 +223,7 @@ export async function createPost(_: PostState, f: FormData): Promise<PostState> 
     [user.id, lounge ? user.nationality : "global", values.board, values.kind, values.lang, values.region || null, values.title, values.body,
      extra.price, extra.deal, extra.place, extra.starts_on, extra.ends_on]
   );
+  await saveImages(rows[0].id, files.images!);
   track("post", user.id);
   redirect(`/posts/${rows[0].id}`);
 }
@@ -188,14 +232,29 @@ export async function updatePost(postId: string, _: PostState, f: FormData): Pro
   const user = await requireUser();
   const { values, error, extra } = readPost(f);
   if (error) return { error, values };
+  const files = await readImages(f);
+  if (files.error) return { error: files.error, values };
+  // Photos the author unticked go; new ones join the rest, four at most.
+  const drop = f.getAll("drop_image").map(String).filter(isId);
+  // Counts only the author's own post, so the error never reveals another post's photos.
+  const kept = await q<{ n: number }>(
+    `SELECT count(*)::int AS n FROM boundless.post_images i JOIN boundless.posts p ON p.id = i.post_id
+     WHERE i.post_id = $1 AND p.user_id = $2 AND NOT (i.id = ANY($3::bigint[]))`,
+    [postId, user.id, drop]
+  );
+  if (kept[0].n + files.images!.length > MAX_IMAGES) return { error: "사진은 4장까지 올릴 수 있어요.", values };
   // The space never changes on edit; the board stays inside the same space.
-  await q(
+  const rows = await q(
     `UPDATE boundless.posts SET topic = $3, kind = $4, lang = $5, region = $6, title = $7, body = $8,
        price = $9, place = $10, starts_on = $11, ends_on = $12, updated_at = now()
-     WHERE id = $1 AND user_id = $2`,
+     WHERE id = $1 AND user_id = $2 RETURNING id`,
     [postId, user.id, values.board, values.kind, values.lang, values.region || null, values.title, values.body,
      extra.price, extra.place, extra.starts_on, extra.ends_on]
   );
+  if (rows.length) {
+    await q("DELETE FROM boundless.post_images WHERE post_id = $1 AND id = ANY($2::bigint[])", [postId, drop]);
+    await saveImages(postId, files.images!);
+  }
   await q("DELETE FROM boundless.translations WHERE item = $1", [`p:${postId}`]);
   redirect(`/posts/${postId}`);
 }
@@ -205,6 +264,7 @@ export async function addComment(postId: string, _: Result, f: FormData): Promis
   const body = str(f, "body");
   const parent = str(f, "parent");
   if (body.length < 1 || body.length > 2000) return { error: "댓글은 1~2000자로 적어 주세요." };
+  if (isAbusive(body)) return { error: "욕설이나 혐오 표현이 있어서 올릴 수 없어요. 표현을 고친 뒤 다시 올려 주세요." };
   if ((await recentCount("comments", user.id)) >= 30) return { error: "댓글은 1시간에 30개까지 달 수 있어요." };
   // Anonymous handle inside this post: author = 0, everyone else numbered by their first comment.
   // Replies hang one level deep: replying to a reply attaches to its top-level comment.
@@ -254,6 +314,76 @@ export async function translate(kind: "p" | "c", id: string): Promise<{ title?: 
   return out ?? { error: "지금은 번역할 수 없어요. 잠시 뒤 다시 시도해 주세요." };
 }
 
+/* ---------- AI helpers (src/lib/ai.ts) ---------- */
+
+export type SummaryView = Summary & { refs: { id: string; no: number }[] };
+
+/**
+ * The AI summary of a solved thread, in the reader's language. Cached per language until the post or its
+ * answers change (basis = hash of the text sent). ponytail: one summary for everyone, so a reply from someone
+ * the viewer blocked can still shape it; per-viewer summaries would cost one AI call per reader.
+ */
+export async function aiSummary(postId: string): Promise<SummaryView | null> {
+  if (!isId(postId) || !aiEnabled()) return null;
+  const [user, ui] = await Promise.all([getUser(), getLang()]);
+  const lang = readLangOf(user, ui);
+  const rows = await q<{ title: string; body: string; space: string; hidden: boolean; solved: boolean }>(
+    "SELECT title, body, space, hidden, solved FROM boundless.posts WHERE id = $1",
+    [postId]
+  );
+  const p = rows[0];
+  if (!p || p.hidden || !p.solved || (p.space !== "global" && p.space !== user?.nationality)) return null;
+  const cs = await q<{ id: string; anon_no: number; body: string; likes: number }>(
+    `SELECT c.id, c.anon_no, c.body, (SELECT count(*)::int FROM boundless.comment_likes l WHERE l.comment_id = c.id) AS likes
+     FROM boundless.comments c WHERE c.post_id = $1 AND NOT c.hidden ORDER BY c.created_at LIMIT 30`,
+    [postId]
+  );
+  if (!cs.some((c) => c.anon_no !== 0)) return null;
+  const post = { title: stripPII(p.title), body: stripPII(p.body).slice(0, 3000) };
+  const lines = cs.map((c) => ({ text: stripPII(c.body).slice(0, 600), helpful: c.likes, author: c.anon_no === 0 }));
+  const basis = createHash("sha256").update(JSON.stringify([SUMMARY_VERSION, post, lines])).digest("hex");
+  const hit = await q<{ summary: Summary }>("SELECT summary FROM boundless.post_summaries WHERE post_id = $1 AND lang = $2 AND basis = $3", [
+    postId,
+    lang,
+    basis,
+  ]);
+  let s: Summary | null = hit[0]?.summary ?? null;
+  if (!s) {
+    s = await summarizeThread(post, lines, langName(lang, "en"));
+    if (!s) {
+      // No cited steps (or the AI failed): drop an outdated summary rather than keep quoting old text.
+      await q("DELETE FROM boundless.post_summaries WHERE post_id = $1 AND lang = $2", [postId, lang]);
+      return null;
+    }
+    await q(
+      `INSERT INTO boundless.post_summaries (post_id, lang, basis, summary) VALUES ($1, $2, $3, $4)
+       ON CONFLICT (post_id, lang) DO UPDATE SET basis = EXCLUDED.basis, summary = EXCLUDED.summary, created_at = now()`,
+      [postId, lang, basis, JSON.stringify(s)]
+    );
+  }
+  return { ...s, refs: s.sources.map((n) => ({ id: cs[n - 1].id, no: cs[n - 1].anon_no })) };
+}
+
+/** Before posting: a better board or title, missing details, privacy warnings. Never an answer. */
+export async function aiCheckDraft(d: { title: string; body: string; board: string; space: string }): Promise<{ check?: DraftCheck; error?: string }> {
+  const user = await requireUser();
+  if (!aiEnabled()) return { error: "AI 점검을 지금은 쓸 수 없어요. 잠시 뒤 다시 시도해 주세요." };
+  const title = String(d.title ?? "").normalize("NFC").trim().slice(0, 120);
+  const body = String(d.body ?? "").normalize("NFC").trim().slice(0, 5000);
+  if (body.length < 10) return { error: "본문을 조금 더 적은 뒤 점검해 주세요." };
+  const used = await q<{ n: number }>(
+    "SELECT count(*)::int AS n FROM boundless.events WHERE name = 'ai_check' AND user_id = $1 AND created_at > now() - interval '1 hour'",
+    [user.id]
+  );
+  if (used[0].n >= 20) return { error: "AI 점검은 1시간에 20번까지 쓸 수 있어요." };
+  track("ai_check", user.id);
+  const global = d.space !== "lounge" && isBoard(d.board);
+  // English board names: with the Korean ones in the prompt the model wrote Korean titles for English drafts.
+  const boards = global ? BOARDS.map((b) => ({ id: b.id, about: `${EN[b.ko] ?? b.ko}. ${EN[b.desc] ?? b.desc}` })) : [];
+  const check = await checkDraft({ title: stripPII(title), body: stripPII(body), board: global ? d.board : "" }, boards, langName(await getLang(), "en"));
+  return check ? { check } : { error: "AI 점검을 지금은 쓸 수 없어요. 잠시 뒤 다시 시도해 주세요." };
+}
+
 export async function setReadLang(f: FormData) {
   const user = await requireUser();
   const v = str(f, "read_lang");
@@ -261,8 +391,8 @@ export async function setReadLang(f: FormData) {
   refresh();
 }
 
-/** Remove the member's row if it exists, else add it (likes and saves). */
-async function toggleRow(table: "post_likes" | "comment_likes" | "saves", col: "post_id" | "comment_id", id: string, userId: string) {
+/** Remove the member's row if it exists, else add it (likes, saves and follows). */
+async function toggleRow(table: "post_likes" | "comment_likes" | "saves" | "follows", col: "post_id" | "comment_id" | "followee_id", id: string, userId: string) {
   const del = await q(`DELETE FROM boundless.${table} WHERE ${col} = $1 AND user_id = $2 RETURNING 1`, [id, userId]);
   if (!del.length) await q(`INSERT INTO boundless.${table} (${col}, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`, [id, userId]);
 }
@@ -287,6 +417,30 @@ export async function toggleSave(f: FormData) {
   refresh();
 }
 
+/** One view each time the post page opens. Refreshes after a like or reply do not count (see ViewCount). */
+export async function countView(id: string) {
+  if (!isId(id)) return;
+  const user = await getUser();
+  // ponytail: no per-viewer dedupe; key views by viewer in a table if counts get gamed.
+  await q("UPDATE boundless.posts SET views = views + 1 WHERE id = $1 AND NOT hidden AND user_id IS DISTINCT FROM $2::uuid", [id, user?.id ?? null]);
+}
+
+/** "Ask again" (like a 끌어올리기): the author lifts a question nobody answered back to the top of the lists. */
+export async function bumpPost(f: FormData) {
+  const user = await requireUser();
+  const id = str(f, "post");
+  if (!isId(id)) return;
+  await q(
+    `UPDATE boundless.posts p SET bumped_at = now()
+     WHERE p.id = $1 AND p.user_id = $2 AND NOT p.hidden AND NOT p.solved AND p.kind = ANY($3::text[])
+       AND COALESCE(p.bumped_at, p.created_at) < now() - make_interval(hours => $4)
+       AND NOT EXISTS (SELECT 1 FROM boundless.comments c WHERE c.post_id = p.id AND NOT c.hidden)`,
+    [id, user.id, ASKING_TAGS, BUMP_AFTER_H]
+  );
+  track("bump", user.id);
+  refresh();
+}
+
 /** The author marks a question as solved (or reopens it). */
 export async function toggleSolved(f: FormData) {
   const user = await requireUser();
@@ -307,6 +461,8 @@ export async function deleteOwn(f: FormData) {
          WHERE c.id = own.id OR c.parent_id = own.id)`,
       [comment, user.id]
     );
+    // So does the AI summary that quoted it (made again on the next visit).
+    await q("DELETE FROM boundless.post_summaries WHERE post_id = (SELECT post_id FROM boundless.comments WHERE id = $1 AND user_id = $2)", [comment, user.id]);
     await q("DELETE FROM boundless.comments WHERE id = $1 AND user_id = $2", [comment, user.id]);
     refresh();
     return;
@@ -344,6 +500,8 @@ async function targetOwner(f: FormData) {
 async function setHidden(t: { post_id: string | null; comment_id: string | null }, hidden: boolean) {
   if (t.comment_id) await q("UPDATE boundless.comments SET hidden = $2 WHERE id = $1", [t.comment_id, hidden]);
   else await q("UPDATE boundless.posts SET hidden = $2 WHERE id = $1", [t.post_id, hidden]);
+  // An AI summary may quote hidden text; it is made again from what stays visible.
+  await q("DELETE FROM boundless.post_summaries WHERE post_id = COALESCE($1, (SELECT post_id FROM boundless.comments WHERE id = $2))", [t.post_id, t.comment_id]);
 }
 
 export async function reportContent(_: Result, f: FormData): Promise<Result> {
@@ -404,7 +562,26 @@ export async function blockAuthor(f: FormData) {
   if (target && target.owner !== user.id) {
     await q("INSERT INTO boundless.blocks (user_id, blocked_id) VALUES ($1, $2) ON CONFLICT DO NOTHING", [user.id, target.owner]);
   }
-  redirect("/feed");
+  // The feed says the block worked; a silent redirect left testers unsure.
+  redirect("/feed?blocked=1");
+}
+
+/** Follow or unfollow the author of a post. The author only ever sees a follower count. */
+export async function toggleFollow(f: FormData) {
+  const user = await requireUser();
+  const target = await targetOwner(f);
+  if (!target || target.owner === user.id) return;
+  await toggleRow("follows", "followee_id", target.owner, user.id);
+  refresh();
+}
+
+/** Unfollow from the following list, by follow row (the list never holds member ids). */
+export async function unfollow(f: FormData) {
+  const user = await requireUser();
+  const id = str(f, "follow");
+  if (!isId(id)) return;
+  await q("DELETE FROM boundless.follows WHERE id = $1 AND user_id = $2", [id, user.id]);
+  refresh();
 }
 
 export async function unblockAll() {
@@ -449,6 +626,7 @@ export async function deleteAccount(f: FormData) {
        UNION SELECT 'c:' || c.id FROM boundless.comments c JOIN boundless.posts p ON p.id = c.post_id WHERE c.user_id = $1 OR p.user_id = $1)`,
     [user.id]
   );
+  await q("DELETE FROM boundless.post_summaries WHERE post_id IN (SELECT post_id FROM boundless.comments WHERE user_id = $1)", [user.id]);
   await q("DELETE FROM boundless.users WHERE id = $1", [user.id]);
   await endSession();
   redirect("/");

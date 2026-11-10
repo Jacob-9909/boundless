@@ -40,10 +40,10 @@ export function LangMenu({
         <Icon name="down" size={14} className="opacity-70 transition group-open:rotate-180" />
       </summary>
       <div
-        className={`absolute z-50 w-[264px] rounded-2xl bg-white p-2 text-ink shadow-2xl ring-1 ring-black/10 ${align === "right" ? "right-0" : "left-0"} ${up ? "bottom-full mb-2" : "top-full mt-2"}`}
+        className={`absolute z-50 w-[264px] max-w-[calc(100vw-2rem)] rounded-2xl bg-white p-2 text-ink shadow-2xl ring-1 ring-black/10 ${align === "right" ? "right-0" : "left-0"} ${up ? "bottom-full mb-2" : "top-full mt-2"}`}
       >
         <p className="px-2 pt-1 pb-1.5 text-xs font-bold opacity-70">{label}</p>
-        <ul className="grid max-h-[55vh] grid-cols-2 gap-0.5 overflow-y-auto">
+        <ul className="grid max-h-[55svh] grid-cols-2 gap-0.5 overflow-y-auto">
           {LANGS.map((l) => (
             <li key={l} lang={l}>
               <form action={setLang.bind(null, l)}>

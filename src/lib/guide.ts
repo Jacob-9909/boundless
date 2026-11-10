@@ -7,6 +7,8 @@ export const HOTLINES: Help[] = [
   { name: "경찰", tel: "112", desc: "범죄·위급 상황. 통역을 연결해 줘요.", topics: [] },
   { name: "화재·구급", tel: "119", desc: "화재, 응급 환자. 통역을 연결해 줘요.", topics: ["health"] },
   { name: "외국인종합안내센터", tel: "1345", desc: "비자·체류·외국인등록 상담. 여러 언어로 안내해요.", topics: ["visa", "work"] },
+  // Wage arrears are the most common problem on the work board; 132 (legal aid) alone was not enough.
+  { name: "고용노동부 고객상담센터", tel: "1350", desc: "임금 체불, 근로 조건, 산업재해 상담.", topics: ["work"] },
   { name: "관광통역안내", tel: "1330", desc: "여행·교통 안내와 통역. 24시간, 여러 언어.", topics: ["transit", "trip", "popup"] },
   { name: "다누리콜센터", tel: "1577-1366", desc: "이주민·다문화가족 생활 상담과 긴급 지원. 여러 언어.", topics: ["chat", "housing"] },
   { name: "대한법률구조공단", tel: "132", desc: "임금 체불, 전세 사기 같은 법률 상담.", topics: ["housing", "work", "market"] },

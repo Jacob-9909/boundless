@@ -1,25 +1,29 @@
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { addComment, deleteOwn, setDeal, toggleLike, toggleSave, toggleSolved } from "@/app/actions";
-import { CommentForm, AppealForm } from "@/components/forms";
+import { addComment, bumpPost, deleteOwn, setDeal, toggleFollow, toggleLike, toggleSave, toggleSolved } from "@/app/actions";
+import { AiSummary } from "@/components/AiSummary";
+import { CommentForm, AppealForm, ViewCount } from "@/components/forms";
 import { ShareButton } from "@/components/Share";
 import { Icon } from "@/components/Icon";
 import { RightRail } from "@/components/Community";
+import { LinkCards, Linkify } from "@/components/RichText";
 import { Translatable } from "@/components/Translate";
-import { Avatar, BackLink, BoardBadge, EventLine, Flag, HelpItem, LevelBadge, MarketLine, NationalityChip, Notice, TagText, pill, tag } from "@/components/ui";
+import { Avatar, BackLink, BoardBadge, EventLine, Flag, HelpItem, LevelBadge, MarketLine, NationalityChip, Notice, SolvedBadge, SolvedNote, TagText, btn, card, pill, tag } from "@/components/ui";
+import { aiEnabled } from "@/lib/ai";
 import { getT, getUser } from "@/lib/auth";
 import { isId } from "@/lib/db";
 import { boardOf, DEALS, tagOf } from "@/lib/boards";
 import { helpFor } from "@/lib/guide";
 import { countryName, langName, readLangOf, regionLabel, timeAgo, type Lang, type T } from "@/lib/i18n";
-import { getComments, getPost, type CommentRow } from "@/lib/posts";
+import { BUMP_AFTER_H, canBump, getComments, getPost, postImages, type CommentRow } from "@/lib/posts";
 
 export default async function PostPage(props: PageProps<"/posts/[id]">) {
   const { id } = await props.params;
   if (!isId(id)) notFound();
   const [{ lang, t }, user] = await Promise.all([getT(), getUser()]);
   // Comments load alongside the post; they are only rendered once the access checks below pass.
-  const [post, comments] = await Promise.all([getPost(user?.id ?? null, id), getComments(user?.id ?? null, id)]);
+  const [post, comments, images] = await Promise.all([getPost(user?.id ?? null, id), getComments(user?.id ?? null, id), postImages(id)]);
   if (!post) notFound();
 
   // Country lounges are private to members of that nationality.
@@ -59,13 +63,17 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
   const readLang = readLangOf(user, lang);
   const target = langName(readLang, lang).split(" · ")[0];
   const canTranslate = post.lang !== readLang;
-  const asks = tagOf(post.topic, post.kind).asks;
+  const asks = !!tagOf(post.topic, post.kind).asks;
+  // The author's unanswered question: offer "ask again" once it has waited long enough.
+  const unanswered = post.mine && asks && !post.solved && post.comments === 0;
+  const bumpable = canBump(post, asks);
 
   return (
     <div className="grid gap-6 md:px-2 xl:grid-cols-[minmax(0,1fr)_320px] xl:px-6">
       <article className="min-w-0 pb-6">
+        <ViewCount id={post.id} />
         <BackLink href={lounge ? "/lounge" : `/b/${post.topic}`} label={lounge ? t("{country} 라운지", { country: countryName(post.space, lang) }) : t(board.ko)} />
-        <header className="relative overflow-hidden bg-soft px-5 pt-5 pb-6 md:mx-4 md:rounded-3xl md:px-7">
+        <header className="relative overflow-hidden bg-soft px-4 pt-4 pb-5 md:mx-4 md:rounded-3xl md:px-7 md:pt-5 md:pb-6">
           <span
             className="bg-pattern absolute inset-y-0 right-0 w-1/3 opacity-25 [mask-image:linear-gradient(to_left,black,transparent)]"
             style={{ backgroundColor: "var(--c-primary)" }}
@@ -86,14 +94,15 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
                 {regionLabel(post.region, t)}
               </span>
             )}
-            {post.solved && (
-              <span className={`${tag} bg-emerald-700 text-white`}>
-                <Icon name="check" size={12} />
-                {t("해결됨")}
+            {post.solved && <SolvedBadge post={post} t={t} />}
+            {post.bumped_at && !post.solved && post.comments === 0 && (
+              <span className={`${tag} bg-amber-100 text-amber-900`}>
+                <Icon name="lift" size={12} />
+                {t("도움 요청")}
               </span>
             )}
           </div>
-          <h1 className="relative mt-3 font-display text-2xl leading-tight font-extrabold tracking-tight [overflow-wrap:anywhere] md:text-[32px]">
+          <h1 className="relative mt-2.5 font-display text-[22px] leading-tight font-extrabold tracking-tight [overflow-wrap:anywhere] md:mt-3 md:text-[32px]">
             <TagText board={post.topic} tagId={post.kind} t={t} />
             {post.title}
           </h1>
@@ -104,21 +113,82 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
             <Avatar code={post.nationality} size={32} />
             <NationalityChip code={post.nationality} lang={lang} prefix={t("글쓴이")} />
             <LevelBadge points={post.points} t={t} />
+            {/* Follow a neighbor whose tips keep helping. They only ever see a follower count, never who. */}
+            {user && !post.mine && (
+              <form action={toggleFollow}>
+                <input type="hidden" name="post" value={post.id} />
+                <button
+                  aria-pressed={post.following}
+                  className={`inline-flex h-8 items-center gap-1 rounded-full px-3 text-xs font-bold transition ${post.following ? "bg-ink text-white" : "bg-white text-primary ring-1 ring-primary/30 hover:ring-primary"}`}
+                >
+                  <Icon name={post.following ? "following" : "follow"} size={14} />
+                  {post.following ? t("팔로잉") : t("팔로우")}
+                </button>
+              </form>
+            )}
             <span className="opacity-70">
               {timeAgo(post.created_at, lang)}
               {post.updated_at && ` · ${t("수정됨")}`}
+            </span>
+            <span className="inline-flex items-center gap-1 opacity-70">
+              <Icon name="eye" size={13} />
+              {t("조회 {n}", { n: post.views })}
             </span>
           </div>
         </header>
 
         <div className="px-4 py-5">
-          <p className={`${tag} mb-3 bg-ink/5`}>
-            {t("원문")} · {langName(post.lang, lang)}
-          </p>
-          {canTranslate ? (
-            <Translatable kind="p" id={post.id} body={post.body} target={target} className="text-base leading-[1.75] whitespace-pre-wrap [overflow-wrap:anywhere]" />
-          ) : (
-            <div className="text-base leading-[1.75] whitespace-pre-wrap [overflow-wrap:anywhere]">{post.body}</div>
+          {/* The text in its own card, so it reads apart from the header, the tools and the replies. */}
+          <section className={`${card} p-4 md:p-6`} aria-label={t("본문")}>
+            <p className={`${tag} mb-3 bg-ink/5`}>
+              {t("원문")} · {langName(post.lang, lang)}
+            </p>
+            {canTranslate ? (
+              <Translatable kind="p" id={post.id} body={post.body} target={target} className="text-base leading-[1.75] whitespace-pre-wrap [overflow-wrap:anywhere]" />
+            ) : (
+              <div className="text-base leading-[1.75] whitespace-pre-wrap [overflow-wrap:anywhere]">
+                <Linkify text={post.body} />
+              </div>
+            )}
+            {images.length > 0 && (
+              <ul className={`mt-5 grid gap-2 ${images.length > 1 ? "grid-cols-2" : ""}`}>
+                {images.map((im, i) => (
+                  <li key={im.id}>
+                    <a href={`/api/img/${im.id}`} target="_blank" className="relative block aspect-[4/3] overflow-hidden rounded-xl bg-ink/5 ring-1 ring-ink/10">
+                      <Image
+                        src={`/api/img/${im.id}`}
+                        alt={t("첨부 사진 {n}", { n: i + 1 })}
+                        fill
+                        unoptimized
+                        className={images.length > 1 ? "object-cover" : "object-contain"}
+                      />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <LinkCards text={post.body} label={t("첨부 링크")} />
+          </section>
+          {post.solved && <SolvedNote post={post} lang={lang} t={t} />}
+          {post.solved && aiEnabled() && comments.some((c) => c.anon_no !== 0 && !c.hidden) && <AiSummary postId={post.id} />}
+          {unanswered && (
+            <div className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-amber-950">
+              <Icon name="lift" size={20} />
+              <p className="min-w-48 flex-1 text-sm">
+                {bumpable
+                  ? t("아직 답변이 없어요. 도움을 요청하면 이 글이 목록 맨 위로 다시 올라가요.")
+                  : t("{h}시간 동안 답변이 없으면 도움 요청으로 이 글을 목록 맨 위에 다시 올릴 수 있어요.", { h: BUMP_AFTER_H })}
+              </p>
+              {bumpable && (
+                <form action={bumpPost}>
+                  <input type="hidden" name="post" value={post.id} />
+                  <button className={`${btn} h-10 text-sm`}>
+                    <Icon name="lift" size={16} />
+                    {t("도움 요청")}
+                  </button>
+                </form>
+              )}
+            </div>
           )}
           {post.mine && board.extra === "market" && (
             <div className="mt-4 flex flex-wrap items-center gap-2 rounded-2xl bg-paper p-3 text-sm">
@@ -182,7 +252,7 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
               )}
               {user && !post.mine && (
                 <Link href={`/report?post=${post.id}`} className="inline-flex h-8 items-center gap-1 font-semibold opacity-70 hover:underline">
-                  <Icon name="flag" size={14} />
+                  <Icon name="siren" size={14} className="text-red-700" />
                   {t("신고")}
                 </Link>
               )}
@@ -263,7 +333,8 @@ function Comment({ c, postId, t, lang, signedIn, target }: { c: CommentRow; post
   return (
     <div
       data-comment
-      className={`flex gap-3 rounded-2xl border-l-4 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,.04)] ${c.anon_no === 0 ? "border-primary" : "border-transparent"}`}
+      id={`c-${c.id}`}
+      className={`flex scroll-mt-24 gap-3 rounded-2xl border-l-4 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,.04)] ${c.anon_no === 0 ? "border-primary" : "border-transparent"}`}
     >
       <Avatar code={c.nationality} size={34} />
       <div className="min-w-0 flex-1">
@@ -303,7 +374,7 @@ function Comment({ c, postId, t, lang, signedIn, target }: { c: CommentRow; post
             ) : (
               signedIn && (
                 <Link href={`/report?comment=${c.id}&post=${postId}`} className="inline-flex h-8 items-center gap-1 opacity-70 hover:underline">
-                  <Icon name="flag" size={13} />
+                  <Icon name="siren" size={13} className="text-red-700" />
                   {t("신고")}
                 </Link>
               )

@@ -1,0 +1,20 @@
+# CodeRabbit AI review and PR summary: runs once the CodeRabbit GitHub App is installed on this repository.
+language: ko-KR
+reviews:
+  profile: chill
+  high_level_summary: true
+  auto_review:
+    enabled: true
+    drafts: false
+  path_instructions:
+    - path: "src/**/*.tsx"
+      instructions: >-
+        UI text is written as t("<Korean sentence>") and every key needs an English line in src/lib/en.ts.
+        Icons come from src/components/Icon.tsx (SVG), never emoji. Members are anonymous: flag anything that
+        puts a member id or email in a page, or links one member's posts together outside the follow feature.
+    - path: "src/app/actions.ts"
+      instructions: >-
+        Server actions are the trust boundary: check the session, validate every form field, keep SQL parameterized.
+    - path: "db/schema.sql"
+      instructions: >-
+        The schema is applied on every deploy, so each statement must stay idempotent (IF NOT EXISTS, CREATE OR REPLACE).

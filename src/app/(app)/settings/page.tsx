@@ -4,7 +4,8 @@ import { deleteAccount, setReadLang, setRegion, signOut, unblockAll } from "@/ap
 import { NationalityForm } from "@/components/forms";
 import { Icon } from "@/components/Icon";
 import { PageHead, btn, btnGhost, field } from "@/components/ui";
-import { canViewQueue, getT, getUser } from "@/lib/auth";
+import { AccountSwitcher } from "@/components/Community";
+import { canViewQueue, demoEnabled, getT, getUser } from "@/lib/auth";
 import { q } from "@/lib/db";
 import { langName, READ_LANGS, REGIONS, REPORT_REASONS, sortedCountries, timeAgo } from "@/lib/i18n";
 
@@ -26,6 +27,18 @@ export default async function SettingsPage() {
       ])
     : [[], [{ n: 0 }]];
   const status: Record<string, string> = { received: t("접수됨"), actioned: t("조치 완료"), dismissed: t("문제 없음으로 종료") };
+  // Phones have no sidebar, so official help and the intro page are linked here, signed in or not.
+  // (The phone logo goes to the feed; only the desktop logo opens the intro page.)
+  const phoneLinks = (
+    <>
+      <Link href="/guide" className={`${row} font-bold text-primary lg:hidden`}>
+        {t("공식 안내")} <span aria-hidden="true">›</span>
+      </Link>
+      <Link href="/?intro=1" className={`${row} font-bold text-primary lg:hidden`}>
+        {t("Boundless 소개")} <span aria-hidden="true">›</span>
+      </Link>
+    </>
+  );
 
   return (
     <div className="mx-auto max-w-3xl lg:ml-2 pb-6">
@@ -38,6 +51,12 @@ export default async function SettingsPage() {
               <span className="font-bold">{t("화면 언어")}</span>
               <LangMenu lang={lang} label={t("화면 언어 바꾸기")} note={t("한국어와 영어 밖의 언어는 기계 번역이라 어색한 문장이 있을 수 있어요. 검수하고 있어요.")} compact />
             </div>
+            {/* Sample accounts switch country from the desktop sidebar; phones and tablets have no sidebar, so it sits here. */}
+            {user && demoEnabled() && user.email.endsWith("@example.com") && (
+              <div className="border-b border-ink/10 py-3 lg:hidden">
+                <AccountSwitcher t={t} lang={lang} current={user.nationality} up={false} />
+              </div>
+            )}
             <details className="border-b border-ink/10 py-3">
               <summary className="cursor-pointer font-bold">{t("커뮤니티 규칙과 안전")}</summary>
               <ul className="mt-2 list-disc space-y-1 pl-5 text-sm opacity-80">
@@ -133,6 +152,7 @@ export default async function SettingsPage() {
                     )}
                   </span>
                 </div>
+                {phoneLinks}
                 <Link href="/policy" className={`${row} font-bold text-primary`}>
                   {t("운영 정책")} <span aria-hidden="true">›</span>
                 </Link>
@@ -158,9 +178,12 @@ export default async function SettingsPage() {
             </section>
           </>
         ) : (
-          <Link href="/login?next=/settings" className={btn}>
-            {t("로그인")}
-          </Link>
+          <>
+            <Link href="/login?next=/settings" className={btn}>
+              {t("로그인")}
+            </Link>
+            <div className="mt-4">{phoneLinks}</div>
+          </>
         )}
       </div>
     </div>

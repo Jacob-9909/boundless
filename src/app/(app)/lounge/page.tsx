@@ -39,16 +39,16 @@ export default async function LoungePage(props: PageProps<"/lounge">) {
   return (
     <WithRail viewer={user.id} lang={lang} t={t}>
       <div className="min-w-0 space-y-4">
-        <header className="relative overflow-hidden rounded-3xl bg-primary p-6 text-paper md:p-8">
+        <header className="relative overflow-hidden rounded-2xl bg-primary p-4 text-paper md:rounded-3xl md:p-8">
           <span className="bg-pattern absolute inset-0 opacity-30" aria-hidden="true" />
           <span className="absolute inset-0 bg-gradient-to-r from-black/50 via-black/20 to-transparent" aria-hidden="true" />
-          <Landmark culture={culture} className="absolute right-0 bottom-0 h-28 w-auto opacity-90 md:h-36" />
+          <Landmark culture={culture} className="absolute right-0 bottom-0 h-20 w-auto opacity-40 sm:opacity-90 md:h-36" />
           <div className="relative max-w-xl">
             <p className="flex items-center gap-2 text-sm font-bold opacity-90">
               <Flag code={user.nationality} h={14} />
               {t("{country} 라운지", { country })}
             </p>
-            <h1 className="mt-2 font-culture text-3xl leading-tight md:text-[42px]">{culture.greet}</h1>
+            <h1 className="mt-1.5 font-culture text-2xl leading-tight md:mt-2 md:text-[42px]">{culture.greet}</h1>
             <p className="mt-2 text-sm opacity-90 [text-shadow:0_1px_6px_rgb(0_0_0/.4)]">{t("{country} 이웃만 볼 수 있는 공간이에요. 우리말로 편하게 이야기해요.", { country })}</p>
             <p className="mt-3 flex flex-wrap items-center gap-3 text-xs opacity-85 [text-shadow:0_1px_6px_rgb(0_0_0/.4)]">
               <span className="inline-flex items-center gap-1">
@@ -59,12 +59,13 @@ export default async function LoungePage(props: PageProps<"/lounge">) {
                 <Icon name="file" size={14} />
                 {t("글 {n}개", { n: total })}
               </span>
-              <span className="inline-flex items-center gap-1">
+              {/* The sentence above already says who can see it; phones skip the repeat. */}
+              <span className="hidden items-center gap-1 sm:inline-flex">
                 <Icon name="lock" size={14} />
                 {t("다른 나라 이웃에게는 보이지 않아요")}
               </span>
             </p>
-            <Link href="/write?space=lounge" className="mt-5 inline-flex h-11 items-center gap-1.5 rounded-xl bg-white px-5 text-[15px] font-bold whitespace-nowrap text-primary hover:bg-white/90">
+            <Link href="/write?space=lounge" className="mt-4 inline-flex h-10 items-center gap-1.5 rounded-xl bg-white px-4 text-sm font-bold whitespace-nowrap text-primary hover:bg-white/90 md:mt-5 md:h-11 md:px-5 md:text-[15px]">
               <Icon name="edit" size={17} />
               {t("라운지에 쓰기")}
             </Link>

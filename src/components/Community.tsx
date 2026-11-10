@@ -12,13 +12,18 @@ import { Avatar, LevelBadge, card } from "./ui";
 const railTitle = "flex items-center gap-1.5 text-sm font-extrabold whitespace-nowrap";
 const MEDALS = ["#E8B23A", "#9AA4B2", "#C27A45"];
 
-/** Page body with the right rail beside it on wide screens (feed, lounge, boards). */
+/**
+ * Page body with the right rail beside it on wide screens (feed, lounge, boards).
+ * Below xl the rail follows the content instead of disappearing: my level, the helper ranking and
+ * recent activity have no other place on phones, tablets and small laptops.
+ */
 export function WithRail({ viewer, lang, t, children }: { viewer: string | null; lang: Lang; t: T; children: ReactNode }) {
   return (
-    <div className="grid gap-6 px-4 py-4 md:px-6 md:py-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+    // grid-cols-1 (minmax(0,1fr)): without a set track, the rail's nowrap lines widen the single column past the phone screen.
+    <div className="grid grid-cols-1 gap-6 px-4 py-4 md:px-6 md:py-6 xl:grid-cols-[minmax(0,1fr)_320px]">
       {children}
-      <aside className="hidden xl:block">
-        <div className="sticky top-6">
+      <aside aria-label={t("커뮤니티 소식")} className="min-w-0">
+        <div className="xl:sticky xl:top-6">
           <RightRail viewer={viewer} lang={lang} t={t} />
         </div>
       </aside>
@@ -65,7 +70,8 @@ export async function RightRail({ viewer, lang, t }: { viewer: string | null; la
               {[
                 [mine.answers, t("답변")],
                 [mine.helped, t("받은 도움돼요")],
-                [mine.rank || "-", t("전체 순위")],
+                // "31" alone did not tell testers how far they were from the top; show it out of all members.
+                [mine.rank ? `${mine.rank}/${mine.total}` : "-", t("전체 순위")],
               ].map(([n, label]) => (
                 <div key={String(label)} className="rounded-xl bg-paper py-2">
                   <dd className="font-display text-lg font-extrabold">{n}</dd>
@@ -215,15 +221,15 @@ export async function RightRail({ viewer, lang, t }: { viewer: string | null; la
         </ul>
       </section>
       <p className="px-1 text-[11px] leading-relaxed opacity-60">
-        <Link href="/policy" className="hover:underline">
+        <Link href="/policy" className="inline-block py-1.5 hover:underline">
           {t("운영 정책")}
         </Link>
         {" · "}
-        <Link href="/guide" className="hover:underline">
+        <Link href="/guide" className="inline-block py-1.5 hover:underline">
           {t("공식 안내")}
         </Link>
         {" · "}
-        <Link href="/boards" className="hover:underline">
+        <Link href="/boards" className="inline-block py-1.5 hover:underline">
           {t("게시판")}
         </Link>
         {" · © 2026 Boundless"}
@@ -242,9 +248,9 @@ export function AccountSwitcher({ t, lang, current, up = true }: { t: T; lang: L
         {t("다른 나라 이웃으로 바꾸기")}
         <Icon name="down" size={16} className="ml-auto transition group-open:rotate-180" />
       </summary>
-      <div className={`absolute left-0 z-40 w-[300px] rounded-2xl bg-white p-2 shadow-2xl ring-1 ring-black/10 ${up ? "bottom-full mb-2" : "top-full mt-2"}`}>
+      <div className={`absolute left-0 z-40 w-[300px] max-w-[calc(100vw-2rem)] rounded-2xl bg-white p-2 shadow-2xl ring-1 ring-black/10 ${up ? "bottom-full mb-2" : "top-full mt-2"}`}>
         <p className="px-2 pt-1 pb-2 text-xs opacity-70">{t("나라를 누르면 그 나라 샘플 이웃으로 바로 바뀌어요.")}</p>
-        <ul className="max-h-[60vh] space-y-0.5 overflow-y-auto">
+        <ul className="max-h-[60svh] space-y-0.5 overflow-y-auto">
           {items.map(({ c, code }) => {
             const on = code === current;
             return (

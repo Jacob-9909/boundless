@@ -94,10 +94,10 @@ export function LoginScreen({
     });
 
   return (
-    <main style={themeVars(culture)} className="min-h-screen bg-paper text-ink lg:grid lg:grid-cols-[1.15fr_1fr]">
+    <main style={themeVars(culture)} className="min-h-dvh bg-paper text-ink lg:grid lg:grid-cols-[1.15fr_1fr]">
       {/* Hero: re-skinned with the chosen culture's colors, pattern, script and greeting */}
       {/* z-10 + no overflow clip on the section, so the language menu can drop below the hero */}
-      <section className="relative z-10 flex min-h-[46vh] flex-col bg-primary px-5 pt-4 pb-8 text-paper transition-colors duration-500 lg:min-h-screen lg:px-10">
+      <section className="relative z-10 flex min-h-[46svh] flex-col bg-primary px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-8 text-paper transition-colors duration-500 lg:min-h-screen lg:px-10">
         <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
           <div key={`p-${culture.code}`} className="bg-pattern animate-fade-in absolute inset-0 opacity-30" />
           <div key={`l-${culture.code}`} className="animate-fade-in absolute inset-x-0 bottom-0">
@@ -146,7 +146,7 @@ export function LoginScreen({
       <section className="mx-auto w-full max-w-lg px-5 py-6 lg:flex lg:flex-col lg:justify-center lg:py-10">
         <h2 className="font-display text-xl font-extrabold">{t("어디에서 오셨나요?")}</h2>
         <p className="mt-1 text-sm opacity-70">{t("고른 문화에 맞춰 화면이 바뀌어요. 국적은 가입할 때 따로 정해요.")}</p>
-        <ul ref={strip} className="-mx-5 mt-3 flex gap-1.5 overflow-x-auto px-5 pb-2 lg:mx-0 lg:grid lg:grid-cols-4 lg:overflow-visible lg:px-0" role="radiogroup" aria-label={t("어디에서 오셨나요?")}>
+        <ul ref={strip} className="relative -mx-5 mt-3 flex gap-1.5 overflow-x-auto px-5 pb-2 lg:mx-0 lg:grid lg:grid-cols-4 lg:overflow-visible lg:px-0" role="radiogroup" aria-label={t("어디에서 오셨나요?")}>
           {PICKER.map((c) => {
             const on = c.code === culture.code;
             return (
@@ -157,10 +157,12 @@ export function LoginScreen({
                   aria-checked={on}
                   onClick={() => pick(c)}
                   title={c.code === "XX" ? t("다른 나라") : nameOf.get(c.code)}
-                  className={`flex w-full flex-col items-center gap-1.5 rounded-xl border-2 px-1 pt-2.5 pb-2 transition ${on ? "border-primary bg-soft shadow-sm" : "border-transparent bg-white hover:border-ink/15"}`}
+                  className={`flex h-full w-full flex-col items-center gap-1.5 rounded-xl border-2 px-1 pt-2.5 pb-2 transition ${on ? "border-primary bg-soft shadow-sm" : "border-transparent bg-white hover:border-ink/15"}`}
                 >
                   {c.code === "XX" ? <Icon name="globe" size={22} className="h-[22px] text-primary" /> : <Flag code={c.code} h={22} />}
-                  <span className="w-full truncate text-center text-xs font-semibold">{c.code === "XX" ? t("다른 나라") : c.native}</span>
+                  {/* Two lines instead of an ellipsis ("United States" was cut off in a 76px tile); 11px so one long word
+                      like "Oʻzbekiston" still fits on a line. overflow-wrap is only the last resort. */}
+                  <span className="line-clamp-2 w-full text-center text-[11px] leading-tight font-semibold [overflow-wrap:anywhere] lg:text-xs">{c.code === "XX" ? t("다른 나라") : c.native}</span>
                 </button>
               </li>
             );

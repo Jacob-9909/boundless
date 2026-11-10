@@ -1,0 +1,12 @@
+# Probot Auto Assign (https://github.com/apps/auto-assign): runs once the app is installed on this repository.
+# GitHub never requests a review from the PR's own author, so on your own PRs only the assignee is set.
+addReviewers: true
+addAssignees: true
+reviewers:
+  - Jacob-9909
+assignees:
+  - Jacob-9909
+# 0 = everyone on the list. After adding teammates, set numberOfReviewers to 1 so each PR gets one of them.
+numberOfReviewers: 0
+skipKeywords:
+  - wip

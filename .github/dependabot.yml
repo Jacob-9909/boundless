@@ -1,0 +1,21 @@
+# Dependabot: weekly version updates. Security updates also need "Dependabot alerts" and
+# "Dependabot security updates" switched on under Settings > Code security.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      timezone: Asia/Seoul
+    open-pull-requests-limit: 5
+    groups:
+      # next and its ESLint config must move together.
+      next:
+        patterns: ["next", "eslint-config-next"]
+      minor-and-patch:
+        update-types: [minor, patch]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      timezone: Asia/Seoul

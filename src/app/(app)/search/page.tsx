@@ -23,7 +23,7 @@ export default async function SearchPage(props: PageProps<"/search">) {
   const searched = Boolean(query || topic || from || region);
   const posts = searched ? await listPosts(user?.id ?? null, { query, board: topic, nationality: from, region, before, sort }) : [];
   const last = posts.at(-1);
-  const more = new URLSearchParams({ q: query, board: topic, from, region, ...(last ? { before: new Date(last.created_at).toISOString() } : {}) });
+  const more = new URLSearchParams({ q: query, board: topic, from, region, ...(last ? { before: new Date(last.listed_at).toISOString() } : {}) });
   if (query) track("search", user?.id ?? null);
 
   return (
@@ -121,6 +121,10 @@ export default async function SearchPage(props: PageProps<"/search">) {
             <p>{t("검색어를 바꾸거나 주제 필터를 해제해 보세요. 그래도 없다면 직접 물어보세요.")}</p>
             <Link href={`/write?${new URLSearchParams({ title: query, board: topic })}`} className="mt-3 inline-flex h-10 items-center font-bold text-primary underline">
               {t("질문 올리기")}
+            </Link>
+            {/* Search only covers posts; someone typing "police" or "112" in a hurry still gets the numbers. */}
+            <Link href="/guide" className="mt-3 ml-4 inline-flex h-10 items-center font-bold text-red-700 underline">
+              112 · 119 · {t("공식 안내")}
             </Link>
           </Notice>
         )}

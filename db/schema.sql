@@ -160,3 +160,41 @@ CREATE TABLE IF NOT EXISTS boundless.appeals (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS appeals_post_once ON boundless.appeals (post_id) WHERE post_id IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS appeals_comment_once ON boundless.appeals (comment_id) WHERE comment_id IS NOT NULL;
+
+-- Views, "ask again" (bump), image attachments, follows. Idempotent.
+ALTER TABLE boundless.posts
+  ADD COLUMN IF NOT EXISTS views int NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS bumped_at timestamptz; -- the author asked again: lists order by COALESCE(bumped_at, created_at)
+CREATE INDEX IF NOT EXISTS posts_listed_idx ON boundless.posts ((COALESCE(bumped_at, created_at)) DESC);
+
+-- ponytail: images live in Postgres (resized to JPEG <= 600 KB in the browser); move to object storage if the table grows past a few GB.
+CREATE TABLE IF NOT EXISTS boundless.post_images (
+  id bigserial PRIMARY KEY,
+  post_id bigint NOT NULL REFERENCES boundless.posts ON DELETE CASCADE,
+  mime text NOT NULL CHECK (mime IN ('image/jpeg', 'image/png', 'image/webp', 'image/gif')),
+  data bytea NOT NULL CHECK (octet_length(data) <= 600000),
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS post_images_post_idx ON boundless.post_images (post_id, id);
+
+-- Follow a neighbor's posts. Private: the followed member sees only a count, never who.
+CREATE TABLE IF NOT EXISTS boundless.follows (
+  id bigserial UNIQUE, -- lets the follower unfollow without the page ever holding a member id
+  user_id uuid NOT NULL REFERENCES boundless.users ON DELETE CASCADE,
+  followee_id uuid NOT NULL REFERENCES boundless.users ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, followee_id),
+  CHECK (user_id <> followee_id)
+);
+CREATE INDEX IF NOT EXISTS follows_followee_idx ON boundless.follows (followee_id);
+
+-- AI summaries of solved threads (src/lib/ai.ts), one per reading language. basis = hash of the text sent to the
+-- AI, so an edit or a new answer gets a fresh summary. Deleting or hiding text removes the rows (actions.ts).
+CREATE TABLE IF NOT EXISTS boundless.post_summaries (
+  post_id bigint NOT NULL REFERENCES boundless.posts ON DELETE CASCADE,
+  lang text NOT NULL,
+  basis text NOT NULL,
+  summary jsonb NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (post_id, lang)
+);

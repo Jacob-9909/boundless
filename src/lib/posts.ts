@@ -19,6 +19,10 @@ export type PostRow = {
   solved: boolean;
   created_at: Date;
   updated_at: Date | null;
+  bumped_at: Date | null; // the author asked again for help
+  listed_at: Date; // bumped_at ?? created_at: list order and the "load more" cursor
+  views: number;
+  image: string | null; // first attached image id
   nationality: string;
   points: number; // author's member points (for the level badge)
   comments: number;
@@ -26,6 +30,8 @@ export type PostRow = {
   liked: boolean;
   saved: boolean;
   mine: boolean;
+  following: boolean; // the viewer follows this author
+  helpers: string[] | null; // solved posts: nationalities of the neighbors who answered
   top_answer: { body: string; nationality: string; likes: number } | null;
 };
 
@@ -50,16 +56,26 @@ const POINTS = (alias: string) => `(SELECT ${SCORE("mp.")} FROM boundless.member
 const ASKS = `p.kind = ANY('{${ASKING_TAGS.join(",")}}')`;
 // A question still waiting: not solved and no visible reply yet.
 const WAITING = `${ASKS} AND NOT p.solved AND NOT EXISTS (SELECT 1 FROM boundless.comments c WHERE c.post_id = p.id AND NOT c.hidden)`;
+const LISTED = "COALESCE(p.bumped_at, p.created_at)";
+/** A waiting question can be lifted back to the top once this many hours pass without an answer (and again after each lift). */
+export const BUMP_AFTER_H = 24;
+export const canBump = (p: Pick<PostRow, "solved" | "comments" | "listed_at" | "mine">, asks: boolean) =>
+  p.mine && asks && !p.solved && p.comments === 0 && Date.now() - new Date(p.listed_at).getTime() > BUMP_AFTER_H * 3600_000;
 
 // $1 is always the viewer's user id (or NULL for visitors).
 const POST_COLS = `p.id, p.topic, p.kind, p.space, p.lang, p.region, p.title, p.body, p.price, p.deal, p.place,
   to_char(p.starts_on, 'YYYY-MM-DD') AS starts_on, to_char(p.ends_on, 'YYYY-MM-DD') AS ends_on,
-  p.hidden, p.solved, p.created_at, p.updated_at, u.nationality, ${POINTS("p.user_id")} AS points,
+  p.hidden, p.solved, p.created_at, p.updated_at, p.bumped_at, ${LISTED} AS listed_at, p.views,
+  (SELECT i.id FROM boundless.post_images i WHERE i.post_id = p.id ORDER BY i.id LIMIT 1) AS image,
+  u.nationality, ${POINTS("p.user_id")} AS points,
   (SELECT count(*)::int FROM boundless.comments c WHERE c.post_id = p.id AND NOT c.hidden) AS comments,
   (SELECT count(*)::int FROM boundless.post_likes l WHERE l.post_id = p.id) AS likes,
   EXISTS (SELECT 1 FROM boundless.post_likes l WHERE l.post_id = p.id AND l.user_id = $1::uuid) AS liked,
   EXISTS (SELECT 1 FROM boundless.saves s WHERE s.post_id = p.id AND s.user_id = $1::uuid) AS saved,
   (p.user_id = $1::uuid) IS TRUE AS mine,
+  EXISTS (SELECT 1 FROM boundless.follows f WHERE f.user_id = $1::uuid AND f.followee_id = p.user_id) AS following,
+  CASE WHEN p.solved THEN ARRAY(SELECT DISTINCT cu.nationality::text FROM boundless.comments c JOIN boundless.users cu ON cu.id = c.user_id
+    WHERE c.post_id = p.id AND NOT c.hidden AND c.user_id <> p.user_id) END AS helpers,
   (SELECT json_build_object('body', left(a.body, 160), 'nationality', au.nationality, 'likes', a.likes)
      FROM (SELECT c.*, (SELECT count(*)::int FROM boundless.comment_likes l WHERE l.comment_id = c.id) AS likes
            FROM boundless.comments c WHERE c.post_id = p.id AND c.parent_id IS NULL AND NOT c.hidden AND c.user_id <> p.user_id
@@ -89,6 +105,7 @@ export function listPosts(
     before?: string;
     sort?: "new" | "likes";
     waiting?: boolean; // questions nobody has answered yet
+    following?: boolean; // only authors the viewer follows
     limit?: number;
   } = {}
 ) {
@@ -110,10 +127,11 @@ export function listPosts(
   if (opts.nationality) add("u.nationality = ?", opts.nationality);
   if (opts.region) add("p.region = ?", opts.region);
   if (opts.waiting) where.push(WAITING);
-  // Cursor for "load more": created_at of the last post on the previous page.
-  if (opts.before && !Number.isNaN(Date.parse(opts.before))) add("p.created_at < ?::timestamptz", opts.before);
+  if (opts.following) where.push("p.user_id IN (SELECT followee_id FROM boundless.follows WHERE user_id = $1::uuid)");
+  // Cursor for "load more": listed_at of the last post on the previous page.
+  if (opts.before && !Number.isNaN(Date.parse(opts.before))) add(`${LISTED} < ?::timestamptz`, opts.before);
   params.push(opts.limit ?? PAGE);
-  const order = opts.sort === "likes" ? "likes DESC, p.created_at DESC" : "p.created_at DESC";
+  const order = opts.sort === "likes" ? `likes DESC, ${LISTED} DESC` : `${LISTED} DESC`;
   return q<PostRow>(`SELECT ${POST_COLS} ${FROM} WHERE ${where.join(" AND ")} ORDER BY ${order} LIMIT $${params.length}`, params);
 }
 
@@ -149,6 +167,31 @@ export async function getPost(viewer: string | null, id: string) {
     [viewer, id]
   );
   return rows[0] ?? null;
+}
+
+export async function postImages(postId: string) {
+  if (!isId(postId)) return [];
+  return q<{ id: string }>("SELECT id FROM boundless.post_images WHERE post_id = $1 ORDER BY id", [postId]);
+}
+
+/** Neighbors I follow, newest follow first. `id` is the follow row, so pages never hold a member id. */
+export function followedNeighbors(viewer: string) {
+  return q<{ id: string; nationality: string; points: number; posts: number; last_post: string | null; last_title: string | null }>(
+    `SELECT f.id, u.nationality, ${POINTS("f.followee_id")} AS points,
+       (SELECT count(*)::int FROM boundless.posts p WHERE p.user_id = f.followee_id AND NOT p.hidden AND p.space = 'global') AS posts,
+       lp.id AS last_post, lp.title AS last_title
+     FROM boundless.follows f JOIN boundless.users u ON u.id = f.followee_id
+     LEFT JOIN LATERAL (SELECT p.id, p.title FROM boundless.posts p WHERE p.user_id = f.followee_id AND NOT p.hidden AND p.space = 'global'
+       ORDER BY p.created_at DESC LIMIT 1) lp ON true
+     WHERE f.user_id = $1 AND f.followee_id NOT IN (SELECT blocked_id FROM boundless.blocks WHERE user_id = $1)
+     ORDER BY f.created_at DESC`,
+    [viewer]
+  );
+}
+
+export async function followerCount(userId: string) {
+  const r = await q<{ n: number }>("SELECT count(*)::int AS n FROM boundless.follows WHERE followee_id = $1", [userId]);
+  return r[0].n;
 }
 
 export function getComments(viewer: string | null, postId: string) {
@@ -219,13 +262,14 @@ export function ranking(limit = 5) {
 }
 
 export async function myPoints(userId: string) {
-  const r = await q<{ posts: number; answers: number; helped: number; points: number; rank: number }>(
-    `SELECT posts, answers, helped, points, rank FROM (
-       SELECT user_id, posts, answers, helped, ${SCORE()} AS points, rank() OVER (ORDER BY ${SCORE()} DESC)::int AS rank
+  const r = await q<{ posts: number; answers: number; helped: number; points: number; rank: number; total: number }>(
+    `SELECT posts, answers, helped, points, rank, total FROM (
+       SELECT user_id, posts, answers, helped, ${SCORE()} AS points, rank() OVER (ORDER BY ${SCORE()} DESC)::int AS rank,
+         count(*) OVER ()::int AS total
        FROM boundless.member_points) x WHERE user_id = $1`,
     [userId]
   );
-  return r[0] ?? { posts: 0, answers: 0, helped: 0, points: 0, rank: 0 };
+  return r[0] ?? { posts: 0, answers: 0, helped: 0, points: 0, rank: 0, total: 0 };
 }
 
 /** Latest public replies across the community, for the "recent activity" rail. */

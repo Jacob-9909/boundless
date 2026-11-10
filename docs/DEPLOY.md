@@ -36,11 +36,13 @@ gh secret set VERCEL_TOKEN -R Jacob-9909/boundless   # 붙여넣고 Enter
 | `DEMO_LOGIN=1` | ✓ | ✓ | 시연용. 첫 화면 "심사위원 · 체험용 샘플 계정"에서 나라를 누르면 그 나라 샘플 이웃(`<코드>@example.com`)으로 바로 입장, 운영자 화면은 읽기 전용 계정(`moderator@example.com`)으로 입장. `@example.com` 계정은 로그인 코드도 화면에 보여 주고, 운영 처리 권한은 받지 못함. 실제 출시 때 지운다 |
 | `EMAIL_SENDER`, `EMAIL_PASSWORD` | 미설정 | | Gmail 앱 비밀번호. **설정 전에는 실제 이메일로 가입할 수 없다** |
 | `ADMIN_EMAILS` | 미설정 | | 운영 큐(`/admin`) 를 볼 실제 이메일 |
+| `NVIDIA_API_KEY` | 미설정 | | NVIDIA NIM 키(build.nvidia.com). 해결된 글의 AI 요약과 글쓰기 AI 점검에 쓴다. 없으면 두 기능이 화면에 나오지 않을 뿐 나머지는 그대로 동작 |
 
 ```bash
 npx vercel env add EMAIL_SENDER production
 npx vercel env add EMAIL_PASSWORD production --sensitive
 npx vercel env add ADMIN_EMAILS production
+npx vercel env add NVIDIA_API_KEY production --sensitive
 ```
 
 추가한 뒤 `main` 에 푸시하거나 Actions 에서 워크플로를 다시 실행하면 반영된다.
@@ -101,6 +103,7 @@ sudo systemctl daemon-reload && sudo systemctl enable boundless
 | `SESSION_SECRET` | `openssl rand -base64 32` |
 | `EMAIL_SENDER` / `EMAIL_PASSWORD` | Gmail 주소와 앱 비밀번호. 운영에서는 필수 (없으면 로그인 코드 발송 실패) |
 | `ADMIN_EMAILS` | 운영 큐(`/admin`)를 볼 이메일, 쉼표 구분 |
+| `NVIDIA_API_KEY` | 선택. AI 요약·글쓰기 점검용 NVIDIA NIM 키 |
 
 ### 4. 도메인 · TLS
 

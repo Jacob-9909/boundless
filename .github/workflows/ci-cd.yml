@@ -29,6 +29,8 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: node scripts/i18n-check.mjs
+      - run: node --no-warnings scripts/moderation-check.mjs
+      - run: node --no-warnings scripts/ai-check.mjs
       - run: npm run build
       - run: node scripts/db.mjs db/schema.sql db/seed.sql
       # e2e runs against the dev server: without SMTP it shows the sign-in code on screen.
@@ -37,6 +39,29 @@ jobs:
           npx next dev -p 3000 > dev.log 2>&1 &
           for _ in $(seq 60); do curl -fsS -o /dev/null http://localhost:3000/api/health && break; sleep 2; done
           BASE_URL=http://localhost:3000 CHROME_PATH=$(which google-chrome) node e2e/flow.mjs || (tail -50 dev.log; exit 1)
+
+  # Lint findings as inline review comments on the lines a PR changed (the check job above still gates the merge).
+  # Skipped on Dependabot PRs: their token cannot write reviews.
+  reviewdog:
+    if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - uses: reviewdog/action-eslint@v1
+        with:
+          reporter: github-pr-review
+          filter_mode: added
+          eslint_flags: "."
 
   # CD: only after the checks pass on main. Builds here, uploads the prebuilt output to Vercel.
   deploy:
