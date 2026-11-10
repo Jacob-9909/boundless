@@ -85,6 +85,9 @@ await a.getByText(/Personal details showing/).waitFor({ state: "detached" });
 const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
 await a.locator('input[name="images"]').setInputFiles({ name: "dot.png", mimeType: "image/png", buffer: png });
 await a.locator('img[src^="blob:"]').waitFor();
+// Life boards ask for an optional visa status; it shows as a tag and filters search.
+await a.getByText("Area · visa status · original language").click();
+await a.getByLabel("Visa status (optional)").selectOption("f6");
 await a.getByRole("button", { name: "Post", exact: true }).click();
 await a.waitForURL(/\/posts\/\d+$/);
 const postUrl = a.url();
@@ -97,7 +100,14 @@ await a.waitForFunction(() => {
 await a.getByLabel("Comment").fill("what the fuck");
 await a.getByRole("button", { name: "Reply" }).click();
 await a.getByText("contains profanity or hate speech").waitFor();
+await a.getByText("F-6 Marriage migrant").waitFor();
 await comment(a, "Author follow-up");
+
+// Writing a new title that matches it suggests the existing post first.
+await a.goto(BASE + "/write?board=housing");
+await a.getByLabel("Title").fill(`Recycling again ${run}`);
+await a.getByText("Similar posts exist").waitFor();
+await a.getByRole("link", { name: title }).waitFor();
 
 // B and C reply: per-post anonymous handles.
 const b = await newUser();
@@ -141,9 +151,12 @@ await b.getByText("B second reply", { exact: true }).waitFor({ state: "detached"
 await a.goto(BASE + "/me");
 await a.getByText(/\d+ new replies/).waitFor();
 await a.goto(postUrl);
-await a.getByRole("button", { name: "Mark as solved" }).click();
+// Accepting a reply marks the question solved and pins that reply first.
+await a.locator("[data-comment]", { hasText: "B first reply" }).getByRole("button", { name: "Accept this answer" }).click();
 // Solved reads as neighbors from different countries solving it together (A: Japan, B: Vietnam).
 await a.getByText(/^Solved together · \d+ countries$/).first().waitFor();
+await a.locator("[data-accepted]").waitFor();
+assert.match(await a.locator("[data-comment]").first().textContent(), /B first reply/);
 await a.getByRole("link", { name: "Edit" }).click();
 title = `E2E recycling question (edited) ${run}`;
 await a.getByLabel("Title").fill(title);
@@ -154,6 +167,10 @@ assert.equal((await a.locator("h1").textContent()).trim(), `[Question]${title}`)
 // Search finds the post by its original text.
 await visitor.goto(BASE + `/search?q=${encodeURIComponent(String(run))}`);
 await visitor.getByText(title).waitFor();
+await visitor.goto(BASE + `/search?q=${encodeURIComponent(String(run))}&visa=f6`);
+await visitor.getByText(title).waitFor();
+await visitor.goto(BASE + `/search?q=${encodeURIComponent(String(run))}&visa=d2`);
+await visitor.getByText("Nothing matched").waitFor();
 
 // B reports the post, then blocks the author.
 await b.goto(BASE + `/report?post=${postId}`);
@@ -174,6 +191,7 @@ await b.getByText("account you blocked").waitFor();
 const admin = await newUser();
 await signIn(admin, "admin@example.com");
 await admin.goto(BASE + "/admin");
+assert.match(await admin.locator("[data-solve-rate]").textContent(), /[1-9]\d* solved/);
 const item = admin.locator("li", { hasText: title });
 await item.getByRole("button", { name: "Hide" }).click();
 await item.waitFor({ state: "detached" });

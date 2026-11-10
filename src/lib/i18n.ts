@@ -109,6 +109,23 @@ export const REGIONS = [
 export const isRegion = (v: string) => REGIONS.some((x) => x.id === v);
 export const regionLabel = (id: string | null, t: T) => (id ? t(REGIONS.find((x) => x.id === id)?.ko ?? "") : t("지역 무관"));
 
+// Residence status, optional per post on life boards: the same visa question has different answers for D-2 and F-6.
+export const VISAS = [
+  { id: "d2", ko: "D-2 유학" },
+  { id: "d4", ko: "D-4 어학연수" },
+  { id: "d10", ko: "D-10 구직" },
+  { id: "e7", ko: "E-7 전문직" },
+  { id: "e9", ko: "E-9 비전문취업" },
+  { id: "h2", ko: "H-2 방문취업" },
+  { id: "f2", ko: "F-2 거주" },
+  { id: "f4", ko: "F-4 재외동포" },
+  { id: "f5", ko: "F-5 영주" },
+  { id: "f6", ko: "F-6 결혼이민" },
+  { id: "etc", ko: "그 밖의 체류자격" },
+] as const;
+export const isVisa = (v: string) => VISAS.some((x) => x.id === v);
+export const visaLabel = (id: string, t: T) => t(VISAS.find((x) => x.id === id)?.ko ?? "");
+
 // Languages a post can be written in: every interface language plus Spanish. The original is always labeled.
 export const POST_LANGS: string[] = [...LANGS, "es", "other"];
 /** The language's own name ("français"), for compact labels. */

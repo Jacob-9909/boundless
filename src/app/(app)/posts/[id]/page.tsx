@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { addComment, bumpPost, clearAiVisa, deleteOwn, setDeal, toggleFollow, toggleLike, toggleSave, toggleSolved } from "@/app/actions";
+import { acceptAnswer, addComment, bumpPost, clearAiVisa, deleteOwn, setDeal, toggleFollow, toggleLike, toggleSave, toggleSolved } from "@/app/actions";
 import { AiSummary } from "@/components/AiSummary";
 import { CommentForm, AppealForm, ViewCount } from "@/components/forms";
 import { ShareButton } from "@/components/Share";
@@ -15,7 +15,7 @@ import { getT, getUser } from "@/lib/auth";
 import { isId } from "@/lib/db";
 import { boardOf, DEALS, tagOf } from "@/lib/boards";
 import { alertOf, helpFor, hotline } from "@/lib/guide";
-import { countryName, langName, readLangOf, regionLabel, timeAgo, type Lang, type T } from "@/lib/i18n";
+import { countryName, langName, readLangOf, regionLabel, timeAgo, visaLabel, type Lang, type T } from "@/lib/i18n";
 import { BUMP_AFTER_H, canBump, getComments, getPost, postImages, type CommentRow } from "@/lib/posts";
 
 export default async function PostPage(props: PageProps<"/posts/[id]">) {
@@ -52,7 +52,8 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
     );
   }
 
-  const top = comments.filter((c) => !c.parent_id);
+  // The accepted answer leads the thread; the rest keep their order.
+  const top = comments.filter((c) => !c.parent_id).sort((a, b) => Number(b.id === post.accepted_comment_id) - Number(a.id === post.accepted_comment_id));
   const replies = Map.groupBy(comments.filter((c) => c.parent_id), (c) => c.parent_id!);
   const repliesOf = (cid: string) => replies.get(cid) ?? [];
   const help = helpFor(post.topic);
@@ -94,7 +95,9 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
                 {regionLabel(post.region, t)}
               </span>
             )}
-            {post.ai_visa && (
+            {post.visa && <span className={`${tag} bg-white/70`}>{visaLabel(post.visa, t)}</span>}
+            {/* The AI tag only when the author did not pick a visa themselves. */}
+            {post.ai_visa && !post.visa && (
               <span className={`${tag} bg-white/70`} title={t("AI가 글에서 읽은 비자 종류예요")}>
                 <Icon name="idcard" size={12} />
                 {post.ai_visa}
@@ -294,7 +297,16 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
           <ul className="mt-3 space-y-3">
             {top.map((c) => (
               <li key={c.id}>
-                <Comment c={c} postId={post.id} t={t} lang={lang} signedIn={!!user} target={target} />
+                <Comment
+                  c={c}
+                  postId={post.id}
+                  t={t}
+                  lang={lang}
+                  signedIn={!!user}
+                  target={target}
+                  accepted={c.id === post.accepted_comment_id}
+                  canAccept={post.mine && asks && c.anon_no !== 0}
+                />
                 {(repliesOf(c.id).length > 0 || user) && (
                   <div className="mt-2 ml-5 space-y-2 border-l-2 border-ink/10 pl-3">
                     {repliesOf(c.id).map((r) => (
@@ -368,7 +380,25 @@ function AlertCard({ id, t }: { id: string; t: T }) {
   );
 }
 
-function Comment({ c, postId, t, lang, signedIn, target }: { c: CommentRow; postId: string; t: T; lang: Lang; signedIn: boolean; target: string }) {
+function Comment({
+  c,
+  postId,
+  t,
+  lang,
+  signedIn,
+  target,
+  accepted = false,
+  canAccept = false,
+}: {
+  c: CommentRow;
+  postId: string;
+  t: T;
+  lang: Lang;
+  signedIn: boolean;
+  target: string;
+  accepted?: boolean;
+  canAccept?: boolean; // the question's author, on a top-level reply by someone else
+}) {
   if (c.hidden)
     return (
       <div className="rounded-xl bg-white p-3.5 text-sm">
@@ -380,7 +410,7 @@ function Comment({ c, postId, t, lang, signedIn, target }: { c: CommentRow; post
     <div
       data-comment
       id={`c-${c.id}`}
-      className={`flex scroll-mt-24 gap-3 rounded-2xl border-l-4 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,.04)] ${c.anon_no === 0 ? "border-primary" : "border-transparent"}`}
+      className={`flex scroll-mt-24 gap-3 rounded-2xl border-l-4 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,.04)] ${accepted ? "border-emerald-700" : c.anon_no === 0 ? "border-primary" : "border-transparent"}`}
     >
       <Avatar code={c.nationality} size={34} look={c.avatar} />
       <div className="min-w-0 flex-1">
@@ -391,6 +421,12 @@ function Comment({ c, postId, t, lang, signedIn, target }: { c: CommentRow; post
           <NationalityChip code={c.nationality} lang={lang} />
           <LevelBadge points={c.points} t={t} />
           <span className="opacity-70">{timeAgo(c.created_at, lang)}</span>
+          {accepted && (
+            <span className={`${tag} bg-emerald-700 text-white`} data-accepted>
+              <Icon name="check" size={12} />
+              {t("채택된 답변")}
+            </span>
+          )}
         </div>
         <div className="mt-1.5">
           <Translatable kind="c" id={c.id} body={c.body} target={target} small className="text-[15px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere]" />
@@ -413,6 +449,16 @@ function Comment({ c, postId, t, lang, signedIn, target }: { c: CommentRow; post
               <Icon name="helpful" size={15} />
               {c.likes}
             </span>
+          )}
+          {canAccept && (
+            <form action={acceptAnswer}>
+              <input type="hidden" name="post" value={postId} />
+              <input type="hidden" name="comment" value={c.id} />
+              <button aria-pressed={accepted} className="inline-flex h-8 items-center gap-1 font-bold text-emerald-800 hover:underline">
+                <Icon name="check" size={14} />
+                {accepted ? t("채택 취소") : t("이 답변 채택")}
+              </button>
+            </form>
           )}
           <span className="ml-auto">
             {c.mine ? (

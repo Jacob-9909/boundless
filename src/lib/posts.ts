@@ -8,6 +8,8 @@ export type PostRow = {
   space: string; // 'global' or a country code
   lang: string;
   region: string | null;
+  visa: string | null;
+  accepted_comment_id: string | null;
   title: string;
   body: string;
   price: number | null;
@@ -32,7 +34,7 @@ export type PostRow = {
   mine: boolean;
   following: boolean; // the viewer follows this author
   helpers: string[] | null; // solved posts: nationalities of the neighbors who answered
-  top_answer: { body: string; nationality: string; likes: number } | null;
+  top_answer: { body: string; nationality: string; likes: number; accepted: boolean } | null;
   avatar: unknown; // the author's cartoon avatar when they chose to show it on posts (src/lib/avatar.ts)
   ai_visa: string | null; // visa code the AI read from the text; '' = the author removed it
   alert: string | null; // ALERTS id (src/lib/guide.ts), only ever selected for the author
@@ -67,7 +69,7 @@ export const canBump = (p: Pick<PostRow, "solved" | "comments" | "listed_at" | "
   p.mine && asks && !p.solved && p.comments === 0 && Date.now() - new Date(p.listed_at).getTime() > BUMP_AFTER_H * 3600_000;
 
 // $1 is always the viewer's user id (or NULL for visitors).
-const POST_COLS = `p.id, p.topic, p.kind, p.space, p.lang, p.region, p.title, p.body, p.price, p.deal, p.place,
+const POST_COLS = `p.id, p.topic, p.kind, p.space, p.lang, p.region, p.visa, p.accepted_comment_id, p.title, p.body, p.price, p.deal, p.place,
   to_char(p.starts_on, 'YYYY-MM-DD') AS starts_on, to_char(p.ends_on, 'YYYY-MM-DD') AS ends_on,
   p.hidden, p.solved, p.created_at, p.updated_at, p.bumped_at, ${LISTED} AS listed_at, p.views,
   (SELECT i.id FROM boundless.post_images i WHERE i.post_id = p.id ORDER BY i.id LIMIT 1) AS image,
@@ -81,12 +83,12 @@ const POST_COLS = `p.id, p.topic, p.kind, p.space, p.lang, p.region, p.title, p.
   p.ai_visa, CASE WHEN p.user_id = $1::uuid THEN p.alert END AS alert,
   CASE WHEN p.solved THEN ARRAY(SELECT DISTINCT cu.nationality::text FROM boundless.comments c JOIN boundless.users cu ON cu.id = c.user_id
     WHERE c.post_id = p.id AND NOT c.hidden AND c.user_id <> p.user_id) END AS helpers,
-  (SELECT json_build_object('body', left(a.body, 160), 'nationality', au.nationality, 'likes', a.likes)
+  (SELECT json_build_object('body', left(a.body, 160), 'nationality', au.nationality, 'likes', a.likes, 'accepted', a.id = p.accepted_comment_id)
      FROM (SELECT c.*, (SELECT count(*)::int FROM boundless.comment_likes l WHERE l.comment_id = c.id) AS likes
            FROM boundless.comments c WHERE c.post_id = p.id AND c.parent_id IS NULL AND NOT c.hidden AND c.user_id <> p.user_id
              AND c.user_id NOT IN (SELECT blocked_id FROM boundless.blocks WHERE user_id = $1::uuid)) a
      JOIN boundless.users au ON au.id = a.user_id
-     ORDER BY a.likes DESC, a.created_at LIMIT 1) AS top_answer`;
+     ORDER BY a.id = p.accepted_comment_id DESC, a.likes DESC, a.created_at LIMIT 1) AS top_answer`;
 const FROM = "FROM boundless.posts p JOIN boundless.users u ON u.id = p.user_id";
 
 // Content from accounts the viewer blocked is never shown to them.
@@ -107,6 +109,8 @@ export function listPosts(
     query?: string;
     nationality?: string;
     region?: string;
+    visa?: string;
+    words?: string[]; // title matches any of these (similar-post hints while writing)
     before?: string;
     sort?: "new" | "likes";
     waiting?: boolean; // questions nobody has answered yet
@@ -131,6 +135,13 @@ export function listPosts(
     );
   if (opts.nationality) add("u.nationality = ?", opts.nationality);
   if (opts.region) add("p.region = ?", opts.region);
+  // The visa the author picked, or else the one the AI read from the text (f6 matches F-6, f2 matches F-2-7).
+  if (opts.visa)
+    add(
+      "(p.visa = ? OR (p.visa IS NULL AND ? <> 'etc' AND (p.ai_visa = upper(left(?, 1)) || '-' || substr(?, 2) OR p.ai_visa LIKE upper(left(?, 1)) || '-' || substr(?, 2) || '-%')))",
+      opts.visa
+    );
+  if (opts.words?.length) add("p.title ILIKE ANY(?)", opts.words.map(likeEscape));
   if (opts.waiting) where.push(WAITING);
   if (opts.following) where.push("p.user_id IN (SELECT followee_id FROM boundless.follows WHERE user_id = $1::uuid)");
   // Cursor for "load more": listed_at of the last post on the previous page.

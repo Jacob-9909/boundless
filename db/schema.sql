@@ -211,3 +211,7 @@ CREATE INDEX IF NOT EXISTS posts_alert_idx ON boundless.posts (created_at DESC) 
 ALTER TABLE boundless.users
   ADD COLUMN IF NOT EXISTS avatar jsonb,
   ADD COLUMN IF NOT EXISTS avatar_public boolean NOT NULL DEFAULT false;
+-- Residence status per post (optional, life boards only) and the answer the author accepted. Idempotent.
+ALTER TABLE boundless.posts
+  ADD COLUMN IF NOT EXISTS visa text, -- VISAS id in src/lib/i18n.ts, NULL = not given
+  ADD COLUMN IF NOT EXISTS accepted_comment_id bigint REFERENCES boundless.comments ON DELETE SET NULL;

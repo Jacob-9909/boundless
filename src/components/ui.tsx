@@ -372,7 +372,7 @@ export function PostCard({ post, lang, t, showBoard = true }: { post: PostRow; l
         <div className="mt-3 flex gap-2.5 border-l-2 border-primary/40 pl-3">
           <Avatar code={post.top_answer.nationality} size={22} />
           <p className="line-clamp-2 min-w-0 text-[13px] leading-relaxed [overflow-wrap:anywhere]">
-            <span className="mr-1 font-bold text-primary">{t("가장 도움된 답변")}</span>
+            <span className="mr-1 font-bold text-primary">{post.top_answer.accepted ? t("채택된 답변") : t("가장 도움된 답변")}</span>
             <span className="opacity-80">{post.top_answer.body}</span>
           </p>
         </div>

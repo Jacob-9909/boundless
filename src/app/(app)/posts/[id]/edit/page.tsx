@@ -31,6 +31,7 @@ export default async function EditPage(props: PageProps<"/posts/[id]/edit">) {
           kind: post.kind,
           lang: post.lang,
           region: post.region ?? "",
+          visa: post.visa ?? "",
           price: post.price === null ? "" : String(post.price),
           place: post.place ?? "",
           starts_on: post.starts_on ?? "",
