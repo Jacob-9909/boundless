@@ -221,15 +221,15 @@ export async function RightRail({ viewer, lang, t }: { viewer: string | null; la
         </ul>
       </section>
       <p className="px-1 text-[11px] leading-relaxed opacity-60">
-        <Link href="/policy" className="hover:underline">
+        <Link href="/policy" className="inline-block py-1.5 hover:underline">
           {t("운영 정책")}
         </Link>
         {" · "}
-        <Link href="/guide" className="hover:underline">
+        <Link href="/guide" className="inline-block py-1.5 hover:underline">
           {t("공식 안내")}
         </Link>
         {" · "}
-        <Link href="/boards" className="hover:underline">
+        <Link href="/boards" className="inline-block py-1.5 hover:underline">
           {t("게시판")}
         </Link>
         {" · © 2026 Boundless"}
