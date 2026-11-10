@@ -11,7 +11,7 @@ const MODEL = "nvidia/nemotron-3.5-super-vl-120b-a12b";
 
 export const aiEnabled = () => Boolean(process.env.NVIDIA_API_KEY);
 
-async function nimJson(o: { name: string; system: string; user: string; schema: object; maxTokens: number }): Promise<unknown> {
+async function nimJson(o: { name: string; system: string; user: string; schema: object; maxTokens: number; timeoutMs?: number }): Promise<unknown> {
   const key = process.env.NVIDIA_API_KEY;
   if (!key) return null;
   try {
@@ -30,7 +30,7 @@ async function nimJson(o: { name: string; system: string; user: string; schema: 
         chat_template_kwargs: { enable_thinking: false },
       }),
       // The free endpoint swings between 1 and 25 s; the screens show a waiting state meanwhile.
-      signal: AbortSignal.timeout(25_000),
+      signal: AbortSignal.timeout(o.timeoutMs ?? 25_000),
       cache: "no-store",
     });
     if (!res.ok) return null;
@@ -144,4 +144,59 @@ export async function checkDraft(d: { title: string; body: string; board: string
     maxTokens: 500,
   });
   return raw ? parseCheck(raw, boards.map((b) => b.id), d.board) : null;
+}
+
+/* ---------- classify a post when it is filed ---------- */
+
+// Ids match ALERTS in src/lib/guide.ts (scripts/ai-check.mjs checks). Each line is what the model reads.
+const ALERT_TEXT: Record<string, string> = {
+  self_harm: "the writer is thinking about suicide or hurting themselves",
+  abuse: "domestic violence or sexual violence against the writer",
+  confined: "the employer keeps the writer's passport, locks them in, or forces them to work",
+  violence: "the writer was assaulted or is being threatened",
+  medical: "a medical emergency happening now",
+  wage: "the writer is not being paid wages, or was injured at work",
+  scam: "the writer is being scammed or lost money (rent deposit, job, marketplace)",
+};
+
+export type Classified = { visa: string | null; region: string | null; alert: string | null };
+
+/** Visa codes like E-9, D-2, F-2-7 (E9 and e-9 become E-9); anything else is dropped. */
+export function normalizeVisa(v: unknown) {
+  const m = typeof v === "string" ? v.trim().toUpperCase().match(/^([A-H])-?(\d{1,2})(-\d{1,2})?$/) : null;
+  return m ? `${m[1]}-${m[2]}${m[3] ?? ""}` : null;
+}
+
+export function parseClassify(raw: unknown, regions: string[]): Classified | null {
+  const o = raw as Record<string, unknown> | null;
+  if (!o || typeof o !== "object") return null;
+  const pick = (v: unknown, ids: string[]) => (typeof v === "string" && ids.includes(v) ? v : null);
+  return { visa: normalizeVisa(o.visa), region: pick(o.region, regions), alert: pick(o.alert, Object.keys(ALERT_TEXT)) };
+}
+
+// When the AI is off or fails, plain words of suicide still bring up the crisis card. A false alarm only shows
+// the author a helpline, so this leans toward catching. ponytail: a handful of languages; add more as they show up.
+const SELF_HARM = /자살|죽고\s*싶|살기\s*싫|suicid|kill myself|end my life|want to die|tự tử|muốn chết|自杀|想死|死にたい|自殺|суицид|покончить с собой|хочу умереть/i;
+export const crisisFallback = (text: string) => (SELF_HARM.test(text) ? "self_harm" : null);
+
+export async function classifyPost(d: { title: string; body: string }, regions: { id: string; name: string }[]) {
+  const raw = await nimJson({
+    name: "post_class",
+    system: "You read posts from a community of foreigners living in Korea and label them. You never reply to the writer. Reply with JSON only.",
+    user:
+      'visa: the visa the writer says they hold, as its code (E-9, D-2, F-6, H-2...), only if stated; "" otherwise.\n' +
+      `region: one id if the post is clearly about a place in that region, else "".\n${regions.map((r) => `${r.id}: ${r.name}`).join("\n")}\n` +
+      'alert: one id if the writer or someone they describe is in this situation now, else "". A general question about rules is not an alert.\n' +
+      `${Object.entries(ALERT_TEXT).map(([id, text]) => `${id}: ${text}`).join("\n")}\n\n` +
+      `TITLE: ${d.title}\nTEXT:\n${d.body}`,
+    schema: {
+      type: "object",
+      properties: { visa: { type: "string" }, region: { type: "string" }, alert: { type: "string" } },
+      required: ["visa", "region", "alert"],
+    },
+    maxTokens: 120,
+    // Posting waits for this so the author sees a crisis card at once; past 8 s the post goes up unlabelled.
+    timeoutMs: 8_000,
+  });
+  return raw ? parseClassify(raw, regions.map((r) => r.id)) : null;
 }

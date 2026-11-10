@@ -33,6 +33,8 @@ export type PostRow = {
   following: boolean; // the viewer follows this author
   helpers: string[] | null; // solved posts: nationalities of the neighbors who answered
   top_answer: { body: string; nationality: string; likes: number } | null;
+  ai_visa: string | null; // visa code the AI read from the text; '' = the author removed it
+  alert: string | null; // ALERTS id (src/lib/guide.ts), only ever selected for the author
 };
 
 export type CommentRow = {
@@ -74,6 +76,7 @@ const POST_COLS = `p.id, p.topic, p.kind, p.space, p.lang, p.region, p.title, p.
   EXISTS (SELECT 1 FROM boundless.saves s WHERE s.post_id = p.id AND s.user_id = $1::uuid) AS saved,
   (p.user_id = $1::uuid) IS TRUE AS mine,
   EXISTS (SELECT 1 FROM boundless.follows f WHERE f.user_id = $1::uuid AND f.followee_id = p.user_id) AS following,
+  p.ai_visa, CASE WHEN p.user_id = $1::uuid THEN p.alert END AS alert,
   CASE WHEN p.solved THEN ARRAY(SELECT DISTINCT cu.nationality::text FROM boundless.comments c JOIN boundless.users cu ON cu.id = c.user_id
     WHERE c.post_id = p.id AND NOT c.hidden AND c.user_id <> p.user_id) END AS helpers,
   (SELECT json_build_object('body', left(a.body, 160), 'nationality', au.nationality, 'likes', a.likes)

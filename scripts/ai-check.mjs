@@ -3,7 +3,8 @@
 // Usage: node scripts/ai-check.mjs (Node 23.6+ reads .ts directly)
 import assert from "node:assert/strict";
 import { findPII, stripPII } from "../src/lib/pii.ts";
-import { parseCheck, parseSummary, threadText } from "../src/lib/ai.ts";
+import { crisisFallback, normalizeVisa, parseCheck, parseClassify, parseSummary, threadText } from "../src/lib/ai.ts";
+import { ALERTS, hotline } from "../src/lib/guide.ts";
 
 assert.deepEqual(findPII("call me 010-1234-5678"), ["전화번호"]);
 assert.deepEqual(findPII("+82 10 1234 5678 or me@example.com"), ["전화번호", "이메일"]);
@@ -36,5 +37,21 @@ const c = parseCheck({ board: "visa", title: "  Clearer title ", missing: ["visa
 assert.deepEqual(c, { board: "visa", title: "Clearer title", missing: ["visa type?", "region?", "a"], privacy: [] });
 assert.equal(parseCheck({ board: "nope", title: "" , missing: [], privacy: [] }, ["visa"], "work").board, null);
 assert.equal(parseCheck({ board: "work", title: "", missing: [], privacy: [] }, ["work"], "work").board, null, "same board is not a suggestion");
+
+// Labels when a post is filed
+assert.equal(normalizeVisa("e9"), "E-9");
+assert.equal(normalizeVisa(" F-2-7 "), "F-2-7");
+assert.equal(normalizeVisa("tourist"), null);
+assert.equal(normalizeVisa("Z-1"), null);
+assert.deepEqual(parseClassify({ visa: "d2", region: "busan", alert: "wage" }, ["seoul", "busan"]), { visa: "D-2", region: "busan", alert: "wage" });
+assert.deepEqual(parseClassify({ visa: "", region: "mars", alert: "panic" }, ["seoul"]), { visa: null, region: null, alert: null });
+assert.equal(crisisFallback("요즘 너무 힘들어서 죽고 싶어요"), "self_harm");
+assert.equal(crisisFallback("Tôi muốn chết"), "self_harm");
+assert.equal(crisisFallback("Where do I renew my ARC?"), null);
+// Every alert the AI may return has a card with real numbers.
+const ids = ALERTS.map((a) => a.id).sort();
+assert.deepEqual(Object.keys(parseClassify({ alert: "x" }, []) ?? {}).length, 3);
+for (const id of ids) assert.equal(parseClassify({ visa: "", region: "", alert: id }, []).alert, id, `ai.ts knows alert ${id}`);
+for (const a of ALERTS) for (const tel of a.tels) assert.ok(hotline(tel), `${a.id}: ${tel} is in HOTLINES`);
 
 console.log("ai ok");

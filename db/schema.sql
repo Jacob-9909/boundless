@@ -198,3 +198,10 @@ CREATE TABLE IF NOT EXISTS boundless.post_summaries (
   created_at timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (post_id, lang)
 );
+
+-- Labels the AI reads from a post when it is filed (classifyPost in src/lib/ai.ts). ai_visa '' = the author removed it.
+-- alert = ALERTS id in src/lib/guide.ts; the helpline card is for the author only, moderators see it in the queue.
+ALTER TABLE boundless.posts
+  ADD COLUMN IF NOT EXISTS ai_visa text,
+  ADD COLUMN IF NOT EXISTS alert text;
+CREATE INDEX IF NOT EXISTS posts_alert_idx ON boundless.posts (created_at DESC) WHERE alert IS NOT NULL;
