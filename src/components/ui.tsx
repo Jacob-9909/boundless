@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { CSSProperties, ReactNode } from "react";
+import { useId, type CSSProperties, type ReactNode } from "react";
 import { boardOf, DEALS, levelOf, tagOf } from "@/lib/boards";
 import { lookStyle, parseLook } from "@/lib/avatar";
 import { cultureOf, landmarkMarkup, patternUrl, type Culture } from "@/lib/cultures";
@@ -27,23 +27,34 @@ export const labelCls = "mb-1.5 block text-sm font-bold";
 export const LINES = ["#0052A4", "#00A84D", "#EF7C1C", "#00A5DE", "#996CAC", "#E6186C", "#CD7C2F", "#747F00"];
 
 /**
- * Logo: a speech bubble drawn as four colored arcs that never close (no borders),
- * with a dot at the center for the person speaking.
+ * Logo: ㅂ, the Korean letter for the b in boundless. The taller stroke is the neighbor who came first, the shorter
+ * one the newcomer, and the bar is the hand between them; the colors run from one to the other. The top stays open.
+ * Same drawing as src/app/icon.svg.
  */
 export function Logo({ className = "", size = 30, word = true }: { className?: string; size?: number; word?: boolean }) {
-  const arcs = [LINES[0], LINES[1], LINES[2], LINES[5]];
+  // The phone header renders two logos and hides one; a shared gradient id inside a hidden svg would not paint.
+  const id = useId();
   return (
-    <span className={`inline-flex items-center gap-2 ${className}`}>
-      <svg width={size} height={size} viewBox="0 0 36 36" aria-hidden="true" className="shrink-0">
-        <g transform="rotate(-40 18 17)">
-          {arcs.map((c, i) => (
-            <circle key={c} cx="18" cy="17" r="12" fill="none" stroke={c} strokeWidth="5" strokeLinecap="round" pathLength={100} strokeDasharray="14 86" strokeDashoffset={-i * 25} />
-          ))}
+    <span className={`inline-flex items-center ${className}`} style={{ gap: size * 0.2 }}>
+      <svg width={size} height={size} viewBox="0 0 40 40" aria-hidden="true" className="shrink-0">
+        <defs>
+          <linearGradient id={id} x1="8" y1="0" x2="32" y2="0" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stopColor="#3C8DFF" />
+            <stop offset=".33" stopColor="#8B5CF6" />
+            <stop offset=".67" stopColor="#FF5A7A" />
+            <stop offset="1" stopColor="#FF8A2A" />
+          </linearGradient>
+        </defs>
+        <g fill="none" stroke={`url(#${id})`} strokeWidth="6.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M10 6v21a6 6 0 0 0 6 6h8a6 6 0 0 0 6-6V12" />
+          <path d="M10 20h20" />
         </g>
-        <path d="M11.5 26.6 L7.5 33.5 L16 29.4 Z" fill={arcs[1]} />
-        <circle cx="18" cy="17" r="3.4" fill="currentColor" />
       </svg>
-      {word && <span className="font-display text-[20px] leading-none font-extrabold tracking-[-0.03em]">boundless</span>}
+      {word && (
+        <span className="font-display leading-none font-extrabold tracking-[-0.04em]" style={{ fontSize: Math.round(size * 0.72) }}>
+          boundless
+        </span>
+      )}
     </span>
   );
 }
