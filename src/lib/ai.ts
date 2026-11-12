@@ -11,7 +11,7 @@ const MODEL = "nvidia/nemotron-3.5-super-vl-120b-a12b";
 
 export const aiEnabled = () => Boolean(process.env.NVIDIA_API_KEY);
 
-async function nimJson(o: { name: string; system: string; user: string; schema: object; maxTokens: number; timeoutMs?: number }): Promise<unknown> {
+async function nimJson(o: { name: string; system: string; user: string; schema: object; maxTokens: number }): Promise<unknown> {
   const key = process.env.NVIDIA_API_KEY;
   if (!key) return null;
   try {
@@ -30,7 +30,7 @@ async function nimJson(o: { name: string; system: string; user: string; schema: 
         chat_template_kwargs: { enable_thinking: false },
       }),
       // The free endpoint swings between 1 and 25 s; the screens show a waiting state meanwhile.
-      signal: AbortSignal.timeout(o.timeoutMs ?? 25_000),
+      signal: AbortSignal.timeout(25_000),
       cache: "no-store",
     });
     if (!res.ok) return null;
@@ -195,8 +195,6 @@ export async function classifyPost(d: { title: string; body: string }, regions: 
       required: ["visa", "region", "alert"],
     },
     maxTokens: 120,
-    // Posting waits for this so the author sees a crisis card at once; past 8 s the post goes up unlabelled.
-    timeoutMs: 8_000,
   });
   return raw ? parseClassify(raw, regions.map((r) => r.id)) : null;
 }

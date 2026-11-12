@@ -2,6 +2,7 @@
 
 import { createHash } from "node:crypto";
 import { cookies } from "next/headers";
+import { after } from "next/server";
 import { redirect, RedirectType } from "next/navigation";
 import { refresh } from "next/cache";
 import {
@@ -238,17 +239,26 @@ export async function createPost(_: PostState, f: FormData): Promise<PostState> 
  * Reads a filed post once for the visa it mentions, its region and an emergency or crisis (src/lib/ai.ts).
  * The region is filled in only when the author left it empty on a new post; an author-removed visa ('') stays removed.
  * Without the AI, plain words of suicide still raise the crisis card.
+ * Posting waits up to 8 s so the author usually sees a crisis card at once. The free endpoint can take up to 25 s,
+ * so a slower answer is saved after the response and shows on the next visit.
  */
 async function classify(postId: string, title: string, body: string, fillRegion: boolean) {
-  const regions = REGIONS.map((r) => ({ id: r.id, name: EN[r.ko] ?? r.ko }));
-  const c = aiEnabled() ? await classifyPost({ title: stripPII(title), body: stripPII(body).slice(0, 3000) }, regions) : null;
-  const alert = c?.alert ?? crisisFallback(`${title}\n${body}`);
-  await q(
-    `UPDATE boundless.posts SET alert = $2, ai_visa = CASE WHEN ai_visa = '' THEN '' ELSE $3 END, region = COALESCE(region, $4)
-     WHERE id = $1`,
-    [postId, alert, c?.visa ?? null, fillRegion ? (c?.region ?? null) : null]
-  );
-  if (alert) track(`alert_${alert}`);
+  const fallback = crisisFallback(`${title}\n${body}`);
+  // Plain words of suicide raise the card before the wait, so a slow AI never hides it.
+  if (fallback) await q("UPDATE boundless.posts SET alert = $2 WHERE id = $1", [postId, fallback]);
+  const job = (async () => {
+    const regions = REGIONS.map((r) => ({ id: r.id, name: EN[r.ko] ?? r.ko }));
+    const c = aiEnabled() ? await classifyPost({ title: stripPII(title), body: stripPII(body).slice(0, 3000) }, regions) : null;
+    const alert = c?.alert ?? fallback;
+    await q(
+      `UPDATE boundless.posts SET alert = $2, ai_visa = CASE WHEN ai_visa = '' THEN '' ELSE $3 END, region = COALESCE(region, $4)
+       WHERE id = $1`,
+      [postId, alert, c?.visa ?? null, fillRegion ? (c?.region ?? null) : null]
+    );
+    if (alert) track(`alert_${alert}`);
+  })();
+  after(job);
+  await Promise.race([job, new Promise((r) => setTimeout(r, 8_000))]);
 }
 
 /** The author removes the visa tag the AI read from the post. */
