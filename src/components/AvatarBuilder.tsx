@@ -64,7 +64,7 @@ export function AvatarBuilder({ initial, shown, soft, doneHref }: { initial: Loo
   };
 
   return (
-    <div className="grid gap-6 px-4 py-4 md:grid-cols-[220px_minmax(0,1fr)]">
+    <div className="grid gap-6 px-4 py-4 md:grid-cols-[260px_minmax(0,1fr)]">
       <div className="md:sticky md:top-20 md:self-start">
         <div className="mx-auto size-40 rounded-full ring-1 ring-black/5 md:size-52" style={lookStyle(look, soft)} role="img" aria-label={t("내 아바타 미리 보기")} />
         {kind === "person" && (
