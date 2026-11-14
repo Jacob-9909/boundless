@@ -1,11 +1,16 @@
 import Link from "next/link";
+import { AppShell } from "@astryxdesign/core/AppShell";
+import { Button } from "@astryxdesign/core/Button";
+import { IconButton } from "@astryxdesign/core/IconButton";
+import { TopNav, TopNavHeading } from "@astryxdesign/core/TopNav";
 import { cultureFonts } from "@/app/login/fonts";
 import { BottomNav } from "@/components/BottomNav";
 import { AccountSwitcher } from "@/components/Community";
+import { TextField } from "@/components/fields";
 import { Icon } from "@/components/Icon";
 import { LangMenu } from "@/components/LangMenu";
-import { BoardNav, SideNav, type NavItem } from "@/components/SideNav";
-import { Avatar, Flag, LevelBadge, Logo, btn } from "@/components/ui";
+import { AppSideNav, type NavItem } from "@/components/SideNav";
+import { Avatar, Flag, LevelBadge, Logo } from "@/components/ui";
 import { canViewQueue, demoEnabled, getT, getUser } from "@/lib/auth";
 import { BOARDS, GROUPS } from "@/lib/boards";
 import { cultureOf, DEFAULT_CULTURE, themeVars } from "@/lib/cultures";
@@ -22,124 +27,116 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
     user ? myPoints(user.id) : Promise.resolve(null),
   ]);
   const demoUser = !!user && demoEnabled() && user.email.endsWith("@example.com");
+  const langNote = t("한국어와 영어 밖의 언어는 기계 번역이라 어색한 문장이 있을 수 있어요. 검수하고 있어요.");
 
-  const nav: NavItem[] = [
+  const main: NavItem[] = [
     { href: "/feed", icon: "home", label: t("홈") },
     { href: "/lounge", icon: "users", label: user ? t("{country} 라운지", { country: countryName(user.nationality, lang) }) : t("우리나라 라운지") },
     { href: "/search", icon: "search", label: t("검색") },
     { href: "/me", icon: "file", label: t("내 글"), badge: unread },
   ];
-  const navEnd: NavItem[] = [
+  const more: NavItem[] = [
     { href: "/guide", icon: "info", label: t("공식 안내") },
     { href: "/settings", icon: "sliders", label: t("설정") },
     ...(canViewQueue(user) ? [{ href: "/admin", icon: "siren" as const, label: t("운영 큐") }] : []),
   ];
+  const boards = GROUPS.map((gr) => ({
+    label: t(gr.ko),
+    items: BOARDS.filter((b) => b.group === gr.id).map((b) => {
+      const today = counts.find((x) => x.topic === b.id)?.today ?? 0;
+      return { href: `/b/${b.id}`, label: t(b.ko), icon: b.icon, color: b.color, today, todayText: t("새 글 {n}", { n: today }) };
+    }),
+  }));
+
+  const topNav = (
+    <TopNav
+      label={t("상단 메뉴")}
+      heading={<TopNavHeading logo={<Logo word={false} size={28} />} heading="boundless" headingHref="/feed" />}
+      centerContent={
+        // Desktop: search sits in the bar like any community site. Phones get the icon below instead.
+        <form action="/search" role="search" className="w-full max-w-md max-lg:hidden">
+          <TextField name="q" type="search" label={t("검색")} isLabelHidden placeholder={t("검색어를 입력하세요")} startIcon="search" width="100%" />
+        </form>
+      }
+      endContent={
+        <div className="flex items-center gap-2">
+          <IconButton href="/search" label={t("검색")} icon={<Icon name="search" size={18} />} variant="ghost" className="lg:hidden" />
+          <LangMenu lang={lang} label={t("화면 언어 바꾸기")} note={langNote} compact />
+          {user ? (
+            <Link href="/settings" className="inline-flex size-10 items-center justify-center rounded-full ring-1 ring-[var(--color-border)] transition hover:ring-[var(--color-border-emphasized)]" title={t("내 공개 국적")} aria-label={t("내 공개 국적")}>
+              <Avatar code={user.nationality} size={32} look={user.avatar} />
+            </Link>
+          ) : (
+            <Button href="/login" label={t("로그인")} variant="primary" />
+          )}
+        </div>
+      }
+    />
+  );
+
+  const footer = (
+    <div className="space-y-2">
+      {user ? (
+        <Link
+          href={user.avatar ? "/settings" : "/settings/avatar"}
+          title={t("내 프로필")}
+          className="block overflow-hidden rounded-[var(--radius-container)] border border-[var(--color-border)] bg-[var(--color-background-card)] transition hover:border-[var(--color-border-emphasized)]"
+        >
+          <div className="bg-pattern h-1.5 bg-primary bg-[length:auto_24px]" aria-hidden="true" />
+          <div className="flex items-center gap-2.5 px-3 py-2.5">
+            <Avatar code={user.nationality} size={36} look={user.avatar} />
+            <div className="min-w-0">
+              <p className="flex items-center gap-1.5 text-sm font-bold">
+                <Flag code={user.nationality} h={11} />
+                <span className="truncate">{countryName(user.nationality, lang)}</span>
+              </p>
+              {points && <LevelBadge points={points.points} t={t} />}
+              {!user.avatar && <p className="mt-0.5 text-xs font-bold text-primary">{t("아바타 만들기")} ›</p>}
+            </div>
+          </div>
+        </Link>
+      ) : (
+        <div className="rounded-[var(--radius-container)] border border-[var(--color-border)] bg-[var(--color-background-card)] p-3">
+          <p className="text-sm font-bold">{t("로그인하고 이야기해 보세요")}</p>
+          <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">{t("국적 하나만 공개돼요. 이메일은 비공개.")}</p>
+          <Button href="/login" label={t("로그인")} variant="primary" width="100%" className="mt-3" />
+          <Button href="/#demo" label={t("샘플 계정으로 체험")} variant="ghost" size="sm" width="100%" className="mt-1" />
+        </div>
+      )}
+      {demoUser && user && <AccountSwitcher t={t} lang={lang} current={user.nationality} />}
+      <p className="px-1 text-[11px] text-[var(--color-text-secondary)]">
+        <Link href="/policy" className="hover:underline">
+          {t("운영 정책")}
+        </Link>
+        {" · © 2026 Boundless · "}
+        {t("버전")} {process.env.APP_BUILD}
+      </p>
+    </div>
+  );
 
   return (
-    <div style={themeVars(culture)} className={`${cultureFonts} min-h-dvh bg-paper text-ink`}>
-      <a href="#main" className="skip-link rounded-xl bg-ink px-4 py-2 text-sm font-bold text-white">
-        {t("본문으로 건너뛰기")}
-      </a>
-      <div className="mx-auto flex max-w-[1360px]">
-        {/* Desktop sidebar */}
-        <div className="sticky top-0 hidden h-screen w-[264px] shrink-0 flex-col border-r border-ink/[.07] bg-white/75 backdrop-blur lg:flex">
-          <div className="flex-1 space-y-5 overflow-y-auto px-4 pt-5 pb-8 [mask-image:linear-gradient(to_bottom,black_calc(100%-40px),transparent)]">
-            <Link href="/?intro=1" className="block px-2 text-ink" aria-label="Boundless">
-              <Logo />
-            </Link>
-            <SideNav items={nav} label={t("주요 메뉴")} />
-            <Link href="/write" className={`${btn} w-full`}>
-              <Icon name="plus" size={18} />
-              {t("글쓰기")}
-            </Link>
-
-            <hr className="border-ink/[.07]" />
-            <BoardNav
-              label={t("게시판")}
-              groups={GROUPS.map((gr) => ({
-                label: t(gr.ko),
-                items: BOARDS.filter((b) => b.group === gr.id).map((b) => {
-                  const today = counts.find((x) => x.topic === b.id)?.today ?? 0;
-                  return { href: `/b/${b.id}`, label: t(b.ko), icon: b.icon, color: b.color, today, todayText: t("새 글 {n}", { n: today }) };
-                }),
-              }))}
-            />
-            <hr className="border-ink/[.07]" />
-            <SideNav items={navEnd} label={t("더 보기")} compact />
-            <p className="px-3 text-[11px] opacity-60">
-              <Link href="/policy" className="hover:underline">
-                {t("운영 정책")}
-              </Link>
-              {" · © 2026 Boundless"}
-              <span className="block">
-                {t("버전")} {process.env.APP_BUILD}
-              </span>
-            </p>
-          </div>
-
-          <div className="space-y-2 border-t border-ink/[.07] p-3">
-            {user ? (
-              <Link href={user.avatar ? "/settings" : "/settings/avatar"} title={t("내 프로필")} className="block overflow-hidden rounded-2xl border border-ink/[.07] bg-white transition hover:border-ink/20">
-                <div className="bg-pattern h-1.5 bg-primary bg-[length:auto_24px]" aria-hidden="true" />
-                <div className="flex items-center gap-2.5 px-3 py-2.5">
-                  <Avatar code={user.nationality} size={36} look={user.avatar} />
-                  <div className="min-w-0">
-                    <p className="flex items-center gap-1.5 text-sm font-bold">
-                      <Flag code={user.nationality} h={11} />
-                      <span className="truncate">{countryName(user.nationality, lang)}</span>
-                    </p>
-                    {points && <LevelBadge points={points.points} t={t} />}
-                    {!user.avatar && <p className="mt-0.5 text-xs font-bold text-primary">{t("아바타 만들기")} ›</p>}
-                  </div>
-                </div>
-              </Link>
-            ) : (
-              <div className="rounded-2xl border border-ink/[.07] bg-white p-3">
-                <p className="text-sm font-bold">{t("로그인하고 이야기해 보세요")}</p>
-                <p className="mt-0.5 text-xs opacity-70">{t("국적 하나만 공개돼요. 이메일은 비공개.")}</p>
-                <Link href="/login" className={`${btn} mt-3 h-10 w-full text-sm`}>
-                  {t("로그인")}
-                </Link>
-                <Link href="/#demo" className="mt-2 block text-center text-xs font-bold text-primary hover:underline">
-                  {t("샘플 계정으로 체험")}
-                </Link>
-              </div>
-            )}
-            {demoUser && user && <AccountSwitcher t={t} lang={lang} current={user.nationality} />}
-            <LangMenu lang={lang} label={t("화면 언어 바꾸기")} note={t("한국어와 영어 밖의 언어는 기계 번역이라 어색한 문장이 있을 수 있어요. 검수하고 있어요.")} align="left" up />
-          </div>
-        </div>
-
-        <div className="min-w-0 flex-1 pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-12">
-          {/* Phone / tablet header. The bottom nav has five slots, so search lives up here. */}
-          <header className="sticky top-0 z-20 border-b border-ink/10 bg-paper/95 pt-[env(safe-area-inset-top)] backdrop-blur lg:hidden">
-            <div className="flex items-center gap-2 px-4 py-2.5">
-              <Link href="/feed" className="mr-auto text-ink" aria-label="Boundless">
-                {/* Narrow phones (under 360px) keep only the mark so search, language and account still fit. */}
-                <Logo size={26} className="max-[359px]:hidden" />
-                <Logo size={26} word={false} className="min-[360px]:hidden" />
-              </Link>
-              <Link href="/search" className="inline-flex size-9 items-center justify-center rounded-full bg-soft text-ink" aria-label={t("검색")} title={t("검색")}>
-                <Icon name="search" size={18} />
-              </Link>
-              <LangMenu lang={lang} label={t("화면 언어 바꾸기")} note={t("한국어와 영어 밖의 언어는 기계 번역이라 어색한 문장이 있을 수 있어요. 검수하고 있어요.")} compact />
-              {user ? (
-                <Link href="/settings" className="inline-flex h-9 items-center rounded-full bg-soft px-1.5" title={t("내 공개 국적")} aria-label={t("내 공개 국적")}>
-                  <Avatar code={user.nationality} size={26} look={user.avatar} />
-                </Link>
-              ) : (
-                <Link href="/login" className="inline-flex h-9 items-center rounded-full bg-primary px-4 text-[13px] font-bold text-paper">
-                  {t("로그인")}
-                </Link>
-              )}
-            </div>
-            {user && <div className="bg-pattern h-1.5 bg-primary bg-[length:auto_24px]" aria-hidden="true" />}
-          </header>
-          <main id="main" tabIndex={-1} className="outline-none">
-            {children}
-          </main>
-        </div>
-      </div>
+    <div style={themeVars(culture)} className={`culture ${cultureFonts} min-h-dvh bg-paper text-ink`}>
+      <AppShell
+        height="auto"
+        variant="section"
+        mobileNav={{ breakpoint: "lg" }}
+        // The member's culture pattern as a thin strip over the bar: you are in your own country's colors.
+        banner={user ? <div className="bg-pattern h-1.5 bg-primary bg-[length:auto_24px]" aria-hidden="true" /> : undefined}
+        topNav={topNav}
+        sideNav={
+          <AppSideNav
+            label={t("주요 메뉴")}
+            main={main}
+            boards={boards}
+            moreLabel={t("더 보기")}
+            more={more}
+            topContent={<Button href="/write" label={t("글쓰기")} variant="primary" size="lg" width="100%" icon={<Icon name="plus" size={18} />} />}
+            footer={footer}
+          />
+        }
+      >
+        <div className="pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-12">{children}</div>
+      </AppShell>
       <div className="lg:hidden">
         <BottomNav labels={{ feed: t("홈"), boards: t("게시판"), lounge: t("라운지"), me: t("내 글"), settings: t("설정") }} unread={unread} />
       </div>

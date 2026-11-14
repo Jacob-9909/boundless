@@ -8,11 +8,18 @@ import type { Help } from "@/lib/guide";
 import { countryName, langAutonym, regionLabel, timeAgo, type Lang, type T } from "@/lib/i18n";
 import type { PostRow } from "@/lib/posts";
 import { toggleLike } from "@/app/actions";
-import { Icon } from "./Icon";
+import { Badge } from "@astryxdesign/core/Badge";
+import { Banner } from "@astryxdesign/core/Banner";
+import { Button } from "@astryxdesign/core/Button";
+import { Card } from "@astryxdesign/core/Card";
+import { EmptyState } from "@astryxdesign/core/EmptyState";
+import { Icon, type IconName } from "./Icon";
 
-/* Design tokens. Radius: containers 16-24px, controls 12px, tags 6px, pills full.
-   Height: controls 44px (h-11), compact actions 36px (h-9). Type: body 15px, meta 13px, tags 12px. */
-export const card = "rounded-2xl border border-ink/[.07] bg-white shadow-[0_1px_2px_rgba(16,24,40,.04)]";
+/* Controls, cards, badges and banners come from Astryx (@astryxdesign/core) with the Boundless theme
+   (src/themes/boundless). For hand-built surfaces, use the Astryx tokens through Tailwind arbitrary
+   values, e.g. bg-[var(--color-background-card)] or rounded-[var(--radius-container)].
+   The class strings below are the pre-Astryx tokens, kept only until every caller has moved. */
+export const card = "rounded-[var(--radius-container)] border border-[var(--color-border)] bg-[var(--color-background-card)] shadow-[0_1px_2px_rgba(16,24,40,.04)]";
 export const btn =
   "inline-flex h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl bg-primary px-5 text-[15px] font-bold text-paper transition hover:brightness-110 active:scale-[.98] disabled:opacity-50";
 export const btnGhost =
@@ -148,7 +155,7 @@ export function MarketLine({ post, t }: { post: Pick<PostRow, "price" | "deal" |
   return (
     <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
       <span className="font-display text-base font-extrabold whitespace-nowrap">{post.kind === "free" ? t("나눔") : `${post.price.toLocaleString("ko-KR")}${t("원")}`}</span>
-      <span className={`${tag} ${deal.id === "done" ? "bg-ink/10 text-ink/75" : deal.id === "reserved" ? "bg-amber-100 text-amber-900" : "bg-emerald-100 text-emerald-900"}`}>{t(label)}</span>
+      <Badge variant={deal.id === "done" ? "neutral" : deal.id === "reserved" ? "warning" : "success"} label={t(label)} />
       {/* The meeting spot was saved but never shown, so buyers had to ask where to meet. */}
       {post.place && (
         <span className="inline-flex items-center gap-1 text-sm" title={t("거래 희망 동네")}>
@@ -229,22 +236,45 @@ export function PageHead({ line, title, desc, children }: { line: string; title:
 export function BackLink({ href, label }: { href: string; label: string }) {
   return (
     <div className="px-4 pt-3 md:pt-5">
-      <Link href={href} className="inline-flex h-9 items-center gap-0.5 rounded-full pr-3 text-sm font-bold text-primary">
-        <Icon name="back" size={18} />
-        {label}
-      </Link>
+      <Button href={href} label={label} variant="ghost" size="sm" icon={<Icon name="back" size={18} />} className="-ml-2" />
     </div>
   );
 }
 
-export function Notice({ tone = "info", label, title, children }: { tone?: "info" | "error"; label?: string; title: string; children?: ReactNode }) {
-  const err = tone === "error";
+/**
+ * Empty or blocked state on Astryx: EmptyState in a muted card, or an error Banner.
+ * A string body becomes the description; anything richer (links, buttons) sits below it.
+ */
+export function Notice({
+  tone = "info",
+  label,
+  title,
+  icon = "sparkles",
+  children,
+}: {
+  tone?: "info" | "error";
+  label?: string;
+  title: string;
+  icon?: IconName;
+  children?: ReactNode;
+}) {
+  if (tone === "error") return <Banner status="error" title={title} description={children} collapsible={false} />;
+  const text = typeof children === "string" ? children : undefined;
   return (
-    <div className={`rounded-2xl border border-dashed p-5 ${err ? "border-red-300 bg-red-50 text-red-950" : "border-ink/25 bg-white/70"}`} role={err ? "alert" : undefined}>
-      {label && <StationLabel className={`mb-1.5 ${err ? "text-red-700" : "text-primary"}`}>{label}</StationLabel>}
-      <p className="font-display text-lg font-bold">{title}</p>
-      {children && <div className="mt-1 text-sm leading-relaxed">{children}</div>}
-    </div>
+    <Card variant="muted" className="border border-dashed border-[var(--color-border-emphasized)]">
+      {label && <StationLabel className="mb-1 justify-center text-primary">{label}</StationLabel>}
+      <EmptyState
+        title={title}
+        description={text}
+        icon={
+          <span className="flex size-12 items-center justify-center rounded-full bg-soft text-primary">
+            <Icon name={icon} size={24} />
+          </span>
+        }
+        actions={text ? undefined : children}
+        isCompact
+      />
+    </Card>
   );
 }
 
@@ -256,18 +286,22 @@ export function SolvedBadge({ post, t, className = "" }: { post: Pick<PostRow, "
   const all = solvedBy(post);
   const together = !!post.helpers?.length;
   return (
-    <span className={`${tag} bg-emerald-700 text-white ${className}`}>
-      {together ? (
-        <span className="flex -space-x-1" aria-hidden="true">
-          {all.slice(0, 4).map((c) => (
-            <Flag key={c} code={c} h={12} round className="ring-1 ring-emerald-700" />
-          ))}
-        </span>
-      ) : (
-        <Icon name="check" size={12} />
-      )}
-      {!together ? t("해결됨") : all.length > 1 ? t("{n}개국 이웃이 함께 해결", { n: all.length }) : t("이웃과 함께 해결")}
-    </span>
+    <Badge
+      variant="success"
+      className={className}
+      icon={
+        together ? (
+          <span className="flex -space-x-1" aria-hidden="true">
+            {all.slice(0, 4).map((c) => (
+              <Flag key={c} code={c} h={12} round className="ring-1 ring-white" />
+            ))}
+          </span>
+        ) : (
+          <Icon name="check" size={12} />
+        )
+      }
+      label={!together ? t("해결됨") : all.length > 1 ? t("{n}개국 이웃이 함께 해결", { n: all.length }) : t("이웃과 함께 해결")}
+    />
   );
 }
 
@@ -277,24 +311,26 @@ export function SolvedNote({ post, lang, t }: { post: Pick<PostRow, "nationality
   const together = !!post.helpers?.length;
   const names = all.map((c) => countryName(c, lang)).join(" · ");
   return (
-    <div role="note" className="mt-4 flex items-center gap-3 rounded-2xl border border-emerald-700/20 bg-emerald-50 p-4 text-emerald-950">
-      <span className="flex shrink-0 -space-x-2" aria-hidden="true">
-        {all.slice(0, 5).map((c) => (
-          <Avatar key={c} code={c} size={34} />
-        ))}
-      </span>
-      <div className="min-w-0">
-        <p className="font-bold">
-          {!together
+    <div role="note" className="mt-4">
+      <Banner
+        status="success"
+        collapsible={false}
+        icon={
+          <span className="flex shrink-0 -space-x-2" aria-hidden="true">
+            {all.slice(0, 5).map((c) => (
+              <Avatar key={c} code={c} size={30} />
+            ))}
+          </span>
+        }
+        title={
+          !together
             ? t("글쓴이가 해결됐다고 표시한 질문이에요")
             : all.length > 1
               ? t("{countries}, {n}개국 이웃이 국경을 넘어 함께 해결했어요", { countries: names, n: all.length })
-              : t("{country} 이웃끼리 서로 도와 해결했어요", { country: names })}
-        </p>
-        <p className="mt-0.5 text-sm opacity-80">
-          {together ? t("도움이 된 답변에 ‘도움돼요’를 눌러 고마움을 전해 보세요.") : t("어떻게 해결했는지 댓글로 남기면 다음 이웃에게 큰 도움이 돼요.")}
-        </p>
-      </div>
+              : t("{country} 이웃끼리 서로 도와 해결했어요", { country: names })
+        }
+        description={together ? t("도움이 된 답변에 ‘도움돼요’를 눌러 고마움을 전해 보세요.") : t("어떻게 해결했는지 댓글로 남기면 다음 이웃에게 큰 도움이 돼요.")}
+      />
     </div>
   );
 }
@@ -347,10 +383,7 @@ export function PostCard({ post, lang, t, showBoard = true }: { post: PostRow; l
         )}
         <span className="whitespace-nowrap opacity-70">· {timeAgo(post.created_at, lang)}</span>
         {waiting && post.bumped_at && (
-          <span className={`${tag} bg-amber-100 text-amber-900`}>
-            <Icon name="lift" size={12} />
-            {t("도움 요청")}
-          </span>
+          <Badge variant="warning" icon={<Icon name="lift" size={12} />} label={t("도움 요청")} />
         )}
       </div>
 
@@ -392,14 +425,17 @@ export function PostCard({ post, lang, t, showBoard = true }: { post: PostRow; l
       <div className="mt-3 flex flex-wrap items-center gap-2 text-[13px] font-semibold">
         <form action={toggleLike} className="relative z-20">
           <input type="hidden" name="post" value={post.id} />
-          <button
+          <Button
+            type="submit"
+            size="sm"
+            variant={post.liked ? "primary" : "secondary"}
             aria-pressed={post.liked}
-            aria-label={`${t("도움돼요")} ${post.likes}`}
-            className={`${action} ${post.liked ? "bg-primary text-paper" : "bg-ink/[.05] hover:bg-ink/10"}`}
+            label={`${t("도움돼요")} ${post.likes}`}
+            icon={<Icon name="helpful" size={15} />}
+            className="rounded-full"
           >
-            <Icon name="helpful" size={15} />
             {post.likes}
-          </button>
+          </Button>
         </form>
         <span className={`${action} bg-ink/[.05]`} aria-label={`${t("댓글")} ${post.comments}`}>
           <Icon name="comment" size={15} />
@@ -427,19 +463,15 @@ export function PostCard({ post, lang, t, showBoard = true }: { post: PostRow; l
 export function SignInRequired({ t, next, title, desc }: { t: T; next: string; title?: string; desc?: string }) {
   return (
     <div className="mx-auto max-w-3xl p-4 md:pt-8">
-      <div className="rounded-2xl border-l-4 border-primary bg-soft/60 p-5">
+      <Card className="border-l-4 border-l-primary bg-soft/60">
         <StationLabel className="text-primary">{t("로그인 필요")}</StationLabel>
         <p className="mt-1.5 font-display text-lg font-bold">{title ?? t("로그인하면 볼 수 있어요")}</p>
-        <p className="mt-1 text-sm opacity-80">{desc ?? t("이 정보는 내 계정에서만 보여요.")}</p>
+        <p className="mt-1 text-sm text-[var(--color-text-secondary)]">{desc ?? t("이 정보는 내 계정에서만 보여요.")}</p>
         <div className="mt-4 flex flex-wrap gap-2">
-          <Link href={`/login?next=${encodeURIComponent(next)}`} className={btn}>
-            {t("로그인")}
-          </Link>
-          <Link href="/#demo" className={btnGhost}>
-            {t("샘플 계정으로 체험")}
-          </Link>
+          <Button href={`/login?next=${encodeURIComponent(next)}`} label={t("로그인")} variant="primary" size="lg" />
+          <Button href="/#demo" label={t("샘플 계정으로 체험")} variant="secondary" size="lg" />
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

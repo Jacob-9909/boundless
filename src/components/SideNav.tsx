@@ -1,78 +1,97 @@
 "use client";
 
-import Link from "next/link";
+import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
-import { Icon, type IconName } from "./Icon";
+import { SideNav, SideNavItem, SideNavSection } from "@astryxdesign/core/SideNav";
+import { svgIcon, type IconName } from "./Icon";
 
 export type NavItem = { href: string; icon: IconName; label: string; badge?: number };
+export type BoardLink = { href: string; label: string; icon: IconName; color: string; today: number; todayText: string };
+export type BoardGroup = { label: string; items: BoardLink[] };
 
-/** Desktop sidebar navigation with the active page highlighted. */
-export function SideNav({ items, label, compact = false }: { items: NavItem[]; label: string; compact?: boolean }) {
-  const path = usePathname();
+const isHere = (path: string, href: string) => path === href || path.startsWith(href + "/");
+
+/** Count bubble: alert orange for unread, pale for boards with posts today. */
+function Count({ n, strong, label }: { n: number; strong?: boolean; label?: string }) {
   return (
-    <nav aria-label={label}>
-      <ul className="space-y-0.5">
-        {items.map((it) => {
-          const active = path === it.href || path.startsWith(it.href + "/");
-          return (
-            <li key={it.href}>
-              <Link
-                href={it.href}
-                aria-current={active ? "page" : undefined}
-                className={`flex items-center gap-3 rounded-xl px-3 transition ${compact ? "h-9 text-sm" : "h-11 text-[15px]"} ${active ? "bg-soft font-bold text-primary" : "text-ink/75 hover:bg-ink/[.05]"}`}
-              >
-                <Icon name={it.icon} size={compact ? 18 : 20} />
-                {it.label}
-                {!!it.badge && (
-                  <span className="ml-auto min-w-5 rounded-full bg-alert px-1.5 text-center text-xs leading-5 font-bold text-white">{it.badge > 9 ? "9+" : it.badge}</span>
-                )}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
+    <span className={`min-w-5 rounded-full px-1.5 text-center text-[11px] leading-5 font-bold ${strong ? "bg-alert text-white" : "bg-alert/10 text-alert"}`}>
+      <span aria-hidden={label ? true : undefined}>{n > 9 && strong ? "9+" : n}</span>
+      {label && <span className="sr-only">{label}</span>}
+    </span>
   );
 }
 
-export type BoardLink = { href: string; label: string; icon: IconName; color: string; today: number; todayText: string };
+/** A board's icon on its own color, the same chip the feed uses. Cached so the component stays stable between renders. */
+const dots = new Map<string, () => ReactNode>();
+function boardDot(icon: IconName, color: string) {
+  const key = icon + color;
+  if (!dots.has(key)) {
+    const Glyph = svgIcon(icon);
+    dots.set(key, function BoardDot() {
+      return (
+        <span className="flex size-6 shrink-0 items-center justify-center rounded-lg text-white" style={{ background: color }} aria-hidden="true">
+          <Glyph width={13} height={13} />
+        </span>
+      );
+    });
+  }
+  return dots.get(key)!;
+}
 
-/** Boards grouped like Reddit's community list: the current board is highlighted, boards with posts today carry a count. */
-export function BoardNav({ label, groups }: { label: string; groups: { label: string; items: BoardLink[] }[] }) {
+/**
+ * The app's side navigation on Astryx SideNav. AppShell shows it inline on desktop and moves it into
+ * the mobile drawer below the breakpoint, so phones reach every board and page from the menu button.
+ */
+export function AppSideNav({
+  label,
+  main,
+  boards,
+  moreLabel,
+  more,
+  topContent,
+  footer,
+}: {
+  label: string;
+  main: NavItem[];
+  boards: BoardGroup[];
+  moreLabel: string;
+  more: NavItem[];
+  topContent?: ReactNode;
+  footer?: ReactNode;
+}) {
   const path = usePathname();
+  const item = (it: NavItem, size?: "sm") => (
+    <SideNavItem
+      key={it.href}
+      href={it.href}
+      label={it.label}
+      icon={svgIcon(it.icon)}
+      size={size}
+      isSelected={isHere(path, it.href)}
+      endContent={it.badge ? <Count n={it.badge} strong /> : undefined}
+    />
+  );
   return (
-    <nav aria-label={label} className="space-y-4">
-      {groups.map((g) => (
-        <div key={g.label}>
-          <p className="mb-1 px-3 text-[11px] font-bold tracking-[.08em] opacity-60">{g.label}</p>
-          <ul className="space-y-px">
-            {g.items.map((b) => {
-              const active = path === b.href;
-              return (
-                <li key={b.href}>
-                  <Link
-                    href={b.href}
-                    title={b.label}
-                    aria-current={active ? "page" : undefined}
-                    className={`flex h-9 items-center gap-2.5 rounded-xl px-3 text-sm whitespace-nowrap transition ${active ? "bg-soft font-bold text-primary" : "text-ink/80 hover:bg-ink/[.05]"}`}
-                  >
-                    <span className="flex size-6 shrink-0 items-center justify-center rounded-lg text-white" style={{ background: b.color }}>
-                      <Icon name={b.icon} size={13} />
-                    </span>
-                    <span className="min-w-0 truncate">{b.label}</span>
-                    {b.today > 0 && (
-                      <span className="ml-auto rounded-full bg-alert/10 px-1.5 text-[11px] leading-5 font-bold text-alert">
-                        <span aria-hidden="true">{b.today}</span>
-                        <span className="sr-only">{b.todayText}</span>
-                      </span>
-                    )}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
+    <SideNav aria-label={label} topContent={topContent} footer={footer}>
+      <SideNavSection title={label} isHeaderHidden>
+        {main.map((it) => item(it))}
+      </SideNavSection>
+      {boards.map((g) => (
+        <SideNavSection key={g.label} title={g.label}>
+          {g.items.map((b) => (
+            <SideNavItem
+              key={b.href}
+              href={b.href}
+              label={b.label}
+              size="sm"
+              icon={boardDot(b.icon, b.color)}
+              isSelected={path === b.href}
+              endContent={b.today > 0 ? <Count n={b.today} label={b.todayText} /> : undefined}
+            />
+          ))}
+        </SideNavSection>
       ))}
-    </nav>
+      <SideNavSection title={moreLabel}>{more.map((it) => item(it, "sm"))}</SideNavSection>
+    </SideNav>
   );
 }
