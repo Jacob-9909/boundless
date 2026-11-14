@@ -12,10 +12,11 @@ const ITEMS = [
   { href: "/settings", icon: "sliders", key: "settings" },
 ] as const;
 
+/** Phone tab bar (Astryx has none), drawn with the Astryx tokens; the current tab reads like the selected side-nav item. */
 export function BottomNav({ labels, unread = 0 }: { labels: Record<(typeof ITEMS)[number]["key"], string>; unread?: number }) {
   const path = usePathname();
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-ink/10 bg-paper/95 backdrop-blur" aria-label="Main">
+    <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-[var(--color-border)] bg-[color-mix(in_oklab,var(--color-background-body)_95%,transparent)] backdrop-blur" aria-label="Main">
       <ul className="mx-auto grid max-w-xl grid-cols-5 gap-1 px-2 py-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))]">
         {ITEMS.map((it) => {
           const active = path.startsWith(it.href);
@@ -24,7 +25,9 @@ export function BottomNav({ labels, unread = 0 }: { labels: Record<(typeof ITEMS
               <Link
                 href={it.href}
                 aria-current={active ? "page" : undefined}
-                className={`relative flex flex-col items-center gap-0.5 rounded-xl py-1.5 text-[11px] leading-tight ${active ? "bg-soft font-bold text-primary" : "opacity-70"}`}
+                className={`relative flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-element)] py-1.5 text-[11px] leading-tight transition-colors ${
+                  active ? "bg-[var(--color-accent-muted)] font-bold text-[var(--color-text-accent)]" : "text-[var(--color-text-secondary)] hover:bg-[var(--color-background-muted)]"
+                }`}
               >
                 <Icon name={it.icon} size={21} />
                 {labels[it.key]}

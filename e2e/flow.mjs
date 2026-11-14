@@ -54,9 +54,16 @@ async function signIn(page, email, culture) {
   }
 }
 
+// Astryx Selector is a combobox with a hidden input carrying the value, not a native <select>.
+async function pick(page, label, option) {
+  await page.getByRole("combobox", { name: label }).click();
+  await page.getByRole("option", { name: option }).click();
+}
+
 async function comment(page, text) {
   await page.getByLabel("Comment").fill(text);
-  await page.getByRole("button", { name: "Reply" }).click();
+  // Scoped to the comment form: each comment's nested-reply toggle is also a "Reply" button now.
+  await page.locator("form", { has: page.getByLabel("Comment") }).getByRole("button", { name: "Reply" }).click();
   await page.getByText(text, { exact: true }).waitFor();
 }
 
@@ -73,9 +80,10 @@ await visitor.getByText("Sign in to see this page").waitFor();
 const a = await newUser();
 await signIn(a, `e2e-a-${run}@example.com`, "日本");
 await a.goto(BASE + "/settings");
-assert.equal(await a.getByLabel("Public nationality", { exact: true }).inputValue(), "JP");
+assert.equal(await a.locator('input[name="nationality"]').inputValue(), "JP");
 await a.goto(BASE + "/write");
-await a.getByRole("link", { name: /Housing/ }).first().click();
+// Board tiles are Astryx ClickableCards: the whole card takes the tap, so press its visible name.
+await a.getByText("Housing", { exact: true }).first().click();
 await a.waitForURL(/board=housing/);
 let title = `E2E recycling question ${run}`;
 await a.getByLabel("Title").fill(title);
@@ -90,7 +98,7 @@ await a.locator('input[name="images"]').setInputFiles({ name: "dot.png", mimeTyp
 await a.locator('img[src^="blob:"]').waitFor();
 // Life boards ask for an optional visa status; it shows as a tag and filters search.
 await a.getByText("Area · visa status · original language").click();
-await a.getByLabel("Visa status (optional)").selectOption("f6");
+await pick(a, "Visa status (optional)", "F-6 Marriage migrant");
 await a.getByRole("button", { name: "Post", exact: true }).click();
 await a.waitForURL(/\/posts\/\d+$/);
 const postUrl = a.url();
@@ -138,17 +146,21 @@ await b.goto(postUrl);
 await b.getByRole("button", { name: "Follow", exact: true }).click();
 await b.getByRole("button", { name: "Following", exact: true }).waitFor();
 await b.goto(BASE + "/me?tab=following");
-await b.getByText("Following 1 neighbors").waitFor();
+// A role query skips the hidden copy Next streams in for a moment before swapping it into place.
+await b.getByRole("heading", { name: "Following 1 neighbors" }).waitFor();
 await b.getByRole("link", { name: title }).first().waitFor();
 await b.goto(postUrl);
+// Astryx Collapsible mounts its content again after hydration; let the page settle before opening a reply box.
+await b.waitForLoadState("networkidle");
 const thread = b.locator("li", { hasText: "Author follow-up" });
-await thread.locator("summary", { hasText: "Reply" }).click();
+await thread.getByRole("button", { name: "Reply", exact: true }).click();
 await thread.getByLabel("Reply").fill("B nested reply");
 await thread.getByRole("button", { name: "Post reply" }).click();
 await thread.getByText("B nested reply").waitFor();
 const mine = b.locator("[data-comment]", { hasText: "B second reply" });
-await mine.locator("summary", { hasText: "Delete" }).click();
+// Delete asks first, in an Astryx AlertDialog.
 await mine.getByRole("button", { name: "Delete" }).click();
+await b.getByRole("alertdialog").getByRole("button", { name: "Delete" }).click();
 await b.getByText("B second reply", { exact: true }).waitFor({ state: "detached" });
 
 await a.goto(BASE + "/me");
@@ -177,7 +189,7 @@ await visitor.getByText("Nothing matched").waitFor();
 
 // B reports the post, then blocks the author.
 await b.goto(BASE + `/report?post=${postId}`);
-await b.getByLabel("Reason").selectOption("privacy");
+await pick(b, "Reason", "Personal information or threats");
 await b.getByRole("button", { name: "Send report" }).click();
 await b.getByText("Report received").waitFor();
 await b.goto(BASE + "/settings");
@@ -208,7 +220,8 @@ await a.getByLabel("Tell us why it should be looked at again").fill("This only a
 await a.getByRole("button", { name: "Send appeal" }).click();
 await a.getByText("Appeal received").waitFor();
 await admin.goto(BASE + "/admin");
-const appealItem = admin.locator("li", { hasText: "no personal data" });
+// Role queries skip hidden copies that a refresh streams in before swapping.
+const appealItem = admin.getByRole("listitem").filter({ hasText: "no personal data" });
 await appealItem.getByRole("button", { name: "Restore" }).click();
 await appealItem.waitFor({ state: "detached" });
 await visitor.goto(postUrl);
@@ -255,10 +268,11 @@ const loungeUrl = BASE + (await judge.locator("a[href^='/posts/']").first().getA
 await judge.goto(loungeUrl);
 await judge.getByText(VI["{country} 라운지"].replace("{country}", new Intl.DisplayNames(["vi"], { type: "region" }).of("VN"))).last().waitFor();
 await a.goto(loungeUrl);
-await a.getByText("only for neighbors from Vietnam").waitFor();
+await a.getByRole("heading", { name: /only for neighbors from Vietnam/ }).waitFor();
 
 // The language menu switches the interface for this browser.
-await judge.locator("header summary").click();
+// The menu lives in the Astryx TopNav, which renders a nav, not a header.
+await judge.getByLabel(VI["화면 언어 바꾸기"]).first().click();
 await judge.getByRole("button", { name: "한국어", exact: true }).click();
 await judge.waitForFunction(() => document.documentElement.lang === "ko");
 

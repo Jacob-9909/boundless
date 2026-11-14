@@ -1,12 +1,16 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Badge } from "@astryxdesign/core/Badge";
+import { Banner } from "@astryxdesign/core/Banner";
+import { Button } from "@astryxdesign/core/Button";
+import { Card } from "@astryxdesign/core/Card";
 import { moderate, resolveAppeal } from "@/app/actions";
+import { Icon } from "@/components/Icon";
 import { NationalityChip, Notice, PageHead } from "@/components/ui";
 import { canViewQueue, getT, getUser, isAdmin } from "@/lib/auth";
 import { q } from "@/lib/db";
 import { ALERTS, alertOf } from "@/lib/guide";
 import { ASKING_TAGS } from "@/lib/boards";
-import { REPORT_REASONS, timeAgo } from "@/lib/i18n";
+import { REPORT_REASONS, timeAgo, type T } from "@/lib/i18n";
 
 export const metadata = { title: "Moderation" };
 
@@ -21,6 +25,15 @@ type Open = {
   nationality: string;
   same: number;
 };
+
+// ponytail: items stay cards in a <ul>, not a Table: excerpts wrap over lines, each row holds its own forms, and a table
+// would scroll sideways on phones (e2e also finds items as <li>).
+const item = "border-l-4 text-sm";
+const meta = "flex flex-wrap items-center gap-2 text-xs";
+
+function OpenPost({ id, t }: { id: string; t: T }) {
+  return <Button href={`/posts/${id}`} label={t("원문 보기")} variant="ghost" icon={<Icon name="external" size={15} />} className="ml-auto" />;
+}
 
 export default async function AdminPage() {
   const [{ lang, t }, user] = await Promise.all([getT(), getUser()]);
@@ -75,15 +88,15 @@ export default async function AdminPage() {
     <div className="mx-auto max-w-3xl lg:ml-2 pb-6">
       <PageHead line="OPS · QUEUE" title={t("운영 큐")} desc={t("접수된 신고와 재심 요청을 오래된 순서로 보여 줘요.")} />
       {readOnly && (
-        <p role="status" className="mx-4 mt-4 rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          {t("시연용 운영자 계정이에요. 신고 내용과 지표는 실제와 같지만 처리 버튼은 꺼져 있어요.")}
-        </p>
+        <div className="mx-4 mt-4">
+          <Banner role="status" status="warning" collapsible={false} title={t("시연용 운영자 계정이에요. 신고 내용과 지표는 실제와 같지만 처리 버튼은 꺼져 있어요.")} />
+        </div>
       )}
       <div className="space-y-4 px-4 py-4">
-        <section className="rounded-2xl border border-ink/10 bg-white p-4 text-sm">
+        <Card className="border-l-4 border-l-primary text-sm">
           <p className="font-bold">{t("최근 7일 이용 지표")}</p>
-          <p className="mt-1 opacity-80">{events.length ? events.map((e) => `${e.name} ${e.n}`).join(" · ") : "—"}</p>
-          <p className="mt-1 opacity-80" data-solve-rate>
+          <p className="mt-1 text-[var(--color-text-secondary)]">{events.length ? events.map((e) => `${e.name} ${e.n}`).join(" · ") : "—"}</p>
+          <p className="mt-1 text-[var(--color-text-secondary)]" data-solve-rate>
             {t("질문 {asked}개 중 해결 {solved}개 ({rate}%), 채택 {accepted}개", {
               asked: qa.asked,
               solved: qa.solved,
@@ -91,27 +104,27 @@ export default async function AdminPage() {
               rate: qa.asked ? Math.round((qa.solved / qa.asked) * 100) : 0,
             })}
           </p>
-        </section>
+        </Card>
         {flagged.length > 0 && (
           <section>
             <h2 className="font-display text-lg font-extrabold">{t("AI 우선 확인 {n}건", { n: flagged.length })}</h2>
-            <p className="mb-2 text-xs opacity-75">{t("최근 7일 동안 AI가 긴급·위기 신호를 읽은 글이에요. 글쓴이에게는 상담 번호가 안내됐어요.")}</p>
+            <p className="mb-2 text-xs text-[var(--color-text-secondary)]">{t("최근 7일 동안 AI가 긴급·위기 신호를 읽은 글이에요. 글쓴이에게는 상담 번호가 안내됐어요.")}</p>
             <ul className="space-y-2">
               {flagged.map((f) => {
                 const a = alertOf(f.alert);
                 return (
-                  <li key={f.id} className={`rounded-2xl border-l-4 bg-white p-4 text-sm ${a?.crisis ? "border-rose-500" : "border-amber-400"}`}>
-                    <div className="flex flex-wrap items-center gap-2 text-xs">
-                      <span className={`rounded px-2 py-0.5 font-bold ${a?.crisis ? "bg-rose-50 text-rose-800" : "bg-amber-50 text-amber-900"}`}>
-                        {a ? t(a.ko) : f.alert}
-                      </span>
-                      <NationalityChip code={f.nationality} lang={lang} />
-                      <span className="ml-auto opacity-70">{timeAgo(f.created_at, lang)}</span>
-                    </div>
-                    <p className="mt-2 whitespace-pre-wrap opacity-80">{f.excerpt}</p>
-                    <Link href={`/posts/${f.id}`} className="mt-1 inline-flex h-8 items-center text-xs text-primary underline">
-                      {t("원문 보기")}
-                    </Link>
+                  <li key={f.id}>
+                    <Card className={`${item} ${a?.crisis ? "border-l-[var(--color-error)]" : "border-l-[var(--color-warning)]"}`}>
+                      <div className={meta}>
+                        <Badge variant={a?.crisis ? "error" : "warning"} icon={<Icon name="siren" size={12} />} label={a ? t(a.ko) : f.alert} />
+                        <NationalityChip code={f.nationality} lang={lang} />
+                        <span className="ml-auto text-[var(--color-text-secondary)]">{timeAgo(f.created_at, lang)}</span>
+                      </div>
+                      <p className="mt-2 whitespace-pre-wrap text-[var(--color-text-secondary)]">{f.excerpt}</p>
+                      <div className="mt-1 flex">
+                        <OpenPost id={f.id} t={t} />
+                      </div>
+                    </Card>
                   </li>
                 );
               })}
@@ -123,34 +136,34 @@ export default async function AdminPage() {
             <h2 className="mb-2 font-display text-lg font-extrabold">{t("재심 요청 {n}건", { n: appeals.length })}</h2>
             <ul className="space-y-3">
               {appeals.map((a) => (
-                <li key={a.id} className="rounded-2xl border-l-4 border-primary bg-white p-4 text-sm">
-                  <div className="flex flex-wrap items-center gap-2 text-xs">
-                    <span className="rounded bg-soft px-2 py-0.5 font-bold text-primary">{t("재심")}</span>
-                    <span>{a.is_comment ? t("댓글") : t("글")}</span>
-                    <NationalityChip code={a.nationality} lang={lang} />
-                    <span className="ml-auto opacity-70">{timeAgo(a.created_at, lang)}</span>
-                  </div>
-                  <p className="mt-2 whitespace-pre-wrap opacity-80">{a.excerpt}</p>
-                  <p className="mt-2 rounded-xl bg-paper px-3 py-2">
-                    <span className="font-bold">{t("작성자 사유")}</span> · {a.reason}
-                  </p>
-                  <div className="mt-2 flex items-center gap-2">
-                    {(["restore", "uphold"] as const).map((action) => (
-                      <form key={action} action={resolveAppeal}>
-                        <input type="hidden" name="appeal" value={a.id} />
-                        <input type="hidden" name="action" value={action} />
-                        <button
-                          disabled={readOnly}
-                          className={`h-9 rounded-full px-4 text-[13px] font-bold disabled:cursor-not-allowed disabled:opacity-40 ${action === "restore" ? "bg-primary text-paper" : "bg-soft"}`}
-                        >
-                          {action === "restore" ? t("복구하기") : t("가림 유지")}
-                        </button>
-                      </form>
-                    ))}
-                    <Link href={`/posts/${a.post_id}`} className="ml-auto inline-flex h-8 items-center text-xs text-primary underline">
-                      {t("원문 보기")}
-                    </Link>
-                  </div>
+                <li key={a.id}>
+                  <Card className={`${item} border-l-primary`}>
+                    <div className={meta}>
+                      <Badge variant="info" label={t("재심")} />
+                      <span>{a.is_comment ? t("댓글") : t("글")}</span>
+                      <NationalityChip code={a.nationality} lang={lang} />
+                      <span className="ml-auto text-[var(--color-text-secondary)]">{timeAgo(a.created_at, lang)}</span>
+                    </div>
+                    <p className="mt-2 whitespace-pre-wrap text-[var(--color-text-secondary)]">{a.excerpt}</p>
+                    <p className="mt-2 rounded-xl bg-soft px-3 py-2">
+                      <span className="font-bold">{t("작성자 사유")}</span> · {a.reason}
+                    </p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      {(["restore", "uphold"] as const).map((action) => (
+                        <form key={action} action={resolveAppeal}>
+                          <input type="hidden" name="appeal" value={a.id} />
+                          <input type="hidden" name="action" value={action} />
+                          <Button
+                            type="submit"
+                            isDisabled={readOnly}
+                            label={action === "restore" ? t("복구하기") : t("가림 유지")}
+                            variant={action === "restore" ? "primary" : "secondary"}
+                          />
+                        </form>
+                      ))}
+                      <OpenPost id={a.post_id} t={t} />
+                    </div>
+                  </Card>
                 </li>
               ))}
             </ul>
@@ -159,33 +172,33 @@ export default async function AdminPage() {
         {open.length === 0 && <Notice title={t("처리할 신고가 없어요")} />}
         <ul className="space-y-3">
           {open.map((r) => (
-            <li key={r.id} className="rounded-2xl border-l-4 border-red-600 bg-white p-4 text-sm">
-              <div className="flex flex-wrap items-center gap-2 text-xs">
-                <span className="rounded bg-red-50 px-2 py-0.5 font-bold text-red-800">{t(REPORT_REASONS.find((x) => x.id === r.reason)?.ko ?? "기타")}</span>
-                <span>{r.is_comment ? t("댓글") : t("글")}</span>
-                <NationalityChip code={r.nationality} lang={lang} />
-                {r.same > 1 && <span className="font-bold">×{r.same}</span>}
-                <span className="ml-auto opacity-70">{timeAgo(r.created_at, lang)}</span>
-              </div>
-              <p className="mt-2 whitespace-pre-wrap">{r.excerpt}</p>
-              {r.details && <p className="mt-1 text-xs opacity-70">“{r.details}”</p>}
-              <div className="mt-2 flex items-center gap-2">
-                {(["hide", "dismiss"] as const).map((action) => (
-                  <form key={action} action={moderate}>
-                    <input type="hidden" name="report" value={r.id} />
-                    <input type="hidden" name="action" value={action} />
-                    <button
-                      disabled={readOnly}
-                      className={`h-9 rounded-full px-4 text-[13px] font-bold disabled:cursor-not-allowed disabled:opacity-40 ${action === "hide" ? "bg-red-700 text-white" : "bg-soft"}`}
-                    >
-                      {action === "hide" ? t("가리기") : t("문제 없음")}
-                    </button>
-                  </form>
-                ))}
-                <Link href={`/posts/${r.post_id}`} className="ml-auto text-xs text-primary underline">
-                  {t("원문 보기")}
-                </Link>
-              </div>
+            <li key={r.id}>
+              <Card className={`${item} border-l-[var(--color-error)]`}>
+                <div className={meta}>
+                  <Badge variant="error" label={t(REPORT_REASONS.find((x) => x.id === r.reason)?.ko ?? "기타")} />
+                  <span>{r.is_comment ? t("댓글") : t("글")}</span>
+                  <NationalityChip code={r.nationality} lang={lang} />
+                  {r.same > 1 && <Badge variant="neutral" label={`×${r.same}`} />}
+                  <span className="ml-auto text-[var(--color-text-secondary)]">{timeAgo(r.created_at, lang)}</span>
+                </div>
+                <p className="mt-2 whitespace-pre-wrap">{r.excerpt}</p>
+                {r.details && <p className="mt-1 text-xs text-[var(--color-text-secondary)]">“{r.details}”</p>}
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  {(["hide", "dismiss"] as const).map((action) => (
+                    <form key={action} action={moderate}>
+                      <input type="hidden" name="report" value={r.id} />
+                      <input type="hidden" name="action" value={action} />
+                      <Button
+                        type="submit"
+                        isDisabled={readOnly}
+                        label={action === "hide" ? t("가리기") : t("문제 없음")}
+                        variant={action === "hide" ? "destructive" : "secondary"}
+                      />
+                    </form>
+                  ))}
+                  <OpenPost id={r.post_id} t={t} />
+                </div>
+              </Card>
             </li>
           ))}
         </ul>

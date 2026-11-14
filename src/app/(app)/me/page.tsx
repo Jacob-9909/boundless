@@ -1,8 +1,12 @@
 import Link from "next/link";
+import { Button } from "@astryxdesign/core/Button";
+import { Card } from "@astryxdesign/core/Card";
 import { unfollow } from "@/app/actions";
 import { RightRail } from "@/components/Community";
+import { PostList } from "@/components/Feed";
 import { Icon } from "@/components/Icon";
-import { Avatar, LevelBadge, Notice, PageHead, PostCard, SignInRequired, btn, card, postList } from "@/components/ui";
+import { NavTabs } from "@/components/NavTabs";
+import { Avatar, LevelBadge, Notice, PageHead, PostCard, SignInRequired } from "@/components/ui";
 import { getT, getUser } from "@/lib/auth";
 import { q } from "@/lib/db";
 import { countryName, timeAgo } from "@/lib/i18n";
@@ -24,15 +28,12 @@ export default async function MePage(props: PageProps<"/me">) {
   // Opening this page counts as reading the new replies (clears the nav badge).
   if (fresh.length) await q("UPDATE boundless.users SET seen_at = now() WHERE id = $1", [user.id]);
 
-  const tabCls = (on: boolean) =>
-    `flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl text-sm font-bold transition ${on ? "bg-white text-ink shadow-sm" : "text-ink/75 hover:text-ink"}`;
-
   return (
     <div className="mx-auto max-w-3xl lg:ml-2 pb-6">
       <PageHead line="LINE 04 · MY POSTS" title={t("내 글")} desc={t("나만 볼 수 있는 목록이에요. 글을 열어 답변을 확인하세요.")} />
       <div className="space-y-4 px-4 py-4">
         {fresh.length > 0 && (
-          <section className="rounded-2xl border-l-4 border-alert bg-white p-4">
+          <Card className="border-l-4 border-l-alert">
             <p className="flex items-center gap-1.5 text-sm font-bold">
               <Icon name="bell" size={16} className="text-alert" />
               {t("새 답변 {n}개", { n: fresh.length })}
@@ -51,32 +52,29 @@ export default async function MePage(props: PageProps<"/me">) {
                 </li>
               ))}
             </ul>
-          </section>
+          </Card>
         )}
 
-        <div className="flex gap-1 rounded-2xl bg-ink/[.06] p-1">
-          <Link href="/me" className={tabCls(tab === "mine")} aria-current={tab === "mine" ? "page" : undefined}>
-            {t("내가 쓴 글")}
-          </Link>
-          <Link href="/me?tab=saved" className={tabCls(tab === "saved")} aria-current={tab === "saved" ? "page" : undefined}>
-            <Icon name="bookmark" size={15} />
-            {t("저장한 글")}
-          </Link>
-          <Link href="/me?tab=following" className={tabCls(tab === "following")} aria-current={tab === "following" ? "page" : undefined}>
-            <Icon name="following" size={15} />
-            {t("팔로잉")}
-          </Link>
-        </div>
+        <NavTabs
+          label={t("내 글")}
+          value={tab}
+          layout="fill"
+          tabs={[
+            { value: "mine", label: t("내가 쓴 글"), href: "/me", icon: <Icon name="file" size={15} /> },
+            { value: "saved", label: t("저장한 글"), href: "/me?tab=saved", icon: <Icon name="bookmark" size={15} /> },
+            { value: "following", label: t("팔로잉"), href: "/me?tab=following", icon: <Icon name="following" size={15} /> },
+          ]}
+        />
 
         {tab === "following" && (
-          <section className={`${card} overflow-hidden`}>
-            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b border-ink/[.06] px-4 py-3">
+          <Card padding={0} className="overflow-hidden">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b border-[var(--color-border)] px-4 py-3">
               <h2 className="font-bold">{t("팔로우한 이웃 {n}명", { n: followed.length })}</h2>
               {/* Only a count: who follows whom stays private on an anonymous board. */}
-              <p className="text-xs opacity-70">{t("나를 팔로우하는 이웃 {n}명 · 누가 팔로우하는지는 공개되지 않아요", { n: followers })}</p>
+              <p className="text-xs text-[var(--color-text-secondary)]">{t("나를 팔로우하는 이웃 {n}명 · 누가 팔로우하는지는 공개되지 않아요", { n: followers })}</p>
             </div>
             {followed.length > 0 && (
-              <ul className="divide-y divide-ink/[.06]">
+              <ul className="divide-y divide-[var(--color-border)]">
                 {followed.map((f) => (
                   <li key={f.id} className="flex items-center gap-3 px-4 py-2.5">
                     <Avatar code={f.nationality} size={34} />
@@ -94,39 +92,32 @@ export default async function MePage(props: PageProps<"/me">) {
                     </div>
                     <form action={unfollow}>
                       <input type="hidden" name="follow" value={f.id} />
-                      <button className="inline-flex h-9 items-center rounded-full px-3 text-xs font-bold text-ink/75 ring-1 ring-ink/15 hover:ring-ink/30">
-                        {t("팔로우 취소")}
-                      </button>
+                      <Button type="submit" label={t("팔로우 취소")} variant="secondary" />
                     </form>
                   </li>
                 ))}
               </ul>
             )}
-          </section>
+          </Card>
         )}
 
         {tab === "mine" && (
-          <Link href="/write" className={btn}>
-            <Icon name="plus" size={18} />
-            {t("글쓰기")}
-          </Link>
+          <Button href="/write" label={t("글쓰기")} variant="primary" size="lg" icon={<Icon name="plus" size={18} />} />
         )}
         {posts.length ? (
-          <ul className={postList}>
+          <PostList>
             {posts.map((p) => (
               <li key={p.id} className={p.hidden ? "opacity-70" : ""}>
                 <PostCard post={p} lang={lang} t={t} />
                 {p.hidden && (
-                  <p className="mt-1 flex flex-wrap items-center gap-x-2 text-xs font-semibold text-red-700">
+                  <p className="flex flex-wrap items-center gap-x-2 px-4 pb-3 text-xs font-semibold text-[var(--color-text-error)] md:px-5">
                     {t("운영 정책에 따라 가려진 글이에요")}
-                    <Link href={`/posts/${p.id}`} className="inline-flex h-8 items-center text-primary underline">
-                      {t("재심 요청·결과 보기")}
-                    </Link>
+                    <Button href={`/posts/${p.id}`} label={t("재심 요청·결과 보기")} variant="ghost" className="text-primary underline" />
                   </p>
                 )}
               </li>
             ))}
-          </ul>
+          </PostList>
         ) : tab === "saved" ? (
           <Notice title={t("저장한 글이 없어요")}>{t("글에서 저장을 누르면 여기에 모여요.")}</Notice>
         ) : tab === "following" ? (

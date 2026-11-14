@@ -535,6 +535,9 @@
 
   .astryx-segmented-control-item[data-selected="selected"] {
     box-shadow: none;
+    background-color: var(--color-accent);
+    color: var(--color-on-accent);
+    font-weight: 700;
   }
 
   .astryx-switch {

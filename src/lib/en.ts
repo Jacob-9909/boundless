@@ -3,6 +3,8 @@ export const EN: Record<string, string> = {
   // shell
   "화면 언어 바꾸기": "Change interface language",
   "주요 메뉴": "Main menu",
+  "상단 메뉴": "Top bar",
+  "검색어를 입력하세요": "Search posts",
   "한강": "Han River",
   "더 보기": "More",
   "한국어와 영어 밖의 언어는 기계 번역이라 어색한 문장이 있을 수 있어요. 검수하고 있어요.": "Languages other than Korean and English are machine-translated and still under review, so some lines may read oddly.",
@@ -278,7 +280,6 @@ export const EN: Record<string, string> = {
   "재난 문자와 대피소 안내를 여러 언어로 받는 정부 앱.": "Government app for disaster alerts and shelter info in many languages.",
 
   // web app shell, feed, rail
-  "본문으로 건너뛰기": "Skip to content",
   "국적 하나만 공개돼요. 이메일은 비공개.": "Only your nationality is shown. Email stays private.",
   "{hello}, 이웃님": "{hello}, neighbor",
   "오늘 새 글 {today}개 · 답변을 기다리는 질문 {waiting}개": "{today} new posts today · {waiting} questions waiting for answers",

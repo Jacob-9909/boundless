@@ -425,7 +425,10 @@ export const boundlessTheme = {
         "height": "calc(var(--size-element-lg) - 8px)"
       },
       "selected": {
-        "boxShadow": "none"
+        "boxShadow": "none",
+        "backgroundColor": "var(--color-accent)",
+        "color": "var(--color-on-accent)",
+        "fontWeight": "700"
       }
     },
     "switch": {

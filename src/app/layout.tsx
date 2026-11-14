@@ -28,7 +28,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang={lang} className={`${brand.variable} ${body.variable} ${noto.variable} ${thai.variable} ${khmer.variable} h-full antialiased`}>
       <body className="min-h-full pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)] font-sans">
-        <Providers>
+        <Providers lang={lang}>
           <I18n dict={dictOf(lang)}>{children}</I18n>
         </Providers>
       </body>

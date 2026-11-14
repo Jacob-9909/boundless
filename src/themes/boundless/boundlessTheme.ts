@@ -45,5 +45,6 @@ export const boundlessTheme = defineTheme({
     badge: { base: { fontWeight: "700" } },
     // The current page reads in the member's own culture color, not neutral gray.
     "side-nav-item": { selected: { backgroundColor: "var(--color-accent-muted)", color: "var(--color-text-accent)", fontWeight: "700" } },
+    "segmented-control-item": { selected: { backgroundColor: "var(--color-accent)", color: "var(--color-on-accent)", fontWeight: "700" } },
   },
 });

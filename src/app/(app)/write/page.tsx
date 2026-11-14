@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Badge } from "@astryxdesign/core/Badge";
+import { ClickableCard } from "@astryxdesign/core/ClickableCard";
 import { createPost } from "@/app/actions";
 import { WriteForm } from "@/components/forms";
 import { Icon } from "@/components/Icon";
@@ -46,22 +48,27 @@ export default async function WritePage(props: PageProps<"/write">) {
               <ul className="grid gap-2.5 sm:grid-cols-2">
                 {BOARDS.filter((b) => b.group === gr.id).map((b) => (
                   <li key={b.id}>
-                    <Link href={`/write?board=${b.id}${keep}`} className="flex h-full items-start gap-3 rounded-2xl bg-white p-4 ring-1 ring-ink/[.07] transition hover:-translate-y-0.5 hover:shadow-md hover:ring-ink/15">
-                      <span className="flex size-10 shrink-0 items-center justify-center rounded-xl text-white" style={{ background: b.color }}>
-                        <Icon name={b.icon} size={20} />
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block font-bold">{t(b.ko)}</span>
-                        <span className="mt-0.5 block text-xs leading-relaxed opacity-70">{t(b.desc)}</span>
-                        <span className="mt-1.5 flex flex-wrap gap-1">
-                          {b.tags.map((tg) => (
-                            <span key={tg.id} className="rounded-md bg-ink/[.05] px-1.5 py-0.5 text-[11px] font-semibold whitespace-nowrap">
-                              {t(tg.ko)}
-                            </span>
-                          ))}
+                    <ClickableCard
+                      href={`/write?board=${b.id}${keep}`}
+                      label={`${t(b.ko)}: ${t(b.desc)}`}
+                      height="100%"
+                      className="transition hover:-translate-y-0.5 hover:shadow-md"
+                    >
+                      <div className="flex items-start gap-3">
+                        <span className="flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-element)] text-white" style={{ background: b.color }}>
+                          <Icon name={b.icon} size={20} />
                         </span>
-                      </span>
-                    </Link>
+                        <div className="min-w-0">
+                          <p className="font-bold">{t(b.ko)}</p>
+                          <p className="mt-0.5 text-xs leading-relaxed text-[var(--color-text-secondary)]">{t(b.desc)}</p>
+                          <div className="mt-1.5 flex flex-wrap gap-1">
+                            {b.tags.map((tg) => (
+                              <Badge key={tg.id} label={t(tg.ko)} />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </ClickableCard>
                   </li>
                 ))}
               </ul>

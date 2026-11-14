@@ -1,6 +1,8 @@
 {
   "화면 언어 바꾸기": "Interfeys tilini oʻzgartirish",
   "주요 메뉴": "Asosiy menyu",
+  "상단 메뉴": "Yuqori bar",
+  "검색어를 입력하세요": "Xabarlarni qidirish",
   "한강": "Xan daryosi",
   "더 보기": "Yana",
   "한국어와 영어 밖의 언어는 기계 번역이라 어색한 문장이 있을 수 있어요. 검수하고 있어요.": "Koreys va ingliz tillaridan boshqa tillar mashina tarjimasi, shuning uchun ayrim jumlalar gʻalati boʻlishi mumkin. Tekshirib chiqyapmiz.",
@@ -240,7 +242,6 @@
   "정부가 여러 언어로 운영하는 한국 소개·뉴스 포털.": "Hukumatning Koreya haqidagi koʻp tilli portali.",
   "주민센터 서류 발급 같은 행정 서비스. 외국인등록번호로 이용.": "Chet ellik roʻyxat raqami bilan onlayn hujjat va davlat xizmatlari.",
   "재난 문자와 대피소 안내를 여러 언어로 받는 정부 앱.": "Ofat haqida ogohlantirish va boshpana maʼlumotini koʻp tillarda beradigan davlat ilovasi.",
-  "본문으로 건너뛰기": "Tarkibga oʻtish",
   "국적 하나만 공개돼요. 이메일은 비공개.": "Faqat fuqarolik koʻrinadi. Email yashirin qoladi.",
   "{hello}, 이웃님": "{hello}, qoʻshni",
   "오늘 새 글 {today}개 · 답변을 기다리는 질문 {waiting}개": "Bugun {today} ta yangi post · javob kutayotgan {waiting} ta savol",

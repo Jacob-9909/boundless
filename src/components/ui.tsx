@@ -16,19 +16,8 @@ import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { Icon, type IconName } from "./Icon";
 
 /* Controls, cards, badges and banners come from Astryx (@astryxdesign/core) with the Boundless theme
-   (src/themes/boundless). For hand-built surfaces, use the Astryx tokens through Tailwind arbitrary
-   values, e.g. bg-[var(--color-background-card)] or rounded-[var(--radius-container)].
-   The class strings below are the pre-Astryx tokens, kept only until every caller has moved. */
-export const card = "rounded-[var(--radius-container)] border border-[var(--color-border)] bg-[var(--color-background-card)] shadow-[0_1px_2px_rgba(16,24,40,.04)]";
-export const btn =
-  "inline-flex h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl bg-primary px-5 text-[15px] font-bold text-paper transition hover:brightness-110 active:scale-[.98] disabled:opacity-50";
-export const btnGhost =
-  "inline-flex h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-ink/15 bg-white px-5 text-[15px] font-bold text-primary transition hover:border-primary/40";
-export const pill = "inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 text-[13px] font-bold transition";
-export const tag = "inline-flex items-center gap-1 whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-semibold";
-export const field =
-  "w-full rounded-xl border border-ink/20 bg-white px-3.5 py-2.5 text-base outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10";
-export const labelCls = "mb-1.5 block text-sm font-bold";
+   (src/themes/boundless); see docs/ASTRYX.md. For hand-built surfaces, use the Astryx tokens through
+   Tailwind arbitrary values, e.g. bg-[var(--color-background-card)] or rounded-[var(--radius-container)]. */
 
 /** Seoul subway line colors: the brand's "many lines, one network" motif. */
 export const LINES = ["#0052A4", "#00A84D", "#EF7C1C", "#00A5DE", "#996CAC", "#E6186C", "#CD7C2F", "#747F00"];
@@ -335,8 +324,6 @@ export function SolvedNote({ post, lang, t }: { post: Pick<PostRow, "nationality
   );
 }
 
-/** Container for a list of posts: one surface, items split by hairlines (forum/Reddit style). */
-export const postList = `${card} divide-y divide-ink/[.07] overflow-hidden`;
 
 const action = "inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full px-3 transition";
 
@@ -483,7 +470,7 @@ export function HelpItem({ h, t }: { h: Help; t: T }) {
     <a
       href={href}
       {...(h.url ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-      className={`${card} flex flex-wrap items-start gap-x-3 gap-y-2 p-3.5 transition hover:border-primary/40`}
+      className={`flex flex-wrap items-start rounded-[var(--radius-container)] border border-[var(--color-border)] bg-[var(--color-background-card)] gap-x-3 gap-y-2 p-3.5 transition hover:border-primary/40`}
     >
       <span
         className={`flex h-9 shrink-0 items-center gap-1 rounded-xl px-2.5 font-display text-sm font-extrabold whitespace-nowrap ${h.tel ? "bg-primary text-paper" : "bg-soft text-primary"}`}

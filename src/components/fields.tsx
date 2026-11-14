@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ComponentProps } from "react";
+import { startTransition, useState, type ComponentProps, type FormEvent } from "react";
 import { Selector } from "@astryxdesign/core/Selector";
 import { TextArea } from "@astryxdesign/core/TextArea";
 import { TextInput } from "@astryxdesign/core/TextInput";
@@ -11,6 +11,19 @@ import { TextInput } from "@astryxdesign/core/TextInput";
  */
 
 type Omitted = "value" | "onChange" | "htmlName";
+
+/**
+ * onSubmit for a form whose fields are Astryx (controlled) inputs: runs the useActionState action
+ * without React's automatic form reset. That reset rewrites the DOM values behind React's back, so a
+ * second comment in a row was submitted empty. Keep `action={action}` too: it still works before hydration.
+ */
+export function keepValues(dispatch: (f: FormData) => void) {
+  return (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const f = new FormData(e.currentTarget, (e.nativeEvent as SubmitEvent).submitter);
+    startTransition(() => dispatch(f));
+  };
+}
 
 export function TextField({ name, defaultValue = "", ...rest }: Omit<ComponentProps<typeof TextInput>, Omitted> & { name: string; defaultValue?: string }) {
   const [v, setV] = useState(defaultValue);

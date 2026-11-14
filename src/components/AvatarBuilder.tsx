@@ -23,10 +23,17 @@ import {
   type Look,
   type Person,
 } from "@/lib/avatar";
+import { Button } from "@astryxdesign/core/Button";
+import { Card } from "@astryxdesign/core/Card";
+import { CheckboxInput } from "@astryxdesign/core/CheckboxInput";
+import { SegmentedControl, SegmentedControlItem } from "@astryxdesign/core/SegmentedControl";
+import { Slider } from "@astryxdesign/core/Slider";
 import { Icon } from "./Icon";
 import { useT } from "./I18n";
-import { btn, btnGhost, labelCls } from "./ui";
 
+const legend = "mb-1.5 block text-sm font-bold";
+// ponytail: swatches and parts stay plain aria-pressed buttons. Astryx has no swatch picker, ToggleButton's icon
+// slot is too small for a 52px avatar preview, and SelectableCard is a checkbox (e2e presses them as buttons).
 const pressed = "outline-3 outline-offset-2 outline-[var(--c-primary)]";
 
 export function AvatarBuilder({ initial, shown, soft, doneHref }: { initial: Look | null; shown: boolean; soft: string; doneHref?: string }) {
@@ -78,20 +85,10 @@ export function AvatarBuilder({ initial, shown, soft, doneHref }: { initial: Loo
       </div>
 
       <div className="space-y-5">
-        <div role="radiogroup" aria-label={t("아바타 종류")} className="inline-flex rounded-full bg-white p-1 ring-1 ring-ink/10">
-          {(["person", "animal"] as const).map((k) => (
-            <button
-              key={k}
-              type="button"
-              role="radio"
-              aria-checked={kind === k}
-              onClick={() => (setKind(k), setSaved(""))}
-              className={`h-10 rounded-full px-5 text-sm font-bold transition ${kind === k ? "bg-primary text-paper" : "text-ink/70 hover:text-ink"}`}
-            >
-              {k === "person" ? t("사람") : t("동물")}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl label={t("아바타 종류")} size="lg" value={kind} onChange={(k) => (setKind(k as Look["kind"]), setSaved(""))}>
+          <SegmentedControlItem value="person" label={t("사람")} />
+          <SegmentedControlItem value="animal" label={t("동물")} />
+        </SegmentedControl>
 
         {kind === "person" ? (
           <>
@@ -131,21 +128,20 @@ export function AvatarBuilder({ initial, shown, soft, doneHref }: { initial: Loo
           </>
         )}
 
-        <label className="flex items-start gap-3 rounded-2xl bg-white p-4 ring-1 ring-ink/10">
-          <input type="checkbox" checked={show} onChange={(e) => (setShow(e.target.checked), setSaved(""))} className="mt-0.5 size-5 shrink-0 accent-[var(--c-primary)]" />
-          <span className="text-sm">
-            <span className="block font-bold">{t("내 글과 댓글에도 이 아바타 쓰기")}</span>
-            <span className="mt-0.5 block opacity-75">{t("켜면 같은 아바타가 붙어서 내 글끼리 이어 볼 수 있어요. 끄면 지금처럼 국기 아바타가 보여요.")}</span>
-          </span>
-        </label>
+        <Card className="border-l-4 border-l-primary">
+          <CheckboxInput
+            label={t("내 글과 댓글에도 이 아바타 쓰기")}
+            description={t("켜면 같은 아바타가 붙어서 내 글끼리 이어 볼 수 있어요. 끄면 지금처럼 국기 아바타가 보여요.")}
+            value={show}
+            onChange={(v) => (setShow(v), setSaved(""))}
+          />
+        </Card>
 
         <div className="flex flex-wrap items-center gap-3">
-          <button type="button" onClick={save} disabled={pending} className={btn}>
-            {t("저장")}
-          </button>
+          <Button label={t("저장")} variant="primary" size="lg" onClick={save} isLoading={pending} />
           {initial && (
             <form action={removeAvatar}>
-              <button className={btnGhost}>{t("아바타 지우기")}</button>
+              <Button type="submit" label={t("아바타 지우기")} variant="secondary" size="lg" />
             </form>
           )}
           <span role="status" className="text-sm font-bold">
@@ -162,7 +158,7 @@ function Swatches({ label, list, value, onPick }: { label: string; list: string[
   const t = useT();
   return (
     <fieldset>
-      <legend className={labelCls}>{label}</legend>
+      <legend className={legend}>{label}</legend>
       <div className="flex flex-wrap gap-2">
         {list.map((hex, i) => (
           <button
@@ -201,7 +197,7 @@ function Parts<L extends Look>({
   const current = (look as Record<string, string>)[field];
   return (
     <fieldset>
-      <legend className={labelCls}>{label}</legend>
+      <legend className={legend}>{label}</legend>
       <div className="flex flex-wrap gap-2">
         {list.map((v, i) => (
           <button
@@ -245,6 +241,7 @@ function PhotoMatch({ onColors }: { onColors: (skin: string, hair: string) => vo
   const [zoom, setZoom] = useState(1);
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const img = useRef<HTMLImageElement>(null);
+  const file = useRef<HTMLInputElement>(null);
   const drag = useRef<{ x: number; y: number; px: number; py: number } | null>(null);
   const scale = Math.max(BOX / nat.w, BOX / nat.h) * zoom;
   const left = (BOX - nat.w * scale) / 2 + pos.x;
@@ -277,26 +274,24 @@ function PhotoMatch({ onColors }: { onColors: (skin: string, hair: string) => vo
   if (!url)
     return (
       <div className="mt-4 text-center">
-        <label className={`${btnGhost} cursor-pointer`}>
-          <Icon name="image" size={16} />
-          {t("사진으로 색 채우기")}
-          <input
-            type="file"
-            accept="image/*"
-            className="sr-only"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              e.target.value = "";
-              if (!f) return;
-              setError("");
-              setZoom(1);
-              setPos({ x: 0, y: 0 });
-              setUrl(URL.createObjectURL(f));
-            }}
-          />
-        </label>
+        <Button label={t("사진으로 색 채우기")} variant="secondary" icon={<Icon name="image" size={16} />} onClick={() => file.current?.click()} />
+        <input
+          ref={file}
+          type="file"
+          accept="image/*"
+          hidden
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            e.target.value = "";
+            if (!f) return;
+            setError("");
+            setZoom(1);
+            setPos({ x: 0, y: 0 });
+            setUrl(URL.createObjectURL(f));
+          }}
+        />
         <p className="mt-2 text-xs opacity-70">{t("사진은 이 기기에서만 쓰고, 저장하거나 서버로 보내지 않아요.")}</p>
-        {error && <p className="mt-2 text-sm font-bold text-red-700">{error}</p>}
+        {error && <p className="mt-2 text-sm font-bold text-[var(--color-text-error)]">{error}</p>}
       </div>
     );
 
@@ -335,17 +330,12 @@ function PhotoMatch({ onColors }: { onColors: (skin: string, hair: string) => vo
           <ellipse cx="50" cy="48" rx="30" ry="38" fill="none" stroke="white" strokeWidth="0.8" strokeDasharray="3 2" />
         </svg>
       </div>
-      <label className="mx-auto flex max-w-[260px] items-center gap-2 text-xs">
-        {t("크기")}
-        <input type="range" min={1} max={3} step={0.05} value={zoom} onChange={(e) => setZoom(Number(e.target.value))} className="flex-1" />
-      </label>
-      <div className="flex justify-center gap-2">
-        <button type="button" onClick={read} className={btn}>
-          {t("이 위치로 색 읽기")}
-        </button>
-        <button type="button" onClick={close} className={btnGhost}>
-          {t("취소")}
-        </button>
+      <div className="mx-auto max-w-[260px] text-left">
+        <Slider label={t("크기")} min={1} max={3} step={0.05} value={zoom} onChange={setZoom} valueDisplay="none" width="100%" />
+      </div>
+      <div className="flex flex-wrap justify-center gap-2">
+        <Button label={t("이 위치로 색 읽기")} variant="primary" onClick={read} />
+        <Button label={t("취소")} variant="secondary" onClick={close} />
       </div>
     </div>
   );
