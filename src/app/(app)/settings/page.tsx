@@ -2,7 +2,6 @@ import Link from "next/link";
 import { Badge } from "@astryxdesign/core/Badge";
 import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
-import { ClickableCard } from "@astryxdesign/core/ClickableCard";
 import { Collapsible } from "@astryxdesign/core/Collapsible";
 import { LangMenu } from "@/components/LangMenu";
 import { setReadLang, setRegion, signOut, unblockAll } from "@/app/actions";
@@ -60,28 +59,25 @@ export default async function SettingsPage() {
       <div className="space-y-6 px-4 py-4">
         {/* The member's profile comes first: avatar, public nationality and level, one tap from editing. */}
         {user && (
-          <ClickableCard
-            id="profile"
-            href="/settings/avatar"
-            label={`${t("내 프로필")} · ${user.avatar ? t("바꾸기") : t("아바타 만들기")}`}
-            padding={0}
-            className="group overflow-hidden"
-          >
-            <div className="bg-pattern h-1.5 bg-primary bg-[length:auto_24px]" aria-hidden="true" />
-            <div className="flex items-center gap-4 p-4">
-              <Avatar code={user.nationality} size={64} look={user.avatar} />
-              <span className="min-w-0 flex-1">
-                <span className="block font-display text-lg font-extrabold">{t("내 프로필")}</span>
-                <span className="block text-sm leading-snug text-[var(--color-text-secondary)]">
-                  {countryName(user.nationality, lang)} ·{" "}
-                  {user.avatar ? (user.avatar_public ? t("내 글과 댓글에도 보여요") : t("나에게만 보여요")) : t("사람이나 동물 캐릭터를 만들어요")}
+          // A real link around the card, so the tap works before the page's JS loads.
+          <Link id="profile" href="/settings/avatar" className="group block rounded-[var(--radius-container)]">
+            <Card padding={0} className="overflow-hidden">
+              <div className="bg-pattern h-1.5 bg-primary bg-[length:auto_24px]" aria-hidden="true" />
+              <div className="flex items-center gap-4 p-4">
+                <Avatar code={user.nationality} size={64} look={user.avatar} />
+                <span className="min-w-0 flex-1">
+                  <span className="block font-display text-lg font-extrabold">{t("내 프로필")}</span>
+                  <span className="block text-sm leading-snug text-[var(--color-text-secondary)]">
+                    {countryName(user.nationality, lang)} ·{" "}
+                    {user.avatar ? (user.avatar_public ? t("내 글과 댓글에도 보여요") : t("나에게만 보여요")) : t("사람이나 동물 캐릭터를 만들어요")}
+                  </span>
                 </span>
-              </span>
-              <span className="shrink-0 text-sm font-bold text-primary group-hover:underline">
-                {user.avatar ? t("바꾸기") : t("아바타 만들기")} <span aria-hidden="true">›</span>
-              </span>
-            </div>
-          </ClickableCard>
+                <span className="shrink-0 text-sm font-bold text-primary group-hover:underline">
+                  {user.avatar ? t("바꾸기") : t("아바타 만들기")} <span aria-hidden="true">›</span>
+                </span>
+              </div>
+            </Card>
+          </Link>
         )}
         <section>
           <h2 className="font-display text-lg font-extrabold">{t("환경 설정")}</h2>

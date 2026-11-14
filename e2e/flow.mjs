@@ -18,6 +18,14 @@ async function newUser() {
   await ctx.addCookies([{ name: "lang", value: "en", url: BASE }]);
   const page = await ctx.newPage();
   page.on("pageerror", (e) => pageErrors.push(e.message));
+  // Astryx controls (Collapsible, Selector, buttons in action forms) act only once hydrated, and a cold dev
+  // server hydrates late. ponytail: wait for the network to settle after every goto instead of at each step.
+  const goto = page.goto.bind(page);
+  page.goto = async (url, opts) => {
+    const res = await goto(url, opts);
+    await page.waitForLoadState("networkidle");
+    return res;
+  };
   return page;
 }
 
@@ -37,14 +45,14 @@ async function signIn(page, email, culture) {
   const code = (await page.locator("b.tracking-widest").textContent()).trim();
   await page.getByLabel("6-digit code").fill(code === "000000" ? "111111" : "000000");
   await page.getByRole("button", { name: "Verify" }).click();
-  await page.getByText("That code is wrong or expired").waitFor();
+  await page.getByText("That code is wrong or expired").filter({ visible: true }).first().waitFor();
   await page.getByLabel("6-digit code").fill(code);
   await page.getByRole("button", { name: "Verify" }).click();
   const last = page.getByText("One last step");
   await Promise.race([last.waitFor(), page.waitForURL(BASE + "/feed")]);
   if (await last.isVisible()) {
     await page.getByRole("button", { name: "Finish sign-up" }).click();
-    await page.getByText("Please confirm you are 14 or older").waitFor();
+    await page.getByText("Please confirm you are 14 or older").filter({ visible: true }).first().waitFor();
     await page.getByRole("checkbox").check();
     await page.getByRole("button", { name: "Finish sign-up" }).click();
     // New members land on a skippable avatar step first.
@@ -54,6 +62,7 @@ async function signIn(page, email, culture) {
   }
 }
 
+// Text waits skip hidden copies: while Next streams a page, the same text can briefly exist twice.
 // Astryx Selector is a combobox with a hidden input carrying the value, not a native <select>.
 async function pick(page, label, option) {
   await page.getByRole("combobox", { name: label }).click();
@@ -64,7 +73,7 @@ async function comment(page, text) {
   await page.getByLabel("Comment").fill(text);
   // Scoped to the comment form: each comment's nested-reply toggle is also a "Reply" button now.
   await page.locator("form", { has: page.getByLabel("Comment") }).getByRole("button", { name: "Reply" }).click();
-  await page.getByText(text, { exact: true }).waitFor();
+  await page.getByText(text, { exact: true }).filter({ visible: true }).first().waitFor();
 }
 
 // Visitor lands on the intro page, can browse the feed, but not open private pages.
@@ -72,9 +81,9 @@ const visitor = await newUser();
 await visitor.goto(BASE + "/");
 await visitor.getByRole("link", { name: "Browse the feed" }).first().click();
 await visitor.waitForURL(BASE + "/feed");
-await visitor.getByText("Everyone’s square").waitFor();
+await visitor.getByText("Everyone’s square").filter({ visible: true }).first().waitFor();
 await visitor.goto(BASE + "/me");
-await visitor.getByText("Sign in to see this page").waitFor();
+await visitor.getByText("Sign in to see this page").filter({ visible: true }).first().waitFor();
 
 // A (Japan) asks a question; the culture pick pre-fills the public nationality.
 const a = await newUser();
@@ -82,14 +91,14 @@ await signIn(a, `e2e-a-${run}@example.com`, "日本");
 await a.goto(BASE + "/settings");
 assert.equal(await a.locator('input[name="nationality"]').inputValue(), "JP");
 await a.goto(BASE + "/write");
-// Board tiles are Astryx ClickableCards: the whole card takes the tap, so press its visible name.
-await a.getByText("Housing", { exact: true }).first().click();
+// Board tiles are plain links around a card, so a tap works even before the page hydrates (cold dev server in CI).
+await a.locator(`a[href^="/write?board=housing"]`).click();
 await a.waitForURL(/board=housing/);
 let title = `E2E recycling question ${run}`;
 await a.getByLabel("Title").fill(title);
 // A phone number in the text gets a warning while typing (no AI involved), and it goes once removed.
 await a.getByLabel("Post text").fill("Which day are boxes collected in Mapo? Text me 010-1234-5678");
-await a.getByText("Personal details showing: phone number. Please remove them before posting.").waitFor();
+await a.getByText("Personal details showing: phone number. Please remove them before posting.").filter({ visible: true }).first().waitFor();
 await a.getByLabel("Post text").fill("Which day are boxes collected in Mapo?");
 await a.getByText(/Personal details showing/).waitFor({ state: "detached" });
 // One photo: the browser shrinks it to JPEG, the server checks its bytes, the post shows it.
@@ -110,14 +119,14 @@ await a.waitForFunction(() => {
 // The word filter stops profanity before it is saved.
 await a.getByLabel("Comment").fill("what the fuck");
 await a.getByRole("button", { name: "Reply" }).click();
-await a.getByText("contains profanity or hate speech").waitFor();
-await a.getByText("F-6 Marriage migrant").waitFor();
+await a.getByText("contains profanity or hate speech").filter({ visible: true }).first().waitFor();
+await a.getByText("F-6 Marriage migrant").filter({ visible: true }).first().waitFor();
 await comment(a, "Author follow-up");
 
 // Writing a new title that matches it suggests the existing post first.
 await a.goto(BASE + "/write?board=housing");
 await a.getByLabel("Title").fill(`Recycling again ${run}`);
-await a.getByText("Similar posts exist").waitFor();
+await a.getByText("Similar posts exist").filter({ visible: true }).first().waitFor();
 await a.getByRole("link", { name: title }).waitFor();
 
 // B and C reply: per-post anonymous handles.
@@ -140,7 +149,7 @@ await b.getByRole("button", { name: "Helpful 1" }).first().waitFor();
 await b.getByRole("button", { name: "Save" }).click();
 await b.getByRole("button", { name: "Saved" }).waitFor();
 await b.goto(BASE + "/me?tab=saved");
-await b.getByText(title).waitFor();
+await b.getByText(title).filter({ visible: true }).first().waitFor();
 // Following an author gathers their posts on the Following tab.
 await b.goto(postUrl);
 await b.getByRole("button", { name: "Follow", exact: true }).click();
@@ -156,7 +165,7 @@ const thread = b.locator("li", { hasText: "Author follow-up" });
 await thread.getByRole("button", { name: "Reply", exact: true }).click();
 await thread.getByLabel("Reply").fill("B nested reply");
 await thread.getByRole("button", { name: "Post reply" }).click();
-await thread.getByText("B nested reply").waitFor();
+await thread.getByText("B nested reply").filter({ visible: true }).first().waitFor();
 const mine = b.locator("[data-comment]", { hasText: "B second reply" });
 // Delete asks first, in an Astryx AlertDialog.
 await mine.getByRole("button", { name: "Delete" }).click();
@@ -164,7 +173,7 @@ await b.getByRole("alertdialog").getByRole("button", { name: "Delete" }).click()
 await b.getByText("B second reply", { exact: true }).waitFor({ state: "detached" });
 
 await a.goto(BASE + "/me");
-await a.getByText(/\d+ new replies/).waitFor();
+await a.getByText(/\d+ new replies/).filter({ visible: true }).first().waitFor();
 await a.goto(postUrl);
 // Accepting a reply marks the question solved and pins that reply first.
 await a.locator("[data-comment]", { hasText: "B first reply" }).getByRole("button", { name: "Accept this answer" }).click();
@@ -181,26 +190,26 @@ assert.equal((await a.locator("h1").textContent()).trim(), `[Question]${title}`)
 
 // Search finds the post by its original text.
 await visitor.goto(BASE + `/search?q=${encodeURIComponent(String(run))}`);
-await visitor.getByText(title).waitFor();
+await visitor.getByText(title).filter({ visible: true }).first().waitFor();
 await visitor.goto(BASE + `/search?q=${encodeURIComponent(String(run))}&visa=f6`);
-await visitor.getByText(title).waitFor();
+await visitor.getByText(title).filter({ visible: true }).first().waitFor();
 await visitor.goto(BASE + `/search?q=${encodeURIComponent(String(run))}&visa=d2`);
-await visitor.getByText("Nothing matched").waitFor();
+await visitor.getByText("Nothing matched").filter({ visible: true }).first().waitFor();
 
 // B reports the post, then blocks the author.
 await b.goto(BASE + `/report?post=${postId}`);
 await pick(b, "Reason", "Personal information or threats");
 await b.getByRole("button", { name: "Send report" }).click();
-await b.getByText("Report received").waitFor();
+await b.getByText("Report received").filter({ visible: true }).first().waitFor();
 await b.goto(BASE + "/settings");
 await b.getByText("Received").first().waitFor();
 await b.goto(BASE + `/report?post=${postId}`);
 await b.getByRole("button", { name: "Block author" }).click();
 await b.waitForURL(BASE + "/feed?blocked=1");
-await b.getByText("You blocked this author").waitFor();
+await b.getByText("You blocked this author").filter({ visible: true }).first().waitFor();
 assert.equal(await b.getByText(title).count(), 0, "blocked author's post must leave B's feed");
 await b.goto(postUrl);
-await b.getByText("account you blocked").waitFor();
+await b.getByText("account you blocked").filter({ visible: true }).first().waitFor();
 
 // Admin hides the reported post; everyone then sees it as hidden.
 const admin = await newUser();
@@ -211,14 +220,14 @@ const item = admin.locator("li", { hasText: title });
 await item.getByRole("button", { name: "Hide" }).click();
 await item.waitFor({ state: "detached" });
 await visitor.goto(postUrl);
-await visitor.getByText("hidden by moderators").waitFor();
+await visitor.getByText("hidden by moderators").filter({ visible: true }).first().waitFor();
 
 // A appeals once; the admin restores the post and it is public again.
 await a.goto(postUrl);
 await a.getByText("Ask for a second look").click();
 await a.getByLabel("Tell us why it should be looked at again").fill("This only asks about recycling days, no personal data.");
 await a.getByRole("button", { name: "Send appeal" }).click();
-await a.getByText("Appeal received").waitFor();
+await a.getByText("Appeal received").filter({ visible: true }).first().waitFor();
 await admin.goto(BASE + "/admin");
 // Role queries skip hidden copies that a refresh streams in before swapping.
 const appealItem = admin.getByRole("listitem").filter({ hasText: "no personal data" });
@@ -231,7 +240,7 @@ await visitor.getByRole("heading", { level: 1, name: title }).waitFor();
 const authorAvatar = visitor.locator("header [data-look]");
 await a.goto(BASE + "/settings/avatar");
 await a.getByRole("button", { name: "Hijab", exact: true }).click();
-await a.getByText("Hijab or hat color").waitFor();
+await a.getByText("Hijab or hat color").filter({ visible: true }).first().waitFor();
 await a.getByRole("button", { name: "Save", exact: true }).click();
 await a.getByRole("status").filter({ hasText: "Saved" }).waitFor();
 await visitor.goto(postUrl);
@@ -266,7 +275,7 @@ await judge.getByRole("heading", { name: VI["{hello}, 이웃님"].replace("{hell
 await judge.goto(BASE + "/lounge");
 const loungeUrl = BASE + (await judge.locator("a[href^='/posts/']").first().getAttribute("href"));
 await judge.goto(loungeUrl);
-await judge.getByText(VI["{country} 라운지"].replace("{country}", new Intl.DisplayNames(["vi"], { type: "region" }).of("VN"))).last().waitFor();
+await judge.getByText(VI["{country} 라운지"].replace("{country}", new Intl.DisplayNames(["vi"], { type: "region" }).of("VN"))).filter({ visible: true }).first().waitFor();
 await a.goto(loungeUrl);
 await a.getByRole("heading", { name: /only for neighbors from Vietnam/ }).waitFor();
 

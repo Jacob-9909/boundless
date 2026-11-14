@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Badge } from "@astryxdesign/core/Badge";
-import { ClickableCard } from "@astryxdesign/core/ClickableCard";
+import { Card } from "@astryxdesign/core/Card";
 import { createPost } from "@/app/actions";
 import { WriteForm } from "@/components/forms";
 import { Icon } from "@/components/Icon";
@@ -48,27 +48,28 @@ export default async function WritePage(props: PageProps<"/write">) {
               <ul className="grid gap-2.5 sm:grid-cols-2">
                 {BOARDS.filter((b) => b.group === gr.id).map((b) => (
                   <li key={b.id}>
-                    <ClickableCard
+                    {/* A real link around the card: the tap works before the page's JS loads (ClickableCard needs JS). */}
+                    <Link
                       href={`/write?board=${b.id}${keep}`}
-                      label={`${t(b.ko)}: ${t(b.desc)}`}
-                      height="100%"
-                      className="transition hover:-translate-y-0.5 hover:shadow-md"
+                      className="block h-full rounded-[var(--radius-container)] transition hover:-translate-y-0.5 hover:shadow-md"
                     >
-                      <div className="flex items-start gap-3">
-                        <span className="flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-element)] text-white" style={{ background: b.color }}>
-                          <Icon name={b.icon} size={20} />
-                        </span>
-                        <div className="min-w-0">
-                          <p className="font-bold">{t(b.ko)}</p>
-                          <p className="mt-0.5 text-xs leading-relaxed text-[var(--color-text-secondary)]">{t(b.desc)}</p>
-                          <div className="mt-1.5 flex flex-wrap gap-1">
-                            {b.tags.map((tg) => (
-                              <Badge key={tg.id} label={t(tg.ko)} />
-                            ))}
+                      <Card height="100%">
+                        <div className="flex items-start gap-3">
+                          <span className="flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-element)] text-white" style={{ background: b.color }}>
+                            <Icon name={b.icon} size={20} />
+                          </span>
+                          <div className="min-w-0">
+                            <p className="font-bold">{t(b.ko)}</p>
+                            <p className="mt-0.5 text-xs leading-relaxed text-[var(--color-text-secondary)]">{t(b.desc)}</p>
+                            <div className="mt-1.5 flex flex-wrap gap-1">
+                              {b.tags.map((tg) => (
+                                <Badge key={tg.id} label={t(tg.ko)} />
+                              ))}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </ClickableCard>
+                      </Card>
+                    </Link>
                   </li>
                 ))}
               </ul>
