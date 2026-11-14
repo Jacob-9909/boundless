@@ -1,6 +1,8 @@
+import { Button } from "@astryxdesign/core/Button";
+import { Card } from "@astryxdesign/core/Card";
 import { blockAuthor } from "@/app/actions";
 import { ReportForm } from "@/components/forms";
-import { BackLink, PageHead, SignInRequired, card } from "@/components/ui";
+import { BackLink, PageHead, SignInRequired } from "@/components/ui";
 import { getT, getUser } from "@/lib/auth";
 
 export const metadata = { title: "Report" };
@@ -18,13 +20,15 @@ export default async function ReportPage(props: PageProps<"/report">) {
       <PageHead line="LINE 08 · REPORT" title={comment ? t("댓글 신고") : t("글 신고")} desc={t("신고 내용은 공개되지 않아요. 운영자가 검토해요.")} />
       <div className="space-y-4 p-4">
         <ReportForm post={post} comment={comment} />
-        <form action={blockAuthor} className="rounded-2xl bg-soft/60 p-5">
-          {post && <input type="hidden" name="post" value={post} />}
-          {comment && <input type="hidden" name="comment" value={comment} />}
-          <p className="font-bold">{t("이 계정의 글을 더 보고 싶지 않나요?")}</p>
-          <p className="mt-1 text-xs opacity-70">{t("차단하면 그 계정의 글과 댓글이 내 화면에서 사라져요. 상대에게는 알리지 않아요.")}</p>
-          <button className={`${card} mt-3 h-11 px-5 text-[15px] font-bold text-primary`}>{t("작성자 차단")}</button>
-        </form>
+        <Card className="border-transparent bg-soft/60">
+          <form action={blockAuthor}>
+            {post && <input type="hidden" name="post" value={post} />}
+            {comment && <input type="hidden" name="comment" value={comment} />}
+            <p className="font-bold">{t("이 계정의 글을 더 보고 싶지 않나요?")}</p>
+            <p className="mt-1 text-xs text-[var(--color-text-secondary)]">{t("차단하면 그 계정의 글과 댓글이 내 화면에서 사라져요. 상대에게는 알리지 않아요.")}</p>
+            <Button type="submit" variant="destructive" size="lg" label={t("작성자 차단")} className="mt-3" />
+          </form>
+        </Card>
       </div>
     </div>
   );

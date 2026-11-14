@@ -1,3 +1,5 @@
+import { Card } from "@astryxdesign/core/Card";
+import { Skeleton } from "@astryxdesign/core/Skeleton";
 import { getT } from "@/lib/auth";
 
 /** Shown at once while a page's data loads, so a tap never looks ignored. */
@@ -8,16 +10,16 @@ export default async function Loading() {
       <p role="status" className="sr-only">
         {t("불러오는 중…")}
       </p>
-      <div className="h-36 animate-pulse rounded-3xl bg-ink/[.06]" />
+      <Skeleton height={144} radius={4} />
       {[0, 1, 2].map((i) => (
-        <div key={i} className="space-y-3 rounded-2xl bg-white p-5 ring-1 ring-ink/[.05]">
+        <Card key={i} className="space-y-3">
           <div className="flex items-center gap-3">
-            <div className="size-10 animate-pulse rounded-full bg-ink/[.07]" />
-            <div className="h-3 w-40 animate-pulse rounded-full bg-ink/[.07]" />
+            <Skeleton width={40} height={40} radius="rounded" index={i} />
+            <Skeleton width={160} height={12} radius="rounded" index={i} />
           </div>
-          <div className="h-4 w-3/4 animate-pulse rounded-full bg-ink/[.07]" />
-          <div className="h-3 w-full animate-pulse rounded-full bg-ink/[.05]" />
-        </div>
+          <Skeleton width="75%" height={16} radius="rounded" index={i} />
+          <Skeleton height={12} radius="rounded" index={i} />
+        </Card>
       ))}
     </div>
   );

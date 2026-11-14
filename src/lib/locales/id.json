@@ -1,6 +1,8 @@
 {
   "화면 언어 바꾸기": "Ubah bahasa antarmuka",
   "주요 메뉴": "Menu utama",
+  "상단 메뉴": "Bilah atas",
+  "검색어를 입력하세요": "Cari postingan",
   "한강": "Sungai Han",
   "더 보기": "Lainnya",
   "한국어와 영어 밖의 언어는 기계 번역이라 어색한 문장이 있을 수 있어요. 검수하고 있어요.": "Bahasa selain Korea dan Inggris adalah terjemahan mesin, jadi mungkin ada kalimat yang janggal. Kami sedang memeriksanya.",
@@ -240,7 +242,6 @@
   "정부가 여러 언어로 운영하는 한국 소개·뉴스 포털.": "Portal pemerintah tentang Korea dalam banyak bahasa.",
   "주민센터 서류 발급 같은 행정 서비스. 외국인등록번호로 이용.": "Dokumen dan layanan pemerintahan daring memakai nomor registrasi orang asing.",
   "재난 문자와 대피소 안내를 여러 언어로 받는 정부 앱.": "Aplikasi pemerintah untuk peringatan bencana dan info tempat evakuasi dalam banyak bahasa.",
-  "본문으로 건너뛰기": "Lewati ke konten",
   "국적 하나만 공개돼요. 이메일은 비공개.": "Hanya kewarganegaraan yang terlihat. Email tetap rahasia.",
   "{hello}, 이웃님": "{hello}, tetangga",
   "오늘 새 글 {today}개 · 답변을 기다리는 질문 {waiting}개": "{today} postingan baru hari ini · {waiting} pertanyaan menunggu jawaban",

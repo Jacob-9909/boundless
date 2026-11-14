@@ -1,5 +1,6 @@
-import Link from "next/link";
+import { Button } from "@astryxdesign/core/Button";
 import { AvatarBuilder } from "@/components/AvatarBuilder";
+import { Icon } from "@/components/Icon";
 import { BackLink, PageHead, SignInRequired } from "@/components/ui";
 import { getT, getUser } from "@/lib/auth";
 import { parseLook } from "@/lib/avatar";
@@ -24,9 +25,7 @@ export default async function AvatarPage(props: PageProps<"/settings/avatar">) {
         desc={t("사람이나 동물 캐릭터를 골라요. 사람은 사진으로 피부색과 머리색을 채울 수도 있어요.")}
       >
         {welcome && (
-          <Link href={next} className="mt-3 inline-flex h-9 items-center rounded-full bg-white/80 px-4 text-sm font-bold text-primary ring-1 ring-ink/10 hover:bg-white">
-            {t("나중에 할게요")} <span aria-hidden="true">›</span>
-          </Link>
+          <Button href={next} label={t("나중에 할게요")} variant="secondary" endContent={<Icon name="next" size={16} />} className="mt-3" />
         )}
       </PageHead>
       <AvatarBuilder initial={parseLook(user.avatar)} shown={user.avatar_public} soft={cultureOf(user.nationality).c.soft} doneHref={welcome ? next : undefined} />

@@ -3,23 +3,38 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState } from "react";
+import { Banner } from "@astryxdesign/core/Banner";
+import { Button } from "@astryxdesign/core/Button";
+import { Card } from "@astryxdesign/core/Card";
+import { CheckboxInput } from "@astryxdesign/core/CheckboxInput";
+import { DateInput, type DateInputProps } from "@astryxdesign/core/DateInput";
+import { InputGroup, InputGroupText } from "@astryxdesign/core/InputGroup";
+import { RadioList, RadioListItem } from "@astryxdesign/core/RadioList";
+import { TextArea } from "@astryxdesign/core/TextArea";
+import { TextInput } from "@astryxdesign/core/TextInput";
 import { aiCheckDraft, appeal, countView, reportContent, similarPosts, updateNationality, type PostState, type Result } from "@/app/actions";
 import type { DraftCheck } from "@/lib/ai";
 import { boardOf, type Board } from "@/lib/boards";
 import { REGIONS, REPORT_REASONS, VISAS } from "@/lib/i18n";
 import { findPII } from "@/lib/pii";
+import { keepValues, SelectField, TextAreaField, TextField } from "./fields";
 import { Icon } from "./Icon";
 import { useT } from "./I18n";
-import { Flag, btn, btnGhost, field, labelCls } from "./ui";
+import { Flag } from "./ui";
+
+/**
+ * Astryx inputs type only their own props but pass the rest to the native element, so the browser still checks
+ * these before submit, as it did with plain inputs. (TextArea's own maxLength is a soft limit with a counter.)
+ */
+const native = (a: { required?: boolean; minLength?: number; maxLength?: number }) => a;
+
+/** Legend for the photo group, matching Astryx field labels. */
+const legend = "mb-1 block font-medium text-[var(--color-text-secondary)]";
 
 function ErrorLine({ error }: { error?: string }) {
   const t = useT();
   if (!error) return null;
-  return (
-    <p role="alert" className="flex items-center gap-2 rounded-xl bg-red-50 px-3.5 py-2.5 text-sm font-semibold text-red-800">
-      {t(error)}
-    </p>
-  );
+  return <Banner role="alert" status="error" title={t(error)} />;
 }
 
 const counted = new Set<string>();
@@ -59,7 +74,11 @@ async function shrink(file: File) {
   return file;
 }
 
-/** Up to four photos: existing ones (edit) can be unticked, new ones are shrunk in the browser before upload. */
+/**
+ * Up to four photos: existing ones (edit) can be unticked, new ones are shrunk in the browser before upload.
+ * ponytail: the native file input stays (hidden) because the shrunk files are written back into it; Astryx FileInput
+ * only hands File objects to state and would need the same hidden input anyway.
+ */
 function PhotoPicker({ existing = [], reset }: { existing?: { id: string }[]; reset: unknown }) {
   const t = useT();
   const input = useRef<HTMLInputElement>(null);
@@ -97,27 +116,32 @@ function PhotoPicker({ existing = [], reset }: { existing?: { id: string }[]; re
       setBusy(false);
     }
   };
-  const thumb = "relative size-20 overflow-hidden rounded-xl bg-ink/5 ring-1 ring-ink/10";
+  const thumb = "relative size-20 overflow-hidden rounded-[var(--radius-element)] bg-ink/5 ring-1 ring-ink/10";
   return (
     <fieldset>
-      <legend className={labelCls}>{t("사진 (선택, 4장까지)")}</legend>
+      <legend className={legend}>{t("사진 (선택, 4장까지)")}</legend>
       <div className="flex flex-wrap items-center gap-2">
         {existing.map((im) => {
           const off = drop.includes(im.id);
+          const id = `drop-${im.id}`;
           return (
-            <label key={im.id} className={`${thumb} cursor-pointer ${off ? "opacity-40" : ""}`} title={t("빼기")}>
-              {/* eslint-disable-next-line @next/next/no-img-element -- already-uploaded photo served by /api/img */}
-              <img src={`/api/img/${im.id}`} alt="" className="size-full object-cover" />
-              <input
-                type="checkbox"
-                name="drop_image"
-                value={im.id}
-                checked={off}
-                onChange={() => setDrop((d) => (off ? d.filter((x) => x !== im.id) : [...d, im.id]))}
-                className="absolute top-1 right-1 size-5 accent-red-700"
-                aria-label={t("이 사진 빼기")}
-              />
-            </label>
+            <span key={im.id} className={`${thumb} ${off ? "opacity-40" : ""}`} title={t("빼기")}>
+              {/* The photo itself toggles the checkbox too, as before. */}
+              <label htmlFor={id} className="block size-full cursor-pointer">
+                {/* eslint-disable-next-line @next/next/no-img-element -- already-uploaded photo served by /api/img */}
+                <img src={`/api/img/${im.id}`} alt="" className="size-full object-cover" />
+              </label>
+              <span className="absolute top-1 right-1 flex rounded-md bg-white/90 p-0.5">
+                <CheckboxInput
+                  id={id}
+                  label={t("이 사진 빼기")}
+                  isLabelHidden
+                  value={off}
+                  onChange={() => setDrop((d) => (off ? d.filter((x) => x !== im.id) : [...d, im.id]))}
+                />
+              </span>
+              {off && <input type="hidden" name="drop_image" value={im.id} />}
+            </span>
           );
         })}
         {previews.map((u) => (
@@ -126,19 +150,21 @@ function PhotoPicker({ existing = [], reset }: { existing?: { id: string }[]; re
             <img src={u} alt="" className="size-full object-cover" />
           </span>
         ))}
-        <label className={`${btnGhost} h-20 cursor-pointer flex-col gap-0.5 px-4 text-xs has-[:focus-visible]:ring-4 ${room <= 0 ? "pointer-events-none opacity-40" : ""}`}>
-          <Icon name="image" size={20} />
-          {busy ? t("줄이는 중…") : previews.length ? t("다시 고르기") : t("사진 추가")}
-          <input ref={input} type="file" name="images" accept="image/*" multiple disabled={room <= 0} onChange={(e) => pick(e.target.files)} className="sr-only" />
-        </label>
+        <Button
+          label={busy ? t("줄이는 중…") : previews.length ? t("다시 고르기") : t("사진 추가")}
+          icon={<Icon name="image" size={18} />}
+          isLoading={busy}
+          isDisabled={room <= 0}
+          onClick={() => input.current?.click()}
+        />
+        <input ref={input} type="file" name="images" accept="image/*" multiple disabled={room <= 0} onChange={(e) => pick(e.target.files)} hidden />
       </div>
       {note && <p className="mt-1 text-xs font-semibold text-red-700">{note}</p>}
-      <p className="mt-1 text-xs opacity-70">{t("얼굴, 외국인등록증, 집 주소가 보이는 사진은 올리지 마세요.")}</p>
+      <p className="mt-1 text-xs text-[var(--color-text-secondary)]">{t("얼굴, 외국인등록증, 집 주소가 보이는 사진은 올리지 마세요.")}</p>
     </fieldset>
   );
 }
 
-/** New post and edit share this form; the server action decides which. Fields adapt to the board. */
 /** Before posting: the AI suggests a board or a clearer title, asks for missing details, warns about privacy. */
 function AiCheck({
   board,
@@ -179,47 +205,51 @@ function AiCheck({
   const clean = c && !board2 && !c.title && !c.missing.length && !c.privacy.length;
   const box = "mt-3 text-sm [overflow-wrap:anywhere]";
   return (
-    <div className="rounded-2xl border border-violet-200 bg-violet-50/60 p-4 text-violet-950">
-      <button
-        type="button"
+    // Violet marks the AI: the one part of the form that is not the member's own culture color.
+    <div className="rounded-[var(--radius-container)] border border-violet-200 bg-violet-50/60 p-4 text-violet-950">
+      <Button
+        label={busy ? t("점검하는 중…") : t("AI로 질문 점검하기")}
+        icon={<Icon name="sparkles" size={16} />}
+        isLoading={busy}
         onClick={run}
-        disabled={busy}
-        className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-white px-4 text-sm font-bold text-violet-800 ring-1 ring-violet-300 hover:ring-violet-500 disabled:opacity-60"
-      >
-        <Icon name="sparkles" size={16} />
-        {busy ? t("점검하는 중…") : t("AI로 질문 점검하기")}
-      </button>
+        className="text-violet-800"
+      />
       <p className="mt-2 text-xs opacity-75">{t("AI 점검은 글을 NVIDIA AI로 보내요. 전화번호·등록번호·이메일은 지우고 보내요.")}</p>
       <div aria-live="polite">
-        {res?.error && <p className={`${box} font-bold text-red-700`}>{t(res.error)}</p>}
-        {clean && <p className={`${box} font-bold`}>{t("좋아요. 이대로 올려도 충분해요.")}</p>}
+        {res?.error && (
+          <div className={box}>
+            <Banner status="error" title={t(res.error)} />
+          </div>
+        )}
+        {clean && (
+          <div className={box}>
+            <Banner status="success" title={t("좋아요. 이대로 올려도 충분해요.")} />
+          </div>
+        )}
         {c && c.privacy.length > 0 && (
-          <div className={`${box} rounded-xl bg-red-50 p-3 text-red-900`}>
-            <p className="font-bold">{t("올리기 전에 확인해 주세요")}</p>
-            <ul className="mt-1 list-disc space-y-0.5 pl-5">
-              {c.privacy.map((x, i) => (
-                <li key={i}>{x}</li>
-              ))}
-            </ul>
+          <div className={box}>
+            <Banner status="error" title={t("올리기 전에 확인해 주세요")} collapsible={false}>
+              <ul className="list-disc space-y-0.5 pl-5">
+                {c.privacy.map((x, i) => (
+                  <li key={i}>{x}</li>
+                ))}
+              </ul>
+            </Banner>
           </div>
         )}
         {board2 && (
-          <p className={`${box} flex flex-wrap items-center gap-2`}>
+          <div className={`${box} flex flex-wrap items-center gap-2`}>
             {t("이 내용은 {board} 게시판에 더 잘 맞아요.", { board: t(boardOf(board2).ko) })}
-            <button type="button" onClick={() => move(board2)} className="h-9 rounded-lg bg-white px-3 font-bold text-primary ring-1 ring-ink/15">
-              {t("옮기기")}
-            </button>
-          </p>
+            <Button label={t("옮기기")} icon={<Icon name={boardOf(board2).icon} size={16} />} onClick={() => move(board2)} />
+          </div>
         )}
         {c?.title && (
           <div className={box}>
             <p className="font-bold">{t("제목 제안")}</p>
-            <p className="mt-1 flex flex-wrap items-center gap-2">
-              <span className="rounded-lg bg-white px-2.5 py-1.5 ring-1 ring-violet-200">{c.title}</span>
-              <button type="button" onClick={() => setTitle(c.title!)} className="h-9 rounded-lg px-3 font-bold text-primary hover:bg-white">
-                {t("이 제목 쓰기")}
-              </button>
-            </p>
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <span className="rounded-[var(--radius-inner)] bg-[var(--color-background-card)] px-2.5 py-1.5 ring-1 ring-violet-200">{c.title}</span>
+              <Button label={t("이 제목 쓰기")} variant="ghost" onClick={() => setTitle(c.title!)} />
+            </div>
           </div>
         )}
         {c && c.missing.length > 0 && (
@@ -237,6 +267,9 @@ function AiCheck({
   );
 }
 
+type Day = DateInputProps["value"];
+
+/** New post and edit share this form; the server action decides which. Fields adapt to the board. */
 export function WriteForm({
   action: serverAction,
   submitLabel,
@@ -266,16 +299,19 @@ export function WriteForm({
 }) {
   const t = useT();
   const [state, action, pending] = useActionState(serverAction, {});
-  const [pii, setPii] = useState<string[]>([]);
+  // Astryx inputs are controlled, so they keep what was typed through the form reset after a rejected submit.
   const v: Record<string, string> = state.values ?? initial;
   const [tagId, setTagId] = useState(v.kind || board.tags[0].id);
-  const [len, setLen] = useState((v.body ?? "").length);
-  const form = useRef<HTMLFormElement>(null);
+  const [title, setTitle] = useState(v.title ?? "");
+  const [body, setBody] = useState(v.body ?? "");
+  const [startsOn, setStartsOn] = useState(v.starts_on ?? "");
+  const [endsOn, setEndsOn] = useState(v.ends_on ?? "");
   const [restored, setRestored] = useState(false);
   const [similar, setSimilar] = useState<Awaited<ReturnType<typeof similarPosts>>>([]);
   const lookup = useRef<ReturnType<typeof setTimeout>>(undefined);
   const askVisa = space === "global" && board.group === "life";
   const storeKey = draftKey && `draft:${draftKey}`;
+  const pii = findPII(`${title}\n${body}`);
   // New posts only: while the title is typed, show up to 3 posts with similar titles so the answer may already exist.
   const findSimilar = (title: string) => {
     if (!draftKey) return;
@@ -285,31 +321,25 @@ export function WriteForm({
       similarPosts(board.id, space === "lounge", title).then(setSimilar, () => setSimilar([]));
     }, 400);
   };
-  const fields = () => {
-    const f = form.current?.elements;
-    return { title: f?.namedItem("title") as HTMLInputElement | null, body: f?.namedItem("body") as HTMLTextAreaElement | null };
-  };
-  // Bring back a draft left on this device (closed tab, lost connection), unless the form already has text.
+  // Bring back a draft left on this device (closed tab, lost connection). A new post's form opens with no body.
   useEffect(() => {
     if (!storeKey) return;
     let d: { title?: string; body?: string } | null = null;
     try {
       d = JSON.parse(localStorage.getItem(storeKey) ?? "null");
     } catch {}
-    const { title, body } = fields();
-    if (!d?.body || !title || !body || body.value) return;
-    if (!title.value) title.value = d.title ?? "";
-    body.value = d.body;
+    const draft = d;
+    if (!draft?.body) return;
     queueMicrotask(() => {
-      setLen(d.body?.length ?? 0);
+      setTitle((x) => x || (draft.title ?? ""));
+      setBody(draft.body ?? "");
       setRestored(true);
     });
   }, [storeKey]);
-  const saveDraft = () => {
-    const { title, body } = fields();
-    if (!storeKey || !title || !body) return;
+  const saveDraft = (d: { title: string; body: string }) => {
+    if (!storeKey) return;
     try {
-      localStorage.setItem(storeKey, JSON.stringify({ title: title.value, body: body.value }));
+      localStorage.setItem(storeKey, JSON.stringify(d));
     } catch {}
   };
   const dropDraft = () => {
@@ -320,172 +350,136 @@ export function WriteForm({
   };
   return (
     <form
-      ref={form}
       action={action}
-      onInput={() => {
-        saveDraft();
-        const { title, body } = fields();
-        setPii(findPII(`${title?.value ?? ""}\n${body?.value ?? ""}`));
+      onSubmit={(e) => {
+        dropDraft();
+        keepValues(action)(e);
       }}
-      onSubmit={dropDraft}
       className="space-y-5 px-4 py-4 md:px-4"
     >
       <input type="hidden" name="board" value={board.id} />
       {restored && (
-        <p role="status" className="flex flex-wrap items-center gap-x-2 rounded-xl bg-soft/70 px-3.5 py-2 text-sm">
-          {t("이 기기에 임시 저장한 글을 불러왔어요.")}
-          <button
-            type="button"
-            onClick={() => {
-              const { title, body } = fields();
-              if (title) title.value = "";
-              if (body) body.value = "";
-              setLen(0);
-              setRestored(false);
-              dropDraft();
-            }}
-            className="inline-flex h-8 items-center font-bold text-primary underline"
-          >
-            {t("지우고 새로 쓰기")}
-          </button>
-        </p>
+        <Banner
+          role="status"
+          status="info"
+          title={t("이 기기에 임시 저장한 글을 불러왔어요.")}
+          endContent={
+            <Button
+              label={t("지우고 새로 쓰기")}
+              variant="ghost"
+              onClick={() => {
+                setTitle("");
+                setBody("");
+                setRestored(false);
+                dropDraft();
+              }}
+            />
+          }
+        />
       )}
       <input type="hidden" name="space" value={space} />
 
-      <div className="flex items-center gap-3 rounded-2xl bg-white p-3 ring-1 ring-ink/[.07]">
-        <span className="flex size-11 shrink-0 items-center justify-center rounded-xl text-white" style={{ background: board.color }}>
-          <Icon name={board.icon} size={22} />
-        </span>
-        <div className="min-w-0 flex-1">
-          <h1 className="font-bold">{space === "lounge" ? t("{country} 라운지", { country: countryLabel }) : t(board.ko)}</h1>
-          <p className="truncate text-xs opacity-70">{t(board.desc)}</p>
+      <Card padding={3}>
+        <div className="flex items-center gap-3">
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-[var(--radius-element)] text-white" style={{ background: board.color }}>
+            <Icon name={board.icon} size={22} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <h1 className="font-bold">{space === "lounge" ? t("{country} 라운지", { country: countryLabel }) : t(board.ko)}</h1>
+            <p className="truncate text-xs text-[var(--color-text-secondary)]">{t(board.desc)}</p>
+          </div>
+          {changeHref && <Button href={changeHref} label={t("게시판 바꾸기")} variant="ghost" className="shrink-0" />}
         </div>
-        {changeHref && (
-          <Link href={changeHref} className="inline-flex h-9 shrink-0 items-center rounded-lg px-2 text-xs font-bold whitespace-nowrap text-primary hover:bg-soft">
-            {t("게시판 바꾸기")}
-          </Link>
-        )}
-      </div>
+      </Card>
 
-      <fieldset>
-        <legend className={labelCls}>{t("말머리")}</legend>
-        <div className="flex flex-wrap gap-2">
-          {board.tags.map((tg) => (
-            <label
-              key={tg.id}
-              className={`inline-flex h-10 cursor-pointer items-center rounded-full px-4 text-sm font-bold whitespace-nowrap ring-1 transition has-[:focus-visible]:ring-4 ${tagId === tg.id ? "bg-primary text-paper ring-primary" : "bg-white ring-ink/15 hover:ring-ink/30"}`}
-            >
-              <input type="radio" name="kind" value={tg.id} checked={tagId === tg.id} onChange={() => setTagId(tg.id)} className="sr-only" />
-              {t(tg.ko)}
-            </label>
-          ))}
-        </div>
-      </fieldset>
+      {/* Radios that wrap: a SegmentedControl cut longer translations ("Cần lời khuy…") on phones. */}
+      <RadioList label={t("말머리")} htmlName="kind" value={tagId} onChange={setTagId} orientation="horizontal">
+        {board.tags.map((tg) => (
+          <RadioListItem key={tg.id} value={tg.id} label={t(tg.ko)} />
+        ))}
+      </RadioList>
 
       <div>
-        <label htmlFor="title" className={labelCls}>
-          {t("제목")}
-        </label>
-        <input
-          id="title"
-          name="title"
-          required
-          minLength={2}
-          maxLength={120}
-          defaultValue={v.title}
+        <TextInput
+          label={t("제목")}
+          htmlName="title"
+          value={title}
+          onChange={(x) => {
+            setTitle(x);
+            saveDraft({ title: x, body });
+            findSimilar(x);
+          }}
           placeholder={t(board.titleHint)}
-          onChange={(e) => findSimilar(e.target.value)}
-          className={field}
+          width="100%"
+          {...native({ required: true, minLength: 2, maxLength: 120 })}
         />
         {similar.length > 0 && (
-          <div role="status" className="mt-2 rounded-xl bg-soft/70 px-3.5 py-2.5 text-sm">
-            <p className="font-bold">{t("비슷한 글이 있어요. 먼저 읽어 보세요.")}</p>
-            <ul className="mt-1 space-y-1">
+          <Banner role="status" status="info" title={t("비슷한 글이 있어요. 먼저 읽어 보세요.")} collapsible={false} className="mt-2">
+            <ul className="space-y-1 text-sm">
               {similar.map((p) => (
                 <li key={p.id}>
                   <Link href={`/posts/${p.id}`} className="text-primary underline">
                     {p.title}
                   </Link>{" "}
-                  <span className="text-xs opacity-70">
-                    {p.solved ? t("해결됨") : t("댓글 {n}", { n: p.comments })}
-                  </span>
+                  <span className="text-xs text-[var(--color-text-secondary)]">{p.solved ? t("해결됨") : t("댓글 {n}", { n: p.comments })}</span>
                 </li>
               ))}
             </ul>
-          </div>
+          </Banner>
         )}
       </div>
 
       {board.extra === "market" && (
         <div className="grid gap-3 sm:grid-cols-2">
           {tagId !== "free" && (
-            <div>
-              <label htmlFor="price" className={labelCls}>
-                {t("가격")}
-              </label>
-              <div className="relative">
-                <input id="price" name="price" inputMode="numeric" required defaultValue={v.price} placeholder="30000" className={`${field} pr-10`} />
-                <span className="absolute top-1/2 right-3.5 -translate-y-1/2 text-sm opacity-70">{t("원")}</span>
-              </div>
-            </div>
+            <InputGroup label={t("가격")}>
+              {/* Read with the group label: "가격 원". */}
+              <TextField name="price" label={t("원")} inputMode="numeric" defaultValue={v.price} placeholder="30000" {...native({ required: true })} />
+              <InputGroupText>{t("원")}</InputGroupText>
+            </InputGroup>
           )}
-          <div>
-            <label htmlFor="place" className={labelCls}>
-              {t("거래 희망 동네")}
-            </label>
-            <input id="place" name="place" maxLength={80} defaultValue={v.place} placeholder={t("예: 마포구 합정역")} className={field} />
-          </div>
+          <TextField name="place" label={t("거래 희망 동네")} defaultValue={v.place} placeholder={t("예: 마포구 합정역")} width="100%" {...native({ maxLength: 80 })} />
         </div>
       )}
 
       {board.extra === "event" && (
         <div className="grid gap-3 sm:grid-cols-3">
+          {/* The browser's own date picker, as before: it speaks the member's language. The value posts as YYYY-MM-DD. */}
           <div>
-            <label htmlFor="starts_on" className={labelCls}>
-              {t("시작일")}
-            </label>
-            <input id="starts_on" name="starts_on" type="date" defaultValue={v.starts_on} className={field} />
+            <DateInput label={t("시작일")} value={(startsOn || undefined) as Day} onChange={(x) => setStartsOn(x ?? "")} presentation="native" format="system_date" placeholder="YYYY-MM-DD" hasClear width="100%" />
+            <input type="hidden" name="starts_on" value={startsOn} />
           </div>
           <div>
-            <label htmlFor="ends_on" className={labelCls}>
-              {t("종료일")}
-            </label>
-            <input id="ends_on" name="ends_on" type="date" defaultValue={v.ends_on} className={field} />
+            <DateInput label={t("종료일")} value={(endsOn || undefined) as Day} onChange={(x) => setEndsOn(x ?? "")} presentation="native" format="system_date" placeholder="YYYY-MM-DD" hasClear width="100%" />
+            <input type="hidden" name="ends_on" value={endsOn} />
           </div>
-          <div>
-            <label htmlFor="place" className={labelCls}>
-              {t("장소")}
-            </label>
-            <input id="place" name="place" maxLength={80} defaultValue={v.place} placeholder={t("예: 성수동")} className={field} />
-          </div>
+          <TextField name="place" label={t("장소")} defaultValue={v.place} placeholder={t("예: 성수동")} width="100%" {...native({ maxLength: 80 })} />
         </div>
       )}
 
       <div>
-        <label htmlFor="body" className={labelCls}>
-          {t("본문")}
-        </label>
-        <textarea
-          id="body"
-          name="body"
-          required
-          minLength={2}
-          maxLength={5000}
+        <TextArea
+          label={t("본문")}
+          description={t("이름, 연락처, 상세 주소는 적지 마세요.")}
+          htmlName="body"
+          value={body}
+          onChange={(x) => {
+            setBody(x);
+            saveDraft({ title, body: x });
+          }}
           rows={9}
-          defaultValue={v.body}
+          maxLength={5000}
           placeholder={t(board.bodyHint)}
-          onChange={(e) => setLen(e.target.value.length)}
-          className={field}
+          width="100%"
+          {...native({ required: true, minLength: 2 })}
         />
-        <p className="mt-1 flex justify-between text-xs opacity-70">
-          <span>{t("이름, 연락처, 상세 주소는 적지 마세요.")}</span>
-          <span className="tabular-nums">{len} / 5000</span>
-        </p>
         {pii.length > 0 && (
-          <p role="alert" className="mt-2 flex items-start gap-1.5 rounded-xl bg-red-50 px-3 py-2 text-sm font-bold text-red-800">
-            <Icon name="alert" size={16} className="mt-0.5" />
-            {t("개인정보가 보여요: {kinds}. 올리기 전에 지워 주세요.", { kinds: pii.map((k) => t(k)).join(", ") })}
-          </p>
+          <Banner
+            role="alert"
+            status="error"
+            title={t("개인정보가 보여요: {kinds}. 올리기 전에 지워 주세요.", { kinds: pii.map((k) => t(k)).join(", ") })}
+            className="mt-2"
+          />
         )}
       </div>
 
@@ -494,103 +488,88 @@ export function WriteForm({
           board={board}
           space={space}
           canMove={Boolean(storeKey)}
-          read={() => {
-            const { title, body } = fields();
-            return { title: title?.value ?? "", body: body?.value ?? "" };
-          }}
-          setTitle={(v) => {
-            const { title } = fields();
-            if (title) title.value = v;
-            saveDraft();
+          read={() => ({ title, body })}
+          setTitle={(x) => {
+            setTitle(x);
+            saveDraft({ title: x, body });
           }}
         />
       )}
 
       <PhotoPicker existing={images} reset={state} />
 
-      <details className="rounded-2xl bg-white p-4 ring-1 ring-ink/[.07]" open={!!state.error}>
+      <details className="rounded-[var(--radius-container)] border border-[var(--color-border)] bg-[var(--color-background-card)] p-4" open={!!state.error}>
         <summary className="-my-1 cursor-pointer py-2 text-sm font-bold">{askVisa ? t("지역 · 체류자격 · 원문 언어") : t("지역 · 원문 언어")}</summary>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           {askVisa && (
             <div className="sm:col-span-2">
-              <label htmlFor="visa" className={labelCls}>
-                {t("체류자격 (선택)")}
-              </label>
-              <select id="visa" name="visa" defaultValue={v.visa ?? ""} className={field}>
-                <option value="">{t("밝히지 않음")}</option>
-                {VISAS.map((x) => (
-                  <option key={x.id} value={x.id}>
-                    {t(x.ko)}
-                  </option>
-                ))}
-              </select>
-              <p className="mt-1 text-xs opacity-70">{t("체류자격에 따라 답이 달라지는 질문에만 골라 주세요. 국적·지역과 함께 보이니 꼭 필요할 때만 밝혀요.")}</p>
+              <SelectField
+                name="visa"
+                label={t("체류자격 (선택)")}
+                description={t("체류자격에 따라 답이 달라지는 질문에만 골라 주세요. 국적·지역과 함께 보이니 꼭 필요할 때만 밝혀요.")}
+                defaultValue={v.visa ?? ""}
+                options={[{ value: "", label: t("밝히지 않음") }, ...VISAS.map((x) => ({ value: x.id, label: t(x.ko) }))]}
+                width="100%"
+              />
             </div>
           )}
-          <div>
-            <label htmlFor="region" className={labelCls}>
-              {t("지역")}
-            </label>
-            <select id="region" name="region" defaultValue={v.region ?? ""} className={field}>
-              <option value="">{t("지역 무관")}</option>
-              {REGIONS.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {t(r.ko)}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="lang" className={labelCls}>
-              {t("원문 언어")}
-            </label>
-            <select id="lang" name="lang" required defaultValue={v.lang} className={field}>
-              {/* Names come from the server: Node and browser ICU data can disagree and break hydration. */}
-              {langs.map((l) => (
-                <option key={l.code} value={l.code}>
-                  {l.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <SelectField
+            name="region"
+            label={t("지역")}
+            defaultValue={v.region ?? ""}
+            options={[{ value: "", label: t("지역 무관") }, ...REGIONS.map((r) => ({ value: r.id, label: t(r.ko) }))]}
+            width="100%"
+          />
+          {/* Names come from the server: Node and browser ICU data can disagree and break hydration. */}
+          <SelectField name="lang" label={t("원문 언어")} defaultValue={v.lang} options={langs.map((l) => ({ value: l.code, label: l.name }))} width="100%" />
         </div>
       </details>
 
-      <p className="flex flex-wrap items-center gap-1.5 text-xs opacity-70">
+      <p className="flex flex-wrap items-center gap-1.5 text-xs text-[var(--color-text-secondary)]">
         <Icon name="lock" size={13} />
         {t("공개")}: <Flag code={nationality} h={11} /> {countryLabel} · {t("글쓴이")} — {t("이메일은 공개되지 않아요.")}
       </p>
       <ErrorLine error={state.error} />
-      <button disabled={pending} className={`${btn} w-full`}>
-        {pending ? t("올리는 중…") : submitLabel}
-      </button>
+      <Button type="submit" variant="primary" size="lg" width="100%" label={pending ? t("올리는 중…") : submitLabel} isLoading={pending} />
     </form>
   );
 }
 
 export function CommentForm({ action: serverAction, parent }: { action: (s: Result, f: FormData) => Promise<Result>; parent?: string }) {
   const t = useT();
-  const [state, action, pending] = useActionState(serverAction, {});
-  const id = parent ? `reply-${parent}` : "comment";
+  const [body, setBody] = useState("");
+  // The box empties as soon as the comment is sent, and a rejected comment comes back so it can be fixed.
+  // Clearing after the reply instead wiped whatever was typed next: the action settles after the refreshed
+  // thread is already on screen.
+  const [state, action, pending] = useActionState(async (s: Result, f: FormData) => {
+    const r = await serverAction(s, f);
+    if (r.error) setBody((cur) => cur || String(f.get("body") ?? ""));
+    return r;
+  }, {});
   return (
-    <form action={action} className="space-y-2">
+    <form
+      action={action}
+      onSubmit={(e) => {
+        keepValues(action)(e);
+        setBody("");
+      }}
+      className="space-y-2"
+    >
       {parent && <input type="hidden" name="parent" value={parent} />}
-      <label htmlFor={id} className="sr-only">
-        {parent ? t("답글") : t("댓글")}
-      </label>
-      <textarea
-        id={id}
-        name="body"
-        required
+      <TextArea
+        label={parent ? t("답글") : t("댓글")}
+        isLabelHidden
+        htmlName="body"
+        value={body}
+        onChange={setBody}
         maxLength={2000}
         rows={parent ? 2 : 3}
         placeholder={parent ? t("이 댓글에 답글 달기") : t("겪어 본 상황과 조건을 함께 적어 주면 더 도움이 돼요.")}
-        className={field}
+        width="100%"
+        {...native({ required: true })}
       />
       <ErrorLine error={state.error} />
-      <button disabled={pending} className={btn}>
-        {pending ? t("등록 중…") : parent ? t("답글 달기") : t("댓글 달기")}
-      </button>
+      <Button type="submit" variant="primary" size="lg" label={pending ? t("등록 중…") : parent ? t("답글 달기") : t("댓글 달기")} isLoading={pending} />
     </form>
   );
 }
@@ -600,53 +579,39 @@ export function ReportForm({ post, comment }: { post?: string; comment?: string 
   const [state, action, pending] = useActionState(reportContent, {});
   if (state.ok) {
     return (
-      <div className="rounded-2xl border-l-4 border-primary bg-soft/60 p-5" role="status">
+      <Card role="status" className="border-l-4 border-l-primary bg-soft/60">
         <p className="font-display text-lg font-bold">{t("신고가 접수됐어요")}</p>
-        <p className="mt-1 text-sm opacity-80">{t("운영자가 확인한 뒤 처리 상태를 알려 드려요.")}</p>
-        <Link href="/settings#reports" className="mt-3 inline-block text-sm font-bold text-primary underline">
-          {t("내 신고 보기")}
-        </Link>
-      </div>
+        <p className="mt-1 text-sm text-[var(--color-text-secondary)]">{t("운영자가 확인한 뒤 처리 상태를 알려 드려요.")}</p>
+        <Button href="/settings#reports" label={t("내 신고 보기")} variant="secondary" className="mt-3" />
+      </Card>
     );
   }
   return (
-    <form action={action} className="space-y-4 rounded-2xl border-l-4 border-red-700 bg-white p-5">
-      {post && <input type="hidden" name="post" value={post} />}
-      {comment && <input type="hidden" name="comment" value={comment} />}
-      <div>
-        <label htmlFor="reason" className={`${labelCls} flex items-center gap-2`}>
-          <span className="flex size-9 items-center justify-center rounded-full bg-red-700 text-white" aria-hidden="true">
+    <Card className="border-l-4 border-l-red-700">
+      <form action={action} onSubmit={keepValues(action)} className="space-y-4">
+        {post && <input type="hidden" name="post" value={post} />}
+        {comment && <input type="hidden" name="comment" value={comment} />}
+        <div className="flex items-end gap-3">
+          <span className="mb-0.5 flex size-10 shrink-0 items-center justify-center rounded-full bg-red-700 text-white" aria-hidden="true">
             <Icon name="siren" size={18} />
           </span>
-          {t("사유")}
-        </label>
-        <select id="reason" name="reason" required defaultValue="" className={field}>
-          <option value="" disabled>
-            {t("사유를 고르세요")}
-          </option>
-          {REPORT_REASONS.map((r) => (
-            <option key={r.id} value={r.id}>
-              {t(r.ko)}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div>
-        <label htmlFor="details" className={labelCls}>
-          {t("자세한 내용 (선택)")}
-        </label>
-        <textarea id="details" name="details" rows={4} maxLength={1000} className={field} />
-      </div>
-      <ErrorLine error={state.error} />
-      <div className="flex gap-2">
-        <button disabled={pending} className={btn}>
-          {t("신고 보내기")}
-        </button>
-        <Link href={post ? `/posts/${post}` : "/feed"} className={btnGhost}>
-          {t("취소")}
-        </Link>
-      </div>
-    </form>
+          {/* No preselected reason: the server asks for one if it is left empty. */}
+          <SelectField
+            name="reason"
+            label={t("사유")}
+            placeholder={t("사유를 고르세요")}
+            options={REPORT_REASONS.map((r) => ({ value: r.id, label: t(r.ko) }))}
+            width="100%"
+          />
+        </div>
+        <TextAreaField name="details" label={t("자세한 내용 (선택)")} rows={4} maxLength={1000} width="100%" />
+        <ErrorLine error={state.error} />
+        <div className="flex flex-wrap gap-2">
+          <Button type="submit" variant="primary" size="lg" label={t("신고 보내기")} isLoading={pending} />
+          <Button href={post ? `/posts/${post}` : "/feed"} variant="secondary" size="lg" label={t("취소")} />
+        </div>
+      </form>
+    </Card>
   );
 }
 
@@ -654,23 +619,14 @@ export function NationalityForm({ current, countries }: { current: string; count
   const t = useT();
   const [state, action, pending] = useActionState(updateNationality, {});
   return (
-    <form action={action} className="space-y-2">
-      <label htmlFor="nationality" className={labelCls}>
-        {t("공개 국적")}
-      </label>
-      <div className="flex gap-2">
-        <select id="nationality" name="nationality" defaultValue={current} className={field}>
-          {countries.map((c) => (
-            <option key={c.code} value={c.code}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-        <button disabled={pending} className={btnGhost}>
-          {t("저장")}
-        </button>
+    <form action={action} onSubmit={keepValues(action)} className="space-y-2">
+      <div className="flex items-end gap-2">
+        <div className="min-w-0 flex-1">
+          <SelectField name="nationality" label={t("공개 국적")} defaultValue={current} options={countries.map((c) => ({ value: c.code, label: c.name }))} width="100%" />
+        </div>
+        <Button type="submit" variant="secondary" label={t("저장")} isLoading={pending} />
       </div>
-      <p className="text-xs opacity-70">{t("국적은 내 모든 글에 공개되고, 30일에 한 번 바꿀 수 있어요.")}</p>
+      <p className="text-xs text-[var(--color-text-secondary)]">{t("국적은 내 모든 글에 공개되고, 30일에 한 번 바꿀 수 있어요.")}</p>
       <ErrorLine error={state.error} />
       {state.ok && <p className="text-sm font-semibold text-primary">{t("저장했어요.")}</p>}
     </form>
@@ -690,19 +646,21 @@ export function AppealForm({ post, comment, status }: { post?: string; comment?:
     );
   return (
     <details className="mt-2 text-sm not-italic" open={!!state.error}>
-      <summary className="inline-flex h-8 cursor-pointer items-center font-bold text-primary">{t("재심 요청하기")}</summary>
-      <form action={action} className="mt-2 space-y-2">
+      <summary className="inline-flex h-11 cursor-pointer items-center font-bold text-primary">{t("재심 요청하기")}</summary>
+      <form action={action} onSubmit={keepValues(action)} className="mt-2 space-y-2 text-left">
         {post && <input type="hidden" name="post" value={post} />}
         {comment && <input type="hidden" name="comment" value={comment} />}
-        <label htmlFor={`appeal-${post ?? comment}`} className={labelCls}>
-          {t("왜 다시 봐야 하는지 적어 주세요")}
-        </label>
-        <textarea id={`appeal-${post ?? comment}`} name="reason" required minLength={10} maxLength={1000} rows={3} className={field} />
-        <p className="text-xs opacity-70">{t("재심은 글마다 한 번 요청할 수 있어요.")}</p>
+        <TextAreaField
+          name="reason"
+          label={t("왜 다시 봐야 하는지 적어 주세요")}
+          description={t("재심은 글마다 한 번 요청할 수 있어요.")}
+          rows={3}
+          maxLength={1000}
+          width="100%"
+          {...native({ required: true, minLength: 10 })}
+        />
         <ErrorLine error={state.error} />
-        <button disabled={pending} className={`${btn} h-10 text-sm`}>
-          {t("재심 요청 보내기")}
-        </button>
+        <Button type="submit" variant="primary" label={t("재심 요청 보내기")} isLoading={pending} />
       </form>
     </details>
   );
