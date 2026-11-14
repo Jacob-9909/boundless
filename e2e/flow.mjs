@@ -65,8 +65,15 @@ async function signIn(page, email, culture) {
 // Text waits skip hidden copies: while Next streams a page, the same text can briefly exist twice.
 // Astryx Selector is a combobox with a hidden input carrying the value, not a native <select>.
 async function pick(page, label, option) {
-  await page.getByRole("combobox", { name: label }).click();
-  await page.getByRole("option", { name: option }).click();
+  const box = page.getByRole("combobox", { name: label });
+  const opt = page.getByRole("option", { name: option });
+  // A tap before hydration is dropped (cold dev server in CI); open until the option shows.
+  for (let i = 0; !(await opt.isVisible()); i++) {
+    assert.ok(i < 20, `${label} never opened`);
+    await box.click();
+    await page.waitForTimeout(500);
+  }
+  await opt.click();
 }
 
 async function comment(page, text) {
@@ -94,6 +101,7 @@ await a.goto(BASE + "/write");
 // Board tiles are plain links around a card, so a tap works even before the page hydrates (cold dev server in CI).
 await a.locator(`a[href^="/write?board=housing"]`).click();
 await a.waitForURL(/board=housing/);
+await a.waitForLoadState("networkidle");
 let title = `E2E recycling question ${run}`;
 await a.getByLabel("Title").fill(title);
 // A phone number in the text gets a warning while typing (no AI involved), and it goes once removed.
