@@ -1,5 +1,8 @@
-import Link from "next/link";
-import { NationalityChip, Notice, PageHead, PostCard, btn, btnGhost, field, labelCls, BoardBadge, postList } from "@/components/ui";
+import { Button } from "@astryxdesign/core/Button";
+import { MoreButton, PostList } from "@/components/Feed";
+import { SelectField, TextField } from "@/components/fields";
+import { Icon } from "@/components/Icon";
+import { NationalityChip, Notice, PageHead, PostCard, BoardBadge } from "@/components/ui";
 import { getT, getUser } from "@/lib/auth";
 import { track } from "@/lib/db";
 import { BOARDS, isBoard } from "@/lib/boards";
@@ -35,69 +38,35 @@ export default async function SearchPage(props: PageProps<"/search">) {
           <div className="flex items-center gap-2 text-sm">
             <input type="hidden" name="from" value={from} />
             <NationalityChip code={from} lang={lang} prefix={t("이웃의 글")} />
-            <Link href={`/search?${new URLSearchParams({ q: query, board: topic, region, visa })}`} className="text-xs text-primary underline">
-              {t("국적 필터 해제")}
-            </Link>
+            <Button href={`/search?${new URLSearchParams({ q: query, board: topic, region, visa })}`} label={t("국적 필터 해제")} variant="ghost" className="text-primary" />
           </div>
         )}
-        <div>
-          <label htmlFor="q" className={labelCls}>
-            {t("검색어")}
-          </label>
-          <div className="flex gap-2">
-            <input id="q" name="q" defaultValue={query} className={field} />
-            <button className={btn}>{t("검색")}</button>
+        <div className="flex items-end gap-2">
+          <div className="min-w-0 flex-1">
+            <TextField name="q" type="search" label={t("검색어")} defaultValue={query} startIcon="search" size="lg" width="100%" />
           </div>
+          <Button type="submit" label={t("검색")} variant="primary" size="lg" />
         </div>
-        <div>
-          <label htmlFor="board" className={labelCls}>
-            {t("주제")}
-          </label>
-          <select id="board" name="board" defaultValue={topic} className={field}>
-            <option value="">{t("전체 주제")}</option>
-            {BOARDS.map((b) => (
-              <option key={b.id} value={b.id}>
-                {t(b.ko)}
-              </option>
-            ))}
-          </select>
-        </div>
+        <SelectField
+          name="board"
+          label={t("주제")}
+          defaultValue={topic}
+          options={[{ value: "", label: t("전체 주제") }, ...BOARDS.map((b) => ({ value: b.id, label: t(b.ko) }))]}
+          width="100%"
+        />
         <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label htmlFor="region" className={labelCls}>
-              {t("지역")}
-            </label>
-            <select id="region" name="region" defaultValue={region} className={field}>
-              <option value="">{t("전국")}</option>
-              {REGIONS.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {t(r.ko)}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="visa" className={labelCls}>
-              {t("체류자격")}
-            </label>
-            <select id="visa" name="visa" defaultValue={visa} className={field}>
-              <option value="">{t("전체 체류자격")}</option>
-              {VISAS.map((x) => (
-                <option key={x.id} value={x.id}>
-                  {t(x.ko)}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="sort" className={labelCls}>
-              {t("정렬")}
-            </label>
-            <select id="sort" name="sort" defaultValue={sort} className={field}>
-              <option value="new">{t("최신순")}</option>
-              <option value="likes">{t("도움돼요 많은 순")}</option>
-            </select>
-          </div>
+          <SelectField name="region" label={t("지역")} defaultValue={region} options={[{ value: "", label: t("전국") }, ...REGIONS.map((r) => ({ value: r.id, label: t(r.ko) }))]} width="100%" />
+          <SelectField name="visa" label={t("체류자격")} defaultValue={visa} options={[{ value: "", label: t("전체 체류자격") }, ...VISAS.map((x) => ({ value: x.id, label: t(x.ko) }))]} width="100%" />
+          <SelectField
+            name="sort"
+            label={t("정렬")}
+            defaultValue={sort}
+            options={[
+              { value: "new", label: t("최신순") },
+              { value: "likes", label: t("도움돼요 많은 순") },
+            ]}
+            width="100%"
+          />
         </div>
       </form>
 
@@ -116,30 +85,24 @@ export default async function SearchPage(props: PageProps<"/search">) {
           </>
         ) : posts.length ? (
           <>
-            <p className="mb-2 text-sm opacity-70">{posts.length === PAGE ? t("최근 {n}개의 글", { n: PAGE }) : t("{n}개의 글", { n: posts.length })}</p>
-            <ul className={postList}>
+            <p className="mb-2 text-sm text-[var(--color-text-secondary)]">{posts.length === PAGE ? t("최근 {n}개의 글", { n: PAGE }) : t("{n}개의 글", { n: posts.length })}</p>
+            <PostList>
               {posts.map((p) => (
                 <li key={p.id}>
                   <PostCard post={p} lang={lang} t={t} />
                 </li>
               ))}
-            </ul>
-            {posts.length === PAGE && sort === "new" && (
-              <Link href={`/search?${more}`} className={`${btnGhost} mt-4 w-full`}>
-                {t("이전 글 더 보기")}
-              </Link>
-            )}
+            </PostList>
+            {posts.length === PAGE && sort === "new" && <MoreButton href={`/search?${more}`} t={t} />}
           </>
         ) : (
           <Notice label={t("결과 없음")} title={t("검색 결과가 없어요")}>
             <p>{t("검색어를 바꾸거나 주제 필터를 해제해 보세요. 그래도 없다면 직접 물어보세요.")}</p>
-            <Link href={`/write?${new URLSearchParams({ title: query, board: topic })}`} className="mt-3 inline-flex h-10 items-center font-bold text-primary underline">
-              {t("질문 올리기")}
-            </Link>
-            {/* Search only covers posts; someone typing "police" or "112" in a hurry still gets the numbers. */}
-            <Link href="/guide" className="mt-3 ml-4 inline-flex h-10 items-center font-bold text-red-700 underline">
-              112 · 119 · {t("공식 안내")}
-            </Link>
+            <div className="mt-3 flex flex-wrap justify-center gap-2">
+              <Button href={`/write?${new URLSearchParams({ title: query, board: topic })}`} label={t("질문 올리기")} variant="primary" icon={<Icon name="edit" size={16} />} />
+              {/* Search only covers posts; someone typing "police" or "112" in a hurry still gets the numbers. */}
+              <Button href="/guide" label={`112 · 119 · ${t("공식 안내")}`} variant="destructive" icon={<Icon name="phone" size={14} />} />
+            </div>
           </Notice>
         )}
       </div>

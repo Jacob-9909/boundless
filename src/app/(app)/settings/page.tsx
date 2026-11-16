@@ -1,17 +1,26 @@
 import Link from "next/link";
+import { Badge } from "@astryxdesign/core/Badge";
+import { Button } from "@astryxdesign/core/Button";
+import { Card } from "@astryxdesign/core/Card";
+import { Collapsible } from "@astryxdesign/core/Collapsible";
 import { LangMenu } from "@/components/LangMenu";
-import { deleteAccount, setReadLang, setRegion, signOut, unblockAll } from "@/app/actions";
+import { setReadLang, setRegion, signOut, unblockAll } from "@/app/actions";
+import { SelectField } from "@/components/fields";
 import { NationalityForm } from "@/components/forms";
 import { Icon } from "@/components/Icon";
-import { Avatar, PageHead, btn, btnGhost, field } from "@/components/ui";
+import { Avatar, PageHead } from "@/components/ui";
 import { AccountSwitcher } from "@/components/Community";
 import { canViewQueue, demoEnabled, getT, getUser } from "@/lib/auth";
 import { q } from "@/lib/db";
 import { countryName, langName, READ_LANGS, REGIONS, REPORT_REASONS, sortedCountries, timeAgo } from "@/lib/i18n";
+import { DeleteAccount } from "./DeleteAccount";
 
 export const metadata = { title: "Settings" };
 
-const row = "flex min-h-12 items-center justify-between gap-3 border-b border-ink/10 py-3";
+const row = "flex min-h-12 items-center justify-between gap-3 px-4 py-3";
+const linkRow = `${row} font-bold text-primary transition hover:bg-soft/60`;
+// One surface per group, rows split by hairlines, with the member's culture color down the side.
+const group = "mt-2 divide-y divide-[var(--color-border)] overflow-hidden border-l-4 border-l-primary";
 
 export default async function SettingsPage() {
   const [{ lang, t }, user] = await Promise.all([getT(), getUser()]);
@@ -26,15 +35,19 @@ export default async function SettingsPage() {
         q<{ n: number }>("SELECT count(*)::int AS n FROM boundless.blocks WHERE user_id = $1", [user.id]),
       ])
     : [[], [{ n: 0 }]];
-  const status: Record<string, string> = { received: t("접수됨"), actioned: t("조치 완료"), dismissed: t("문제 없음으로 종료") };
+  const status: Record<string, { label: string; variant: "info" | "success" | "neutral" }> = {
+    received: { label: t("접수됨"), variant: "info" },
+    actioned: { label: t("조치 완료"), variant: "success" },
+    dismissed: { label: t("문제 없음으로 종료"), variant: "neutral" },
+  };
   // Phones have no sidebar, so official help and the intro page are linked here, signed in or not.
   // (The phone logo goes to the feed; only the desktop logo opens the intro page.)
   const phoneLinks = (
     <>
-      <Link href="/guide" className={`${row} font-bold text-primary lg:hidden`}>
+      <Link href="/guide" className={`${linkRow} lg:hidden`}>
         {t("공식 안내")} <span aria-hidden="true">›</span>
       </Link>
-      <Link href="/?intro=1" className={`${row} font-bold text-primary lg:hidden`}>
+      <Link href="/?intro=1" className={`${linkRow} lg:hidden`}>
         {t("Boundless 소개")} <span aria-hidden="true">›</span>
       </Link>
     </>
@@ -46,166 +59,150 @@ export default async function SettingsPage() {
       <div className="space-y-6 px-4 py-4">
         {/* The member's profile comes first: avatar, public nationality and level, one tap from editing. */}
         {user && (
-          <Link
-            id="profile"
-            href="/settings/avatar"
-            className="group flex items-center gap-4 rounded-3xl bg-white p-4 ring-1 ring-ink/10 transition hover:ring-ink/25"
-          >
-            <Avatar code={user.nationality} size={64} look={user.avatar} />
-            <span className="min-w-0 flex-1">
-              <span className="block font-display text-lg font-extrabold">{t("내 프로필")}</span>
-              <span className="block text-sm leading-snug opacity-75">
-                {countryName(user.nationality, lang)} ·{" "}
-                {user.avatar ? (user.avatar_public ? t("내 글과 댓글에도 보여요") : t("나에게만 보여요")) : t("사람이나 동물 캐릭터를 만들어요")}
-              </span>
-            </span>
-            <span className="shrink-0 text-sm font-bold text-primary group-hover:underline">
-              {user.avatar ? t("바꾸기") : t("아바타 만들기")} <span aria-hidden="true">›</span>
-            </span>
+          // A real link around the card, so the tap works before the page's JS loads.
+          <Link id="profile" href="/settings/avatar" className="group block rounded-[var(--radius-container)]">
+            <Card padding={0} className="overflow-hidden">
+              <div className="bg-pattern h-1.5 bg-primary bg-[length:auto_24px]" aria-hidden="true" />
+              <div className="flex items-center gap-4 p-4">
+                <Avatar code={user.nationality} size={64} look={user.avatar} />
+                <span className="min-w-0 flex-1">
+                  <span className="block font-display text-lg font-extrabold">{t("내 프로필")}</span>
+                  <span className="block text-sm leading-snug text-[var(--color-text-secondary)]">
+                    {countryName(user.nationality, lang)} ·{" "}
+                    {user.avatar ? (user.avatar_public ? t("내 글과 댓글에도 보여요") : t("나에게만 보여요")) : t("사람이나 동물 캐릭터를 만들어요")}
+                  </span>
+                </span>
+                <span className="shrink-0 text-sm font-bold text-primary group-hover:underline">
+                  {user.avatar ? t("바꾸기") : t("아바타 만들기")} <span aria-hidden="true">›</span>
+                </span>
+              </div>
+            </Card>
           </Link>
         )}
         <section>
           <h2 className="font-display text-lg font-extrabold">{t("환경 설정")}</h2>
-          <div className="mt-1 border-l-4 border-primary/30 pl-3">
+          <Card padding={0} className={group}>
             <div className={row}>
               <span className="font-bold">{t("화면 언어")}</span>
               <LangMenu lang={lang} label={t("화면 언어 바꾸기")} note={t("한국어와 영어 밖의 언어는 기계 번역이라 어색한 문장이 있을 수 있어요. 검수하고 있어요.")} compact />
             </div>
             {/* Sample accounts switch country from the desktop sidebar; phones and tablets have no sidebar, so it sits here. */}
             {user && demoEnabled() && user.email.endsWith("@example.com") && (
-              <div className="border-b border-ink/10 py-3 lg:hidden">
+              <div className="px-4 py-3 lg:hidden">
                 <AccountSwitcher t={t} lang={lang} current={user.nationality} up={false} />
               </div>
             )}
-            <details className="border-b border-ink/10 py-3">
-              <summary className="cursor-pointer font-bold">{t("커뮤니티 규칙과 안전")}</summary>
-              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm opacity-80">
+            {/* The padding sits on the trigger so the whole 48px row is the tap target. */}
+            <Collapsible defaultIsOpen={false} className="px-4" trigger={<span className="block py-3 text-base font-bold">{t("커뮤니티 규칙과 안전")}</span>}>
+              <ul className="mb-3 list-disc space-y-1 pl-5 text-sm text-[var(--color-text-secondary)]">
                 <li>{t("공개되는 정보는 스스로 고른 국적과 글마다 바뀌는 익명 호칭뿐이에요. 이메일은 공개되지 않아요.")}</li>
                 <li>{t("이름, 연락처, 상세 주소처럼 누군가를 알아볼 수 있는 정보는 적지 마세요.")}</li>
                 <li>{t("국적·인종·종교를 이유로 한 혐오와 차별은 신고 대상이에요.")}</li>
                 <li>{t("답변은 경험담이에요. 비자·의료·법률 문제는 공식 기관에서 꼭 확인하세요. (외국인종합안내센터 1345)")}</li>
               </ul>
-            </details>
-          </div>
+            </Collapsible>
+          </Card>
         </section>
 
         {user ? (
-          <>
-            <section>
-              <h2 className="font-display text-lg font-extrabold">{t("계정")}</h2>
-              <div className="mt-1 space-y-1 border-l-4 border-primary/30 pl-3">
-                <div className="py-3">
-                  <NationalityForm current={user.nationality} countries={sortedCountries(lang)} />
+          <section>
+            <h2 className="font-display text-lg font-extrabold">{t("계정")}</h2>
+            <Card padding={0} className={group}>
+              <div className="px-4 py-3">
+                <NationalityForm current={user.nationality} countries={sortedCountries(lang)} />
+              </div>
+              <form action={setRegion} className="flex items-end gap-2 px-4 py-3">
+                <div className="min-w-0 flex-1">
+                  <SelectField
+                    name="region"
+                    label={t("내 지역")}
+                    description={t("글쓰기 기본 지역이 되고, 피드에서 우리 지역 글을 바로 볼 수 있어요. 공개되지 않아요.")}
+                    defaultValue={user.region ?? ""}
+                    startIcon={<Icon name="pin" size={16} />}
+                    width="100%"
+                    options={[{ value: "", label: t("정하지 않음") }, ...REGIONS.map((r) => ({ value: r.id, label: t(r.ko) }))]}
+                  />
                 </div>
-                <form action={setRegion} className="space-y-1 border-b border-ink/10 py-3">
-                  <label htmlFor="my-region" className="block text-sm font-bold">
-                    <span className="inline-flex items-center gap-1">
-                      <Icon name="pin" size={15} />
-                      {t("내 지역")}
-                    </span>
-                  </label>
-                  <div className="flex gap-2">
-                    <select id="my-region" name="region" defaultValue={user.region ?? ""} className={field}>
-                      <option value="">{t("정하지 않음")}</option>
-                      {REGIONS.map((r) => (
-                        <option key={r.id} value={r.id}>
-                          {t(r.ko)}
-                        </option>
-                      ))}
-                    </select>
-                    <button className={btnGhost}>{t("저장")}</button>
-                  </div>
-                  <p className="text-xs opacity-70">{t("글쓰기 기본 지역이 되고, 피드에서 우리 지역 글을 바로 볼 수 있어요. 공개되지 않아요.")}</p>
-                </form>
-                <form action={setReadLang} className="space-y-1 border-b border-ink/10 py-3">
-                  <label htmlFor="read-lang" className="block text-sm font-bold">
-                    <span className="inline-flex items-center gap-1">
-                      <Icon name="translate" size={15} />
-                      {t("번역해서 읽을 언어")}
-                    </span>
-                  </label>
-                  <div className="flex gap-2">
-                    <select id="read-lang" name="read_lang" defaultValue={user.read_lang ?? ""} className={field}>
-                      <option value="">{t("화면 언어와 같게 ({lang})", { lang: langName(lang, lang) })}</option>
-                      {READ_LANGS.map((l) => (
-                        <option key={l} value={l}>
-                          {langName(l, lang)}
-                        </option>
-                      ))}
-                    </select>
-                    <button className={btnGhost}>{t("저장")}</button>
-                  </div>
-                  <p className="text-xs opacity-70">{t("글과 댓글의 번역 버튼이 이 언어로 번역해요.")}</p>
-                </form>
+                <Button type="submit" label={t("저장")} variant="secondary" />
+              </form>
+              <form action={setReadLang} className="flex items-end gap-2 px-4 py-3">
+                <div className="min-w-0 flex-1">
+                  <SelectField
+                    name="read_lang"
+                    label={t("번역해서 읽을 언어")}
+                    description={t("글과 댓글의 번역 버튼이 이 언어로 번역해요.")}
+                    defaultValue={user.read_lang ?? ""}
+                    startIcon={<Icon name="translate" size={16} />}
+                    width="100%"
+                    options={[
+                      { value: "", label: t("화면 언어와 같게 ({lang})", { lang: langName(lang, lang) }) },
+                      ...READ_LANGS.map((l) => ({ value: l, label: langName(l, lang) })),
+                    ]}
+                  />
+                </div>
+                <Button type="submit" label={t("저장")} variant="secondary" />
+              </form>
+              <div className={row}>
+                <span className="font-bold">{t("로그인 이메일 (비공개)")}</span>
+                <span className="truncate text-sm text-[var(--color-text-secondary)]">{user.email}</span>
+              </div>
+              <div id="reports">
                 <div className={row}>
-                  <span className="font-bold">{t("로그인 이메일 (비공개)")}</span>
-                  <span className="truncate text-sm opacity-70">{user.email}</span>
-                </div>
-                <div className={row} id="reports">
                   <span className="font-bold">{t("내 신고")}</span>
-                  <span className="text-sm opacity-70">{reports.length}</span>
+                  <span className="text-sm text-[var(--color-text-secondary)]">{reports.length}</span>
                 </div>
                 {reports.length > 0 && (
-                  <ul className="space-y-1 pb-2 text-sm">
+                  <ul className="px-4 pb-2 text-sm">
                     {reports.map((r) => (
-                      <li key={r.id} className="flex items-center gap-2">
-                        <span className="rounded bg-soft px-2 py-0.5 text-xs font-bold">{status[r.status]}</span>
+                      <li key={r.id} className="flex min-h-11 items-center gap-2">
+                        {status[r.status] && <Badge variant={status[r.status].variant} label={status[r.status].label} />}
                         <span className="truncate">{t(REPORT_REASONS.find((x) => x.id === r.reason)?.ko ?? "기타")}</span>
-                        <span className="ml-auto shrink-0 text-xs opacity-70">{timeAgo(r.created_at, lang)}</span>
-                        {r.post_id && (
-                          <Link href={`/posts/${r.post_id}`} className="shrink-0 text-xs text-primary underline">
-                            {t("보기")}
-                          </Link>
-                        )}
+                        <span className="ml-auto shrink-0 text-xs text-[var(--color-text-secondary)]">{timeAgo(r.created_at, lang)}</span>
+                        {r.post_id && <Button href={`/posts/${r.post_id}`} label={t("보기")} variant="ghost" className="shrink-0" />}
                       </li>
                     ))}
                   </ul>
                 )}
-                <div className={row}>
-                  <span className="font-bold">{t("차단한 계정")}</span>
-                  <span className="flex items-center gap-2 text-sm">
-                    {blocked[0].n}
-                    {blocked[0].n > 0 && (
-                      <form action={unblockAll}>
-                        <button className="text-xs text-primary underline">{t("모두 해제")}</button>
-                      </form>
-                    )}
-                  </span>
-                </div>
-                {phoneLinks}
-                <Link href="/policy" className={`${row} font-bold text-primary`}>
-                  {t("운영 정책")} <span aria-hidden="true">›</span>
-                </Link>
-                {canViewQueue(user) && (
-                  <Link href="/admin" className={`${row} font-bold text-primary`}>
-                    {t("운영 큐")} <span aria-hidden="true">›</span>
-                  </Link>
-                )}
-                <details className="border-b border-ink/10 py-3">
-                  <summary className="cursor-pointer font-bold text-red-700">{t("탈퇴하기")}</summary>
-                  <form action={deleteAccount} className="mt-2 space-y-2 text-sm">
-                    <p className="opacity-80">{t("탈퇴하면 내 글, 댓글, 신고 기록이 모두 삭제되고 되돌릴 수 없어요.")}</p>
-                    <label className="flex items-center gap-2">
-                      <input type="checkbox" name="confirm" required className="size-5 shrink-0 align-middle accent-red-700" /> {t("모두 삭제되는 것을 이해했어요")}
-                    </label>
-                    <button className="h-11 rounded-xl bg-red-700 px-5 text-[15px] font-bold text-white">{t("탈퇴")}</button>
-                  </form>
-                </details>
-                <form action={signOut} className="py-3">
-                  <button className="font-bold">{t("로그아웃")}</button>
-                </form>
               </div>
-            </section>
-          </>
+              <div className={row}>
+                <span className="font-bold">{t("차단한 계정")}</span>
+                <span className="flex items-center gap-2 text-sm">
+                  {blocked[0].n}
+                  {blocked[0].n > 0 && (
+                    <form action={unblockAll}>
+                      <Button type="submit" label={t("모두 해제")} variant="ghost" />
+                    </form>
+                  )}
+                </span>
+              </div>
+              {phoneLinks}
+              <Link href="/policy" className={linkRow}>
+                {t("운영 정책")} <span aria-hidden="true">›</span>
+              </Link>
+              {canViewQueue(user) && (
+                <Link href="/admin" className={linkRow}>
+                  {t("운영 큐")} <span aria-hidden="true">›</span>
+                </Link>
+              )}
+              <div className="flex flex-wrap items-center gap-2 px-4 py-3">
+                <form action={signOut}>
+                  <Button type="submit" label={t("로그아웃")} variant="secondary" />
+                </form>
+                <div className="ml-auto">
+                  <DeleteAccount />
+                </div>
+              </div>
+            </Card>
+          </section>
         ) : (
           <>
-            <Link href="/login?next=/settings" className={btn}>
-              {t("로그인")}
-            </Link>
-            <div className="mt-4">{phoneLinks}</div>
+            <Button href="/login?next=/settings" label={t("로그인")} variant="primary" size="lg" />
+            <Card padding={0} className={`${group} lg:hidden`}>
+              {phoneLinks}
+            </Card>
           </>
         )}
-        <p className="pt-2 text-center text-xs opacity-60">
+        <p className="pt-2 text-center text-xs text-[var(--color-text-secondary)]">
           Boundless · {t("버전")} {process.env.APP_BUILD}
         </p>
       </div>

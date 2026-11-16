@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Button } from "@astryxdesign/core/Button";
 import { translate } from "@/app/actions";
 import { Icon } from "./Icon";
 import { useT } from "./I18n";
@@ -49,7 +50,7 @@ export function Translatable({
         <Linkify text={body} />
       </div>
       {showing && out && (
-        <div className="mt-3 rounded-xl border-l-4 border-primary/50 bg-soft/50 p-3">
+        <div className="mt-3 rounded-[var(--radius-element)] border-l-4 border-primary/50 bg-soft/50 p-3">
           <p className="mb-1 inline-flex items-center gap-1 text-[11px] font-bold text-primary">
             <Icon name="translate" size={12} />
             {t("{lang}로 번역됨", { lang: target })}
@@ -60,17 +61,17 @@ export function Translatable({
           </div>
         </div>
       )}
-      <button
-        type="button"
+      {/* Comments get a quiet ghost button; the post body an outlined one. Both in the member's color. */}
+      <Button
         onClick={click}
-        disabled={pending}
-        className={`mt-2 inline-flex items-center gap-1 rounded-full font-bold text-primary transition hover:bg-soft disabled:opacity-50 ${small ? "h-7 px-1.5 text-xs" : "h-8 px-2.5 text-[13px] ring-1 ring-primary/25"}`}
-      >
-        <Icon name="translate" size={small ? 13 : 15} />
-        {pending ? t("번역하는 중…") : showing ? t("번역 접기") : t("{lang}로 번역", { lang: target })}
-      </button>
+        isLoading={pending}
+        variant={small ? "ghost" : "secondary"}
+        icon={<Icon name="translate" size={small ? 13 : 15} />}
+        label={pending ? t("번역하는 중…") : showing ? t("번역 접기") : t("{lang}로 번역", { lang: target })}
+        className={`mt-2 text-primary ${small ? "-ml-2" : "rounded-full"}`}
+      />
       {error && (
-        <p role="alert" className="mt-1 text-xs text-red-700">
+        <p role="alert" className="mt-1 text-xs text-[var(--color-text-error)]">
           {t(error)}
         </p>
       )}

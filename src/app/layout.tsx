@@ -1,9 +1,11 @@
+// First import: globals.css declares the cascade-layer order Astryx and Tailwind rely on.
+import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import { Asta_Sans, Bricolage_Grotesque, Noto_Sans, Noto_Sans_Khmer, Noto_Sans_Thai } from "next/font/google";
 import { I18n } from "@/components/I18n";
 import { getLang } from "@/lib/auth";
 import { dictOf } from "@/lib/messages";
-import "./globals.css";
+import { Providers } from "./providers";
 
 // Display: Bricolage Grotesque for Latin; Asta Sans carries Hangul and body text (picked with the design skill's font data).
 const brand = Bricolage_Grotesque({ variable: "--font-brand", subsets: ["latin", "latin-ext", "vietnamese"] });
@@ -26,7 +28,9 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang={lang} className={`${brand.variable} ${body.variable} ${noto.variable} ${thai.variable} ${khmer.variable} h-full antialiased`}>
       <body className="min-h-full pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)] font-sans">
-        <I18n dict={dictOf(lang)}>{children}</I18n>
+        <Providers lang={lang}>
+          <I18n dict={dictOf(lang)}>{children}</I18n>
+        </Providers>
       </body>
     </html>
   );

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Button } from "@astryxdesign/core/Button";
 import { Icon } from "@/components/Icon";
 import { PageHead } from "@/components/ui";
 import { getT } from "@/lib/auth";
@@ -13,7 +14,7 @@ export default async function BoardsPage() {
     <div className="mx-auto max-w-4xl lg:ml-2 pb-6">
       <PageHead line="BOARDS" title={t("게시판")} desc={t("한국 생활의 모든 순간을 게시판별로 나눠 두었어요.")} />
       <div className="space-y-6 px-4 py-5">
-        <Link href="/lounge" className="flex items-center gap-3 rounded-2xl bg-ink p-4 text-white">
+        <Link href="/lounge" className="flex items-center gap-3 rounded-[var(--radius-container)] bg-ink p-4 text-white transition hover:brightness-110">
           <Icon name="users" size={22} />
           <span className="flex-1">
             <span className="block font-bold">{t("우리나라 라운지")}</span>
@@ -23,13 +24,13 @@ export default async function BoardsPage() {
         </Link>
         {GROUPS.map((gr) => (
           <section key={gr.id}>
-            <h2 className="mb-2 text-sm font-extrabold opacity-70">{t(gr.ko)}</h2>
+            <h2 className="mb-2 text-sm font-extrabold text-[var(--color-text-secondary)]">{t(gr.ko)}</h2>
             <ul className="grid gap-2.5 sm:grid-cols-2">
               {BOARDS.filter((b) => b.group === gr.id).map((b) => {
                 const c = counts.find((x) => x.topic === b.id);
                 return (
                   <li key={b.id}>
-                    <Link href={`/b/${b.id}`} className="flex h-full items-start gap-3 rounded-2xl bg-white p-4 ring-1 ring-ink/[.07] transition hover:-translate-y-0.5 hover:shadow-md">
+                    <Link href={`/b/${b.id}`} className="flex h-full items-start gap-3 rounded-[var(--radius-container)] border border-[var(--color-border)] bg-[var(--color-background-card)] p-4 shadow-[0_1px_2px_rgb(16_24_40/.04)] transition hover:-translate-y-0.5 hover:border-[var(--color-border-emphasized)] hover:shadow-md">
                       <span className="flex size-10 shrink-0 items-center justify-center rounded-xl text-white" style={{ background: b.color }}>
                         <Icon name={b.icon} size={20} />
                       </span>
@@ -38,9 +39,9 @@ export default async function BoardsPage() {
                           {t(b.ko)}
                           {!!c?.today && <span className="rounded-full bg-alert px-1.5 text-[11px] text-white">{t("새 글 {n}", { n: c.today })}</span>}
                         </span>
-                        <span className="mt-0.5 line-clamp-2 text-xs leading-relaxed opacity-70 md:line-clamp-none">{t(b.desc)}</span>
+                        <span className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-[var(--color-text-secondary)] md:line-clamp-none">{t(b.desc)}</span>
                       </span>
-                      <span className="text-xs opacity-70">{c?.n ?? 0}</span>
+                      <span className="text-xs text-[var(--color-text-secondary)]">{c?.n ?? 0}</span>
                     </Link>
                   </li>
                 );
@@ -48,10 +49,7 @@ export default async function BoardsPage() {
             </ul>
           </section>
         ))}
-        <Link href="/guide" className="flex min-h-10 items-center gap-2 text-sm font-bold text-primary">
-          <Icon name="info" size={16} />
-          {t("공식 안내 (비자·의료·긴급 전화)")}
-        </Link>
+        <Button href="/guide" label={t("공식 안내 (비자·의료·긴급 전화)")} variant="ghost" icon={<Icon name="info" size={16} />} className="-ml-3 text-primary" />
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Button } from "@astryxdesign/core/Button";
 import { WithRail } from "@/components/Community";
 import { FeedList, ListControls, listHref, parseSort } from "@/components/Feed";
 import { Icon } from "@/components/Icon";
@@ -18,11 +18,12 @@ export default async function BoardPage(props: PageProps<"/b/[board]">) {
   const [{ lang, t }, user] = await Promise.all([getT(), getUser()]);
   const posts = await listPosts(user?.id ?? null, { board: id, tag, before, sort: sort === "likes" ? "likes" : "new", waiting: sort === "waiting" });
   const base = `/b/${id}`;
+  const deep = `color-mix(in oklab, ${board.color} 72%, black)`;
 
   return (
     <WithRail viewer={user?.id ?? null} lang={lang} t={t}>
       <div className="min-w-0 space-y-4">
-        <header className="relative overflow-hidden rounded-2xl p-4 text-white md:rounded-3xl md:p-8" style={{ background: `color-mix(in oklab, ${board.color} 72%, black)` }}>
+        <header className="relative overflow-hidden rounded-2xl p-4 text-white md:rounded-3xl md:p-8" style={{ background: deep }}>
           <span className="absolute -right-6 -bottom-10 opacity-15" aria-hidden="true">
             <Icon name={board.icon} size={200} />
           </span>
@@ -37,14 +38,16 @@ export default async function BoardPage(props: PageProps<"/b/[board]">) {
               </h1>
               <p className="mt-1.5 text-sm leading-relaxed opacity-90 md:mt-2 md:text-[15px]">{t(board.desc)}</p>
             </div>
-            <Link
+            {/* White on the board's own deep color, written in that color. */}
+            <Button
               href={`/write?board=${id}${tag ? `&kind=${tag}` : ""}`}
-              className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-white px-4 text-sm font-bold whitespace-nowrap shadow-sm hover:bg-white/90 md:h-11 md:px-5 md:text-[15px]"
-              style={{ color: `color-mix(in oklab, ${board.color} 72%, black)` }}
-            >
-              <Icon name="edit" size={17} />
-              {t("이 게시판에 쓰기")}
-            </Link>
+              label={t("이 게시판에 쓰기")}
+              variant="secondary"
+              size="lg"
+              icon={<Icon name="edit" size={17} />}
+              className="bg-white shadow-sm"
+              style={{ color: deep }}
+            />
           </div>
         </header>
         <ListControls base={base} tags={board.tags} tag={tag} sort={sort} t={t} />

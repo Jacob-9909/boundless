@@ -12,8 +12,11 @@
     "e2e": "node e2e/flow.mjs"
   },
   "dependencies": {
+    "@astryxdesign/core": "^0.7.15",
+    "@astryxdesign/theme-neutral": "^0.7.15",
     "@dicebear/avataaars": "9.4.2",
     "@dicebear/core": "9.4.3",
+    "@stylexjs/stylex": "^0.19.2",
     "next": "16.4.5",
     "nodemailer": "^10.3.1",
     "pg": "^8.23.1",
@@ -21,6 +24,7 @@
     "react-dom": "19.3.1"
   },
   "devDependencies": {
+    "@astryxdesign/cli": "^0.7.15",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^20",
     "@types/nodemailer": "^8.0.2",

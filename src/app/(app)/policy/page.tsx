@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Card } from "@astryxdesign/core/Card";
+import { FilterChip } from "@/components/Feed";
 import { Icon, type IconName } from "@/components/Icon";
 import { PageHead } from "@/components/ui";
 import { getT } from "@/lib/auth";
@@ -82,14 +84,12 @@ export default async function PolicyPage() {
       <PageHead line="RULES · POLICY" title={t("운영 정책")} desc={t("가입할 때 동의하는 규칙이에요. 공개 정보, 신고와 재심, 탈퇴 후 데이터를 한곳에 모았어요.")} />
       <nav aria-label={t("운영 정책")} className="flex flex-wrap gap-1.5 px-4 pt-4">
         {sections.map((s) => (
-          <a key={s.id} href={`#${s.id}`} className="inline-flex h-9 items-center rounded-full bg-white px-3.5 text-[13px] font-bold ring-1 ring-ink/10 hover:ring-ink/25">
-            {s.title}
-          </a>
+          <FilterChip key={s.id} href={`#${s.id}`} label={s.title} on={false} />
         ))}
       </nav>
       <div className="space-y-3 px-4 py-4">
         {sections.map((s) => (
-          <section key={s.id} id={s.id} className="scroll-mt-20 rounded-2xl bg-white p-5 ring-1 ring-ink/[.07]">
+          <Card key={s.id} id={s.id} className="scroll-mt-20">
             <h2 className="flex items-center gap-2 font-display text-lg font-extrabold">
               <span className="flex size-8 items-center justify-center rounded-xl bg-soft text-primary">
                 <Icon name={s.icon} size={17} />
@@ -104,9 +104,9 @@ export default async function PolicyPage() {
                 </li>
               ))}
             </ul>
-          </section>
+          </Card>
         ))}
-        <p className="px-1 text-sm opacity-80">
+        <p className="px-1 text-sm text-[var(--color-text-secondary)]">
           {t("긴급한 위험은 112(경찰)·119(구급), 체류·비자 문의는 1345로 바로 연락하세요.")}{" "}
           <Link href="/guide" className="font-bold text-primary underline">
             {t("공식 안내")}

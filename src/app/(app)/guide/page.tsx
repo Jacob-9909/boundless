@@ -1,3 +1,4 @@
+import { Banner } from "@astryxdesign/core/Banner";
 import { HelpItem, PageHead } from "@/components/ui";
 import { getT } from "@/lib/auth";
 import { APPS, HOTLINES, SITES } from "@/lib/guide";
@@ -12,7 +13,7 @@ export default async function GuidePage() {
       <div className="space-y-6 px-4 py-4">
         <section>
           <h2 className="font-display text-lg font-extrabold">{t("전화 상담 · 긴급")}</h2>
-          <p className="mt-0.5 text-xs opacity-70">{t("휴대폰에서 누르면 바로 전화가 걸려요.")}</p>
+          <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">{t("휴대폰에서 누르면 바로 전화가 걸려요.")}</p>
           <ul className="mt-2 grid gap-2 sm:grid-cols-2">
             {HOTLINES.map((h) => (
               <li key={h.tel}>
@@ -44,9 +45,7 @@ export default async function GuidePage() {
           </ul>
         </section>
 
-        <p className="rounded-2xl bg-soft/60 p-4 text-xs leading-relaxed opacity-80">
-          {t("Boundless는 위 기관과 관계가 없어요. 제도와 연락처는 바뀔 수 있으니 공식 사이트에서 최신 내용을 확인하세요. (2026년 11월 확인)")}
-        </p>
+        <Banner status="info" collapsible={false} title={t("Boundless는 위 기관과 관계가 없어요. 제도와 연락처는 바뀔 수 있으니 공식 사이트에서 최신 내용을 확인하세요. (2026년 11월 확인)")} />
       </div>
     </div>
   );

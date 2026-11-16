@@ -1,6 +1,8 @@
 {
   "화면 언어 바꾸기": "Changer la langue de l’interface",
   "주요 메뉴": "Menu principal",
+  "상단 메뉴": "Barre supérieure",
+  "검색어를 입력하세요": "Rechercher des articles",
   "한강": "Fleuve Han",
   "더 보기": "Plus",
   "한국어와 영어 밖의 언어는 기계 번역이라 어색한 문장이 있을 수 있어요. 검수하고 있어요.": "Les langues autres que le coréen et l’anglais sont traduites automatiquement et encore en cours de relecture : certaines phrases peuvent sembler maladroites.",
@@ -240,7 +242,6 @@
   "정부가 여러 언어로 운영하는 한국 소개·뉴스 포털.": "Le portail multilingue du gouvernement sur la Corée.",
   "주민센터 서류 발급 같은 행정 서비스. 외국인등록번호로 이용.": "Documents et démarches administratives en ligne avec votre numéro d’enregistrement d’étranger.",
   "재난 문자와 대피소 안내를 여러 언어로 받는 정부 앱.": "Application officielle d’alertes de catastrophe et d’informations sur les abris, en plusieurs langues.",
-  "본문으로 건너뛰기": "Aller au contenu",
   "국적 하나만 공개돼요. 이메일은 비공개.": "Seule votre nationalité est affichée. Votre e-mail reste privé.",
   "{hello}, 이웃님": "{hello}, voisin",
   "오늘 새 글 {today}개 · 답변을 기다리는 질문 {waiting}개": "{today} nouvelles publications aujourd’hui · {waiting} questions en attente de réponse",

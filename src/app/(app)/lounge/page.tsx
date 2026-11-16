@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Button } from "@astryxdesign/core/Button";
 import { WithRail } from "@/components/Community";
 import { FeedList, ListControls, listHref, parseSort } from "@/components/Feed";
 import { Icon } from "@/components/Icon";
@@ -65,10 +65,14 @@ export default async function LoungePage(props: PageProps<"/lounge">) {
                 {t("다른 나라 이웃에게는 보이지 않아요")}
               </span>
             </p>
-            <Link href="/write?space=lounge" className="mt-4 inline-flex h-10 items-center gap-1.5 rounded-xl bg-white px-4 text-sm font-bold whitespace-nowrap text-primary hover:bg-white/90 md:mt-5 md:h-11 md:px-5 md:text-[15px]">
-              <Icon name="edit" size={17} />
-              {t("라운지에 쓰기")}
-            </Link>
+            <Button
+              href="/write?space=lounge"
+              label={t("라운지에 쓰기")}
+              variant="secondary"
+              size="lg"
+              icon={<Icon name="edit" size={17} />}
+              className="mt-4 bg-white text-primary md:mt-5"
+            />
           </div>
         </header>
         <ListControls base="/lounge" tags={LOUNGE.tags} tag={tag} sort={sort} t={t} />

@@ -1,3 +1,5 @@
+import type { CSSProperties, ReactElement } from "react";
+
 // One stroke icon set (24px grid, 1.9 stroke) instead of emoji, so icons look the same on every OS.
 const PATHS = {
   home: "M3 11 12 4l9 7v9H3z",
@@ -52,6 +54,28 @@ const PATHS = {
 } as const;
 
 export type IconName = keyof typeof PATHS;
+
+type SvgProps = { width?: number | string; height?: number | string; className?: string; style?: CSSProperties };
+const svgCache = new Map<IconName, (p: SvgProps) => ReactElement>();
+
+/**
+ * The same glyph as an SVG component, for Astryx props typed IconType (SideNavItem, TextInput startIcon...).
+ * Astryx sizes and colors it. Functions cannot cross the server/client boundary, so call this in client code.
+ */
+export function svgIcon(name: IconName) {
+  let C = svgCache.get(name);
+  if (!C) {
+    C = function BoundlessIcon(p: SvgProps) {
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...p}>
+          <path d={PATHS[name]} />
+        </svg>
+      );
+    };
+    svgCache.set(name, C);
+  }
+  return C;
+}
 
 export function Icon({ name, size = 18, filled = false, className = "" }: { name: IconName; size?: number; filled?: boolean; className?: string }) {
   return (

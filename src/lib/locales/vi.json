@@ -1,6 +1,8 @@
 {
   "화면 언어 바꾸기": "Thay đổi ngôn ngữ giao diện",
   "주요 메뉴": "Menu chính",
+  "상단 메뉴": "Thanh trên cùng",
+  "검색어를 입력하세요": "Tìm kiếm bài viết",
   "한강": "Sông Hàn",
   "더 보기": "Xem thêm",
   "한국어와 영어 밖의 언어는 기계 번역이라 어색한 문장이 있을 수 있어요. 검수하고 있어요.": "Các ngôn ngữ ngoài tiếng Hàn và tiếng Anh là bản dịch máy nên có thể có câu chưa tự nhiên. Chúng tôi đang kiểm tra lại.",
@@ -240,7 +242,6 @@
   "정부가 여러 언어로 운영하는 한국 소개·뉴스 포털.": "Cổng thông tin đa ngôn ngữ của chính phủ giới thiệu về Hàn Quốc.",
   "주민센터 서류 발급 같은 행정 서비스. 외국인등록번호로 이용.": "Giấy tờ và dịch vụ hành chính trực tuyến, dùng số đăng ký người nước ngoài.",
   "재난 문자와 대피소 안내를 여러 언어로 받는 정부 앱.": "Ứng dụng của chính phủ nhận cảnh báo thiên tai và thông tin nơi trú ẩn bằng nhiều ngôn ngữ.",
-  "본문으로 건너뛰기": "Chuyển đến nội dung",
   "국적 하나만 공개돼요. 이메일은 비공개.": "Chỉ hiển thị quốc tịch. Email được giữ kín.",
   "{hello}, 이웃님": "{hello}, hàng xóm",
   "오늘 새 글 {today}개 · 답변을 기다리는 질문 {waiting}개": "Hôm nay có {today} bài mới · {waiting} câu hỏi đang chờ trả lời",

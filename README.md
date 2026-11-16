@@ -153,7 +153,7 @@ BASE_URL=http://localhost:3000 npm run e2e
 - `src/app/(app)/` 홈, 게시판, 라운지, 검색, 글쓰기·수정, 글, 내 글, 공식 안내, 운영 정책, 설정, 운영자 큐
 - `src/app/actions.ts` 모든 쓰기 동작 (Server Actions)
 - `src/lib/` 세션(`auth.ts`), 조회(`posts.ts`), 게시판(`boards.ts`), 문화 테마(`cultures.ts`, `landmarks.ts`), 공식 안내(`guide.ts`), 화면 언어(`i18n.ts`, `messages.ts`, `locales/`), 글 번역(`translate.ts`)
-- `db/schema.sql` 스키마(재실행 안전), `db/seed.sql` 가상 데이터
+- `db/schema.sql` 스키마(재실행 안전), `db/seed.sql` 가상 데이터, `db/community.sql` 가상 이웃 45명의 지난 7일 활동(seed 다음에 적용, `scripts/community/community.py` 로 생성)
 - `e2e/flow.mjs` 전체 흐름 테스트, `.github/workflows/ci-cd.yml` CI/CD
 
 </details>

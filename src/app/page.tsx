@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { Button } from "@astryxdesign/core/Button";
 import { demoLogin } from "@/app/actions";
 import { LangMenu } from "@/components/LangMenu";
 import { cultureFonts } from "@/app/login/fonts";
@@ -53,6 +54,9 @@ const STOPS: { board: string; x: number; y: number; kind: "dot" | "cap-v" | "cap
 ];
 
 const sectionTitle = "mt-2 font-display text-3xl text-balance font-extrabold tracking-tight md:text-[40px]";
+// Astryx buttons on the navy bands: primary turns white with navy text, ghost gets white text and a hairline ring.
+const onNavy = "[--color-accent:#fff] [--color-on-accent:#0B1224]";
+const ghostOnNavy = "[--color-text-primary:#fff] ring-1 ring-inset ring-white/30 hover:bg-white/10";
 
 export default async function Landing(props: PageProps<"/">) {
   const sp = await props.searchParams;
@@ -80,7 +84,7 @@ export default async function Landing(props: PageProps<"/">) {
   ];
 
   return (
-    <main className={`${cultureFonts} bg-[#F6F5F1] text-[#14161C]`} style={themeVars(DEFAULT_CULTURE)}>
+    <main className={`culture ${cultureFonts} bg-[#F6F5F1] text-[#14161C]`} style={themeVars(DEFAULT_CULTURE)}>
       {/* ---------- Hero ---------- */}
       <section className="relative overflow-hidden bg-[#0B1224] text-white">
         <div
@@ -110,13 +114,9 @@ export default async function Landing(props: PageProps<"/">) {
           <div className="ml-auto flex items-center gap-2">
             <LangMenu lang={lang} label={t("화면 언어 바꾸기")} note={t("한국어와 영어 밖의 언어는 기계 번역이라 어색한 문장이 있을 수 있어요. 검수하고 있어요.")} tone="dark" compact />
             {user ? (
-              <Link href="/feed" className="inline-flex h-9 items-center rounded-full bg-white px-4 text-[13px] font-bold text-[#0B1224]">
-                {t("피드로 가기")}
-              </Link>
+              <Button href="/feed" variant="primary" label={t("피드로 가기")} className={`rounded-full ${onNavy}`} />
             ) : (
-              <Link href="/login" className="inline-flex h-9 items-center rounded-full px-4 text-[13px] font-bold ring-1 ring-white/30 hover:bg-white/10">
-                {t("로그인")}
-              </Link>
+              <Button href="/login" variant="ghost" label={t("로그인")} className={`rounded-full ${ghostOnNavy}`} />
             )}
           </div>
         </nav>
@@ -143,22 +143,8 @@ export default async function Landing(props: PageProps<"/">) {
               {t("분리수거 요일, 교통카드 충전, 외국인등록증 연장까지. 먼저 겪은 이웃의 경험을 찾고, 국적만 밝힌 채 익명으로 묻고, 답을 확인하세요.")}
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link
-                href="/feed"
-                className="inline-flex h-12 items-center gap-2 rounded-xl bg-white px-6 text-[15px] font-bold text-[#0B1224] transition hover:bg-white/90"
-              >
-                {t("피드 둘러보기")}
-                <Icon name="next" size={18} />
-              </Link>
-              {demo && (
-                <a
-                  href="#demo"
-                  className="inline-flex h-12 items-center gap-2 rounded-xl px-6 text-[15px] font-bold ring-1 ring-white/30 transition hover:bg-white/10"
-                >
-                  <Icon name="users" size={18} />
-                  {t("샘플 계정으로 체험하기")}
-                </a>
-              )}
+              <Button href="/feed" variant="primary" size="lg" label={t("피드 둘러보기")} endContent={<Icon name="next" size={18} />} className={onNavy} />
+              {demo && <Button href="#demo" variant="ghost" size="lg" label={t("샘플 계정으로 체험하기")} icon={<Icon name="users" size={18} />} className={ghostOnNavy} />}
             </div>
             <dl className="mt-10 grid max-w-md grid-cols-3 gap-4">
               {[
@@ -397,7 +383,7 @@ export default async function Landing(props: PageProps<"/">) {
               </span>
             </div>
             <div className="relative overflow-hidden rounded-3xl p-6 text-white" style={{ background: "#A8242B" }}>
-              <span className="bg-pattern absolute inset-0 opacity-25" style={themeVars(CULTURES[1])} aria-hidden="true" />
+              <span className="culture bg-pattern absolute inset-0 opacity-25" style={themeVars(CULTURES[1])} aria-hidden="true" />
               <Landmark culture={CULTURES[1]} className="absolute right-0 bottom-0 h-20 w-auto opacity-80" />
               <p className="relative flex items-center gap-2 text-sm font-bold text-white/80">
                 <Flag code="VN" h={13} />
@@ -422,15 +408,19 @@ export default async function Landing(props: PageProps<"/">) {
                 {demo && ` ${t("카드를 누르면 그 나라 샘플 이웃으로 바로 들어가요.")}`}
               </p>
             </div>
-            <Link href="/login" className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-[#14161C] px-5 text-[15px] font-bold text-white">
-              {t("로그인 화면에서 보기")}
-              <Icon name="next" size={16} />
-            </Link>
+            <Button
+              href="/login"
+              variant="primary"
+              size="lg"
+              label={t("로그인 화면에서 보기")}
+              endContent={<Icon name="next" size={16} />}
+              className="[--color-accent:#14161C] [--color-on-accent:#fff]"
+            />
           </div>
           <ul className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             {CULTURES.map((c) => {
               const cls =
-                "group relative flex h-48 w-full flex-col justify-end overflow-hidden rounded-2xl bg-primary p-3.5 text-left text-white transition hover:-translate-y-1 hover:shadow-xl";
+                "culture group relative flex h-48 w-full flex-col justify-end overflow-hidden rounded-2xl bg-primary p-3.5 text-left text-white transition hover:-translate-y-1 hover:shadow-xl";
               const face = (
                 <>
                   <span className="bg-pattern absolute inset-0 opacity-35 transition group-hover:opacity-55" aria-hidden="true" />
@@ -481,7 +471,7 @@ export default async function Landing(props: PageProps<"/">) {
                   <form action={demoLogin.bind(null, c.code)}>
                     <button
                       style={themeVars(c)}
-                      className="group flex w-full items-center gap-3 rounded-2xl bg-white p-3 text-left ring-1 ring-black/[.07] transition hover:-translate-y-0.5 hover:shadow-lg hover:ring-primary/40"
+                      className="culture group flex w-full items-center gap-3 rounded-2xl bg-white p-3 text-left ring-1 ring-black/[.07] transition hover:-translate-y-0.5 hover:shadow-lg hover:ring-primary/40"
                     >
                       <Avatar code={code} size={48} />
                       <span className="min-w-0 flex-1">
@@ -552,15 +542,7 @@ export default async function Landing(props: PageProps<"/">) {
             <ul className="mt-3 flex flex-wrap gap-2">
               {SITES.slice(0, 6).map((s) => (
                 <li key={s.url}>
-                  <a
-                    href={s.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex h-9 items-center gap-1.5 rounded-full bg-[#F6F5F1] px-3.5 text-[13px] font-bold hover:bg-black/5"
-                  >
-                    {t(s.name)}
-                    <Icon name="external" size={13} />
-                  </a>
+                  <Button href={s.url} target="_blank" rel="noopener noreferrer" label={t(s.name)} endContent={<Icon name="external" size={13} />} className="rounded-full" />
                 </li>
               ))}
             </ul>
@@ -579,13 +561,8 @@ export default async function Landing(props: PageProps<"/">) {
           <h2 className="font-display text-3xl text-balance font-extrabold tracking-tight md:text-5xl">{t("오늘도 누군가 같은 고민을 하고 있어요")}</h2>
           <p className="mt-4 text-white/75">{t("먼저 둘러보고, 준비되면 질문하세요.")}</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link href="/feed" className="inline-flex h-12 items-center gap-2 rounded-xl bg-white px-6 text-[15px] font-bold text-[#0B1224]">
-              {t("피드 둘러보기")}
-              <Icon name="next" size={18} />
-            </Link>
-            <Link href="/login" className="inline-flex h-12 items-center rounded-xl px-6 text-[15px] font-bold ring-1 ring-white/30 hover:bg-white/10">
-              {t("이메일로 시작하기")}
-            </Link>
+            <Button href="/feed" variant="primary" size="lg" label={t("피드 둘러보기")} endContent={<Icon name="next" size={18} />} className={onNavy} />
+            <Button href="/login" variant="ghost" size="lg" label={t("이메일로 시작하기")} className={ghostOnNavy} />
           </div>
         </div>
       </section>
@@ -593,10 +570,10 @@ export default async function Landing(props: PageProps<"/">) {
       <footer className="mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-5 py-10 text-sm text-black/75 md:px-8">
         <Logo className="text-[#14161C]" size={24} />
         <span>{t("국경 없이 어우러지는 한국 생활 커뮤니티")}</span>
-        <Link href="/policy" className="inline-flex h-9 items-center font-bold underline">
+        <Link href="/policy" className="inline-flex h-11 items-center font-bold underline">
           {t("운영 정책")}
         </Link>
-        <Link href="/guide" className="inline-flex h-9 items-center font-bold underline">
+        <Link href="/guide" className="inline-flex h-11 items-center font-bold underline">
           {t("공식 안내")}
         </Link>
         <span className="ml-auto text-xs">{t("시연 버전 · 모든 글과 계정은 가상 데이터예요.")}</span>

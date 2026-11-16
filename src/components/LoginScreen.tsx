@@ -3,13 +3,20 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
+import { Banner } from "@astryxdesign/core/Banner";
+import { Button } from "@astryxdesign/core/Button";
+import { Card } from "@astryxdesign/core/Card";
+import { CheckboxInput } from "@astryxdesign/core/CheckboxInput";
+import { Link as TextLink } from "@astryxdesign/core/Link";
+import { Selector } from "@astryxdesign/core/Selector";
+import { TextInput } from "@astryxdesign/core/TextInput";
 import { completeSignup, demoLogin, sendCode, setLang, verifyCode } from "@/app/actions";
 import { CULTURES, DEFAULT_CULTURE, cultureOf, themeVars, type Culture } from "@/lib/cultures";
 import { LANG_NAMES, toLang, type Lang } from "@/lib/i18n";
 import { useT } from "./I18n";
 import { Icon } from "./Icon";
 import { LangMenu } from "./LangMenu";
-import { Flag, Landmark, Logo, NationalityChip, btn, field, labelCls } from "./ui";
+import { Flag, Landmark, Logo, NationalityChip } from "./ui";
 
 type Step = "email" | "code" | "profile";
 const PICKER: Culture[] = [...CULTURES, DEFAULT_CULTURE];
@@ -59,11 +66,14 @@ export function LoginScreen({
     saveCulture(c.code);
   }
 
-  const run = (fn: () => Promise<void>) =>
+  // Astryx's loading button stays focusable (aria-disabled), so Enter in a field could resubmit mid-request.
+  const run = (fn: () => Promise<void>) => {
+    if (pending) return;
     start(async () => {
       setError(null);
       await fn();
     });
+  };
 
   const done = () => {
     router.replace(next);
@@ -96,7 +106,7 @@ export function LoginScreen({
     });
 
   return (
-    <main style={themeVars(culture)} className="min-h-dvh bg-paper text-ink lg:grid lg:grid-cols-[1.15fr_1fr]">
+    <main style={themeVars(culture)} className="culture min-h-dvh bg-paper text-ink lg:grid lg:grid-cols-[1.15fr_1fr]">
       {/* Hero: re-skinned with the chosen culture's colors, pattern, script and greeting */}
       {/* z-10 + no overflow clip on the section, so the language menu can drop below the hero */}
       <section className="relative z-10 flex min-h-[46svh] flex-col bg-primary px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-8 text-paper transition-colors duration-500 lg:min-h-screen lg:px-10">
@@ -134,10 +144,14 @@ export function LoginScreen({
               const own = toLang(culture.langs[0]);
               return own && own !== lang ? (
                 <form action={setLang.bind(null, own)}>
-                  <button className="inline-flex h-8 items-center gap-1.5 rounded-full bg-white px-3 text-xs font-bold text-ink shadow-sm hover:bg-white/90">
-                    <Icon name="globe" size={14} />
-                    {t("{lang}로 보기", { lang: LANG_NAMES[own] })}
-                  </button>
+                  {/* A white chip on the culture-colored hero: primary with the accent swapped for white. */}
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    label={t("{lang}로 보기", { lang: LANG_NAMES[own] })}
+                    icon={<Icon name="globe" size={14} />}
+                    className="rounded-full [--color-accent:#fff] [--color-on-accent:var(--c-ink)]"
+                  />
                 </form>
               ) : null;
             })()}
@@ -159,7 +173,7 @@ export function LoginScreen({
                   aria-checked={on}
                   onClick={() => pick(c)}
                   title={c.code === "XX" ? t("다른 나라") : nameOf.get(c.code)}
-                  className={`flex h-full w-full flex-col items-center gap-1.5 rounded-xl border-2 px-1 pt-2.5 pb-2 transition ${on ? "border-primary bg-soft shadow-sm" : "border-transparent bg-white hover:border-ink/15"}`}
+                  className={`flex h-full w-full flex-col items-center gap-1.5 rounded-[var(--radius-element)] border-2 px-1 pt-2.5 pb-2 transition ${on ? "border-primary bg-soft shadow-sm" : "border-transparent bg-[var(--color-background-card)] hover:border-[var(--color-border-emphasized)]"}`}
                 >
                   {c.code === "XX" ? <Icon name="globe" size={22} className="h-[22px] text-primary" /> : <Flag code={c.code} h={22} />}
                   {/* Two lines instead of an ellipsis ("United States" was cut off in a 76px tile); 11px so one long word
@@ -171,7 +185,7 @@ export function LoginScreen({
           })}
         </ul>
 
-        <div className="mt-6 rounded-2xl border border-ink/10 bg-white p-5 shadow-sm sm:p-6">
+        <Card className="mt-6">
           {step === "email" && (
             <form
               onSubmit={(e) => {
@@ -181,21 +195,23 @@ export function LoginScreen({
               className="space-y-3"
             >
               <p className="font-display text-lg font-extrabold">{t("이메일로 시작하기")}</p>
-              <div>
-                <label htmlFor="email" className={labelCls}>
-                  {t("이메일")}
-                </label>
-                <input id="email" type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className={field} />
-                <p className="mt-1 text-xs opacity-70">{t("이메일은 로그인에만 쓰고 다른 사람에게 보이지 않아요.")}</p>
-              </div>
+              <TextInput
+                type="email"
+                label={t("이메일")}
+                description={t("이메일은 로그인에만 쓰고 다른 사람에게 보이지 않아요.")}
+                autoComplete="email"
+                enterKeyHint="send"
+                size="lg"
+                width="100%"
+                value={email}
+                onChange={setEmail}
+              />
               <ErrorBox error={error} t={t} />
-              <button disabled={pending} className={`${btn} w-full`}>
-                {pending ? t("보내는 중…") : t("로그인 코드 받기")}
-              </button>
-              <p className="text-center text-xs opacity-70">
-                <Link href="/feed" className="inline-block py-2 underline">
+              <Button type="submit" variant="primary" size="lg" width="100%" isLoading={pending} label={pending ? t("보내는 중…") : t("로그인 코드 받기")} />
+              <p className="text-center text-xs">
+                <TextLink href="/feed" type="inherit" color="secondary" hasUnderline className="inline-flex min-h-11 items-center">
                   {t("가입하지 않고 둘러보기")}
-                </Link>
+                </TextLink>
               </p>
             </form>
           )}
@@ -210,38 +226,25 @@ export function LoginScreen({
             >
               <p className="font-display text-lg font-extrabold">{t("메일함을 확인하세요")}</p>
               <p className="text-sm opacity-80">{t("{email} 로 6자리 코드를 보냈어요.", { email })}</p>
-              {devCode && (
-                <p className="rounded-xl bg-amber-50 px-3.5 py-2.5 text-sm text-amber-900">
-                  {t("개발·데모 계정이라 메일 대신 코드를 보여 줘요")} · <b className="tracking-widest">{devCode}</b>
-                </p>
-              )}
-              <div>
-                <label htmlFor="code" className={labelCls}>
-                  {t("6자리 코드")}
-                </label>
-                <input
-                  id="code"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  pattern="\d{6}"
-                  maxLength={6}
-                  required
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-                  className={`${field} text-center text-2xl tracking-[0.5em]`}
-                />
-              </div>
+              {/* e2e/flow.mjs reads the code from b.tracking-widest. */}
+              {devCode && <Banner status="info" title={t("개발·데모 계정이라 메일 대신 코드를 보여 줘요")} description={<b className="text-lg tracking-widest">{devCode}</b>} />}
+              <TextInput
+                label={t("6자리 코드")}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                enterKeyHint="done"
+                hasAutoCorrect={false}
+                size="lg"
+                width="100%"
+                value={code}
+                onChange={(v) => setCode(v.replace(/\D/g, "").slice(0, 6))}
+                controlClassName="[&_input]:text-center [&_input]:text-2xl [&_input]:tracking-[0.5em]"
+              />
               <ErrorBox error={error} t={t} />
-              <button disabled={pending} className={`${btn} w-full`}>
-                {t("확인")}
-              </button>
-              <div className="flex justify-between text-xs">
-                <button type="button" onClick={() => setStep("email")} className="underline opacity-70">
-                  {t("이메일 바꾸기")}
-                </button>
-                <button type="button" onClick={onEmail} disabled={pending} className="underline opacity-70">
-                  {t("코드 다시 받기")}
-                </button>
+              <Button type="submit" variant="primary" size="lg" width="100%" isLoading={pending} label={t("확인")} />
+              <div className="flex justify-between">
+                <Button variant="ghost" label={t("이메일 바꾸기")} onClick={() => setStep("email")} />
+                <Button variant="ghost" label={t("코드 다시 받기")} onClick={onEmail} isDisabled={pending} />
               </div>
             </form>
           )}
@@ -255,32 +258,24 @@ export function LoginScreen({
               className="space-y-4"
             >
               <p className="font-display text-lg font-extrabold">{t("마지막 단계예요")}</p>
-              <div>
-                <label htmlFor="nationality" className={labelCls}>
-                  {t("공개할 국적 (하나)")}
-                </label>
-                <select
-                  id="nationality"
-                  required
-                  value={nationality}
-                  onChange={(e) => {
-                    setNationality(e.target.value);
-                    setCulture(cultureOf(e.target.value));
-                  }}
-                  className={field}
-                >
-                  <option value="" disabled>
-                    {t("국적을 고르세요")}
-                  </option>
-                  {countries.map((c) => (
-                    <option key={c.code} value={c.code}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <Selector
+                label={t("공개할 국적 (하나)")}
+                placeholder={t("국적을 고르세요")}
+                options={countries.map((c) => ({ value: c.code, label: c.name }))}
+                hasSearch
+                searchPlaceholder={t("검색")}
+                emptySearchText={t("검색 결과가 없어요")}
+                presentation="adaptive"
+                size="lg"
+                width="100%"
+                value={nationality || undefined}
+                onChange={(v) => {
+                  setNationality(v);
+                  setCulture(cultureOf(v));
+                }}
+              />
               {nationality && (
-                <div className="rounded-2xl bg-soft/60 p-4 text-sm">
+                <div className="rounded-[var(--radius-container)] bg-soft/60 p-4 text-sm">
                   <p className="font-bold">{t("다른 사람에게는 이렇게 보여요")}</p>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
                     <span className="font-bold">{t("글쓴이")}</span>
@@ -289,33 +284,30 @@ export function LoginScreen({
                   <p className="mt-2 text-xs opacity-70">{t("글마다 다른 익명 호칭이 붙고, 이메일은 비공개예요.")}</p>
                 </div>
               )}
-              <label className="flex items-start gap-2 text-sm">
-                <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mt-0.5 size-5 shrink-0 accent-[var(--c-primary)]" />
-                <span>{t("만 14세 이상이며, 개인정보를 올리지 않는 커뮤니티 규칙에 동의해요.")}</span>
-              </label>
-              <Link href="/policy" target="_blank" className="-mt-2 inline-flex h-8 items-center gap-1 text-xs font-bold text-primary underline">
-                {t("운영 정책 보기")}
-                <Icon name="external" size={12} />
-              </Link>
+              <CheckboxInput label={t("만 14세 이상이며, 개인정보를 올리지 않는 커뮤니티 규칙에 동의해요.")} value={agreed} onChange={setAgreed} />
+              <TextLink href="/policy" target="_blank" type="inherit" weight="bold" hasUnderline className="-mt-2 inline-flex min-h-11 items-center text-xs">
+                {t("운영 정책 보기")} <Icon name="external" size={12} className="inline" />
+              </TextLink>
               <ErrorBox error={error} t={t} />
-              <button disabled={pending} className={`${btn} w-full`}>
-                {t("가입 완료")}
-              </button>
+              <Button type="submit" variant="primary" size="lg" width="100%" isLoading={pending} label={t("가입 완료")} />
             </form>
           )}
-        </div>
+        </Card>
 
         {demo && (
-          <div className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl border border-dashed border-primary/40 bg-soft/40 p-4">
-            <div className="min-w-0 flex-1">
+          <div className="mt-4 flex flex-wrap items-center gap-3 rounded-[var(--radius-container)] border border-dashed border-primary/40 bg-soft/40 p-4">
+            {/* min-w-48: on phones the button drops to its own line instead of squeezing this text to one word per line. */}
+            <div className="min-w-48 flex-1">
               <p className="text-sm font-bold">{t("심사위원·체험용")}</p>
               <p className="text-xs opacity-70">{t("이메일 인증 없이 이 나라의 샘플 이웃으로 둘러봐요. 모든 데이터는 가상이에요.")}</p>
             </div>
             <form action={demoLogin.bind(null, culture.code)}>
-              <button className={`${btn} h-10 text-sm`}>
-                {culture.code === "XX" ? <Icon name="globe" size={16} /> : <Flag code={culture.code} h={12} />}
-                {t("샘플 계정으로 입장")}
-              </button>
+              <Button
+                type="submit"
+                variant="primary"
+                label={t("샘플 계정으로 입장")}
+                icon={culture.code === "XX" ? <Icon name="globe" size={16} /> : <Flag code={culture.code} h={12} />}
+              />
             </form>
           </div>
         )}
@@ -326,9 +318,5 @@ export function LoginScreen({
 
 function ErrorBox({ error, t }: { error: string | null; t: (s: string) => string }) {
   if (!error) return null;
-  return (
-    <p role="alert" className="rounded-xl bg-red-50 px-3.5 py-2.5 text-sm font-semibold text-red-800">
-      {t(error)}
-    </p>
-  );
+  return <Banner role="alert" status="error" title={t(error)} />;
 }

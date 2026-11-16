@@ -43,3 +43,7 @@ next-env.d.ts
 
 # local PGlite database (README: npx -p @electric-sql/pglite-socket pglite-server)
 /.pgdata
+
+# MiroFish community simulation working files (scripts/community)
+/.sim
+/log

@@ -1,4 +1,14 @@
+/* Cascade order for Tailwind + Astryx. It must come before every import, and this file must be the
+   first stylesheet the page loads (src/app/layout.tsx imports it first). "culture" sits above
+   astryx-theme so a member's culture colors win over the built theme's tokens. */
+@layer reset, theme, base, astryx-base, astryx-theme, culture, components, utilities;
+
 @import "tailwindcss";
+@import "@astryxdesign/core/reset.css";
+@import "@astryxdesign/core/astryx.css";
+/* The Boundless theme CSS (src/themes/boundless/boundless.css) loads through src/astryx-themes.ts.
+   The Tailwind bridge (tailwind-theme.css) is left out on purpose: it remaps text-primary,
+   rounded-lg and shadow-md, which this app already uses with its own meaning. */
 
 /* Culture theme tokens. Defaults = the neutral Boundless route-map theme;
    a signed-in member's culture (or the login screen's choice) overrides them inline. */
@@ -24,6 +34,29 @@
   --font-sans: var(--font-body), system-ui, -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", "Segoe UI", sans-serif;
   --font-display: var(--font-brand), var(--font-body), system-ui, "Apple SD Gothic Neo", sans-serif;
   --font-culture: var(--c-font), var(--font-brand), system-ui, sans-serif;
+}
+
+/* Astryx tokens drawn from the culture palette. var() resolves on the element that declares it,
+   so every element that sets --c-* (themeVars + the "culture" class) declares the mapping again;
+   otherwise a nested culture (the login picker, the member's app shell) would keep the root colors. */
+@layer culture {
+  [data-astryx-theme],
+  .culture {
+    --color-accent: var(--c-primary);
+    --color-accent-muted: color-mix(in oklab, var(--c-primary) 14%, transparent);
+    --color-on-accent: var(--c-paper);
+    --color-text-accent: var(--c-primary);
+    --color-icon-accent: var(--c-primary);
+    --color-background-body: var(--c-paper);
+    --color-background-muted: color-mix(in oklab, var(--c-ink) 5%, transparent);
+    --color-text-primary: var(--c-ink);
+    --color-icon-primary: var(--c-ink);
+    --color-text-secondary: color-mix(in oklab, var(--c-ink) 72%, var(--c-paper));
+    --color-icon-secondary: color-mix(in oklab, var(--c-ink) 66%, var(--c-paper));
+    --color-border: color-mix(in oklab, var(--c-ink) 9%, transparent);
+    --color-border-emphasized: color-mix(in oklab, var(--c-ink) 22%, transparent);
+    --focus-outline-color: var(--c-accent);
+  }
 }
 
 /* Korean UI text breaks between words, not inside them; user content still wraps anywhere when it must. */
@@ -83,9 +116,22 @@ body {
   animation: fade-in 0.45s ease both;
 }
 
-:focus-visible {
-  outline: 3px solid var(--c-accent);
-  outline-offset: 2px;
+/* Plain elements get the Astryx focus ring too; Astryx components draw their own from the same tokens. */
+@layer base {
+  /* The theme's prose reset paints bare h1-h6/p/small with fixed colors and sizes. This app styles
+     text by inheritance (white text on a colored banner, text-sm on a wrapper), so give it back.
+     Astryx Heading and Text components keep their own styles. */
+  :where(h1, h2, h3, h4, h5, h6, p, small) {
+    color: inherit;
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    line-height: inherit;
+  }
+  :focus-visible {
+    outline: var(--focus-outline-width, 2px) var(--focus-outline-style, solid) var(--focus-outline-color, var(--c-accent));
+    outline-offset: var(--focus-outline-offset, 2px);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

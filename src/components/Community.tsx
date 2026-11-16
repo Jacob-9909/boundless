@@ -1,5 +1,10 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { Button } from "@astryxdesign/core/Button";
+import { Card } from "@astryxdesign/core/Card";
+import { Collapsible } from "@astryxdesign/core/Collapsible";
+import { Popover } from "@astryxdesign/core/Popover";
+import { ProgressBar } from "@astryxdesign/core/ProgressBar";
 import { demoLogin } from "@/app/actions";
 import { levelOf, LEVELS } from "@/lib/boards";
 import { CULTURES, DEFAULT_CULTURE } from "@/lib/cultures";
@@ -7,7 +12,7 @@ import { HOTLINES } from "@/lib/guide";
 import { countryName, timeAgo, type Lang, type T } from "@/lib/i18n";
 import { hotPosts, listPosts, myPoints, ranking, recentActivity } from "@/lib/posts";
 import { Icon } from "./Icon";
-import { Avatar, LevelBadge, card } from "./ui";
+import { Avatar, LevelBadge } from "./ui";
 
 const railTitle = "flex items-center gap-1.5 text-sm font-extrabold whitespace-nowrap";
 const MEDALS = ["#E8B23A", "#9AA4B2", "#C27A45"];
@@ -44,7 +49,7 @@ export async function RightRail({ viewer, lang, t }: { viewer: string | null; la
   return (
     <div className="space-y-4">
       {mine && lv && (
-        <section className={`${card} overflow-hidden`}>
+        <Card padding={0} className="overflow-hidden">
           <div className="relative bg-primary px-4 py-3 text-paper">
             {/* Pattern dimmed under the text; busy ones (US stars) sat on top of the level name */}
             <span className="bg-pattern absolute inset-0 opacity-30" aria-hidden="true" />
@@ -58,9 +63,8 @@ export async function RightRail({ viewer, lang, t }: { viewer: string | null; la
           <div className="p-4">
             {lv.next ? (
               <>
-                <div className="h-2 overflow-hidden rounded-full bg-ink/10" role="progressbar" aria-label={t("내 이웃 레벨")} aria-valuemin={lv.min} aria-valuemax={lv.next.min} aria-valuenow={mine.points}>
-                  <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, ((mine.points - lv.min) / (lv.next.min - lv.min)) * 100)}%` }} />
-                </div>
+                {/* Progress within this level; the bar takes the member's culture color through the accent token. */}
+                <ProgressBar label={t("내 이웃 레벨")} isLabelHidden value={mine.points - lv.min} max={lv.next.min - lv.min} />
                 <p className="mt-1.5 text-xs opacity-70">{t("{next}까지 {n}점 남았어요", { next: t(lv.next.ko), n: lv.next.min - mine.points })}</p>
               </>
             ) : (
@@ -80,11 +84,11 @@ export async function RightRail({ viewer, lang, t }: { viewer: string | null; la
               ))}
             </dl>
           </div>
-        </section>
+        </Card>
       )}
 
       {waiting.length > 0 && (
-        <section className="rounded-2xl bg-soft/70 p-4 ring-1 ring-primary/10">
+        <section className="rounded-[var(--radius-container)] bg-soft/70 p-4 ring-1 ring-primary/10">
           <p className={railTitle}>
             <Icon name="comment" size={16} className="text-alert" />
             {t("답변을 기다리는 질문")}
@@ -92,7 +96,7 @@ export async function RightRail({ viewer, lang, t }: { viewer: string | null; la
           <ul className="mt-2.5 space-y-2">
             {waiting.map((p) => (
               <li key={p.id}>
-                <Link href={`/posts/${p.id}`} className="flex items-start gap-2.5 rounded-xl bg-white p-2.5 shadow-[0_1px_2px_rgba(16,24,40,.05)] transition hover:shadow-md">
+                <Link href={`/posts/${p.id}`} className="flex items-start gap-2.5 rounded-[var(--radius-element)] bg-[var(--color-background-card)] p-2.5 shadow-[0_1px_2px_rgba(16,24,40,.05)] transition hover:shadow-md">
                   <Avatar code={p.nationality} size={26} />
                   <span className="min-w-0">
                     <span className="line-clamp-2 text-[13px] leading-snug font-bold">{p.title}</span>
@@ -106,7 +110,7 @@ export async function RightRail({ viewer, lang, t }: { viewer: string | null; la
       )}
 
       {hot.length > 0 && (
-        <section className={`${card} p-4`}>
+        <Card>
           <p className={railTitle}>
             <Icon name="flame" size={16} className="text-alert" />
             {t("이번 주 인기 글")}
@@ -125,11 +129,11 @@ export async function RightRail({ viewer, lang, t }: { viewer: string | null; la
               </li>
             ))}
           </ol>
-        </section>
+        </Card>
       )}
 
       {top.length > 0 && (
-        <section className={`${card} p-4`}>
+        <Card>
           <p className={railTitle}>
             <Icon name="trophy" size={16} className="text-[#E8B23A]" />
             {t("도움왕 랭킹")}
@@ -158,9 +162,8 @@ export async function RightRail({ viewer, lang, t }: { viewer: string | null; la
               </li>
             ))}
           </ol>
-          <details className="mt-3 text-xs">
-            <summary className="cursor-pointer py-1.5 font-bold opacity-70">{t("레벨은 어떻게 오르나요?")}</summary>
-            <p className="mt-1.5 leading-relaxed opacity-70">{t("글 1점, 다른 이웃 글에 답변 2점, 도움돼요를 받으면 3점이에요.")}</p>
+          <Collapsible defaultIsOpen={false} className="mt-3 text-xs" trigger={<span className="inline-flex min-h-10 items-center text-xs font-bold opacity-70 pointer-coarse:min-h-11">{t("레벨은 어떻게 오르나요?")}</span>}>
+            <p className="leading-relaxed opacity-70">{t("글 1점, 다른 이웃 글에 답변 2점, 도움돼요를 받으면 3점이에요.")}</p>
             <ul className="mt-1.5 flex flex-wrap gap-1">
               {LEVELS.map((l) => (
                 <li key={l.ko}>
@@ -169,12 +172,12 @@ export async function RightRail({ viewer, lang, t }: { viewer: string | null; la
                 </li>
               ))}
             </ul>
-          </details>
-        </section>
+          </Collapsible>
+        </Card>
       )}
 
       {activity.length > 0 && (
-        <section className={`${card} p-4`}>
+        <Card>
           <p className={railTitle}>
             <span className="relative flex size-2">
               <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-500 opacity-60" />
@@ -196,30 +199,28 @@ export async function RightRail({ viewer, lang, t }: { viewer: string | null; la
               </li>
             ))}
           </ul>
-        </section>
+        </Card>
       )}
 
-      <section className={`${card} p-4`}>
+      <Card>
         <div className="flex items-center justify-between">
           <p className={railTitle}>
             <Icon name="phone" size={16} className="text-primary" />
             {t("공식 안내")}
           </p>
-          <Link href="/guide" className="inline-flex h-8 items-center text-xs opacity-70 hover:underline">
-            {t("전체 보기")}
-          </Link>
+          <Button href="/guide" label={t("전체 보기")} variant="ghost" className="-mr-2" />
         </div>
         <ul className="mt-2 grid grid-cols-2 gap-1.5">
           {HOTLINES.slice(0, 4).map((h) => (
             <li key={h.tel}>
-              <a href={`tel:${h.tel}`} className="block rounded-xl bg-paper px-2.5 py-2 hover:bg-soft">
+              <a href={`tel:${h.tel}`} className="block rounded-[var(--radius-element)] bg-paper px-2.5 py-2 transition hover:bg-soft">
                 <span className="block font-display text-sm font-extrabold text-primary">{h.tel}</span>
                 <span className="block truncate text-[11px] opacity-70">{t(h.name)}</span>
               </a>
             </li>
           ))}
         </ul>
-      </section>
+      </Card>
       <p className="px-1 text-[11px] leading-relaxed opacity-60">
         <Link href="/policy" className="inline-block py-1.5 hover:underline">
           {t("운영 정책")}
@@ -244,16 +245,12 @@ export async function RightRail({ viewer, lang, t }: { viewer: string | null; la
 /** Sample-account switcher: every country with its name, greeting and avatar, current one checked. */
 export function AccountSwitcher({ t, lang, current, up = true }: { t: T; lang: Lang; current: string; up?: boolean }) {
   const items = [...CULTURES, DEFAULT_CULTURE].map((c) => ({ c, code: c.code === "XX" ? "CA" : c.code }));
-  return (
-    <details className="group relative">
-      <summary className="flex h-10 list-none items-center gap-2 rounded-xl bg-paper px-3 text-[13px] font-bold text-primary [&::-webkit-details-marker]:hidden">
-        <Icon name="users" size={16} />
-        {t("다른 나라 이웃으로 바꾸기")}
-        <Icon name="down" size={16} className="ml-auto transition group-open:rotate-180" />
-      </summary>
-      <div className={`absolute left-0 z-40 w-[300px] max-w-[calc(100vw-2rem)] rounded-2xl bg-white p-2 shadow-2xl ring-1 ring-black/10 ${up ? "bottom-full mb-2" : "top-full mt-2"}`}>
-        <p className="px-2 pt-1 pb-2 text-xs opacity-70">{t("나라를 누르면 그 나라 샘플 이웃으로 바로 바뀌어요.")}</p>
-        <ul className="max-h-[60svh] space-y-0.5 overflow-y-auto">
+  const label = t("다른 나라 이웃으로 바꾸기");
+  // Each row is its own server-action form, so the list sits in a Popover (a bottom sheet on phones), not a menu.
+  const list = (
+    <>
+      <p className="px-2 pt-1 pb-2 text-xs opacity-70">{t("나라를 누르면 그 나라 샘플 이웃으로 바로 바뀌어요.")}</p>
+      <ul className="max-h-[60svh] space-y-0.5 overflow-y-auto">
           {items.map(({ c, code }) => {
             const on = code === current;
             return (
@@ -276,8 +273,15 @@ export function AccountSwitcher({ t, lang, current, up = true }: { t: T; lang: L
               </li>
             );
           })}
-        </ul>
-      </div>
-    </details>
+      </ul>
+    </>
+  );
+  return (
+    // Popover wraps its trigger in an inline-flex div; stretch it so the button fills the sidebar instead of overflowing.
+    <div className="[&>:first-child]:w-full">
+      <Popover label={label} content={list} placement={up ? "above" : "below"} width={300} padding={2} presentation="adaptive">
+        <Button label={label} variant="secondary" width="100%" icon={<Icon name="users" size={16} />} endContent={<Icon name="down" size={16} />} className="text-primary" />
+      </Popover>
+    </div>
   );
 }
