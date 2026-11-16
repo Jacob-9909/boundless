@@ -215,3 +215,9 @@ ALTER TABLE boundless.users
 ALTER TABLE boundless.posts
   ADD COLUMN IF NOT EXISTS visa text, -- VISAS id in src/lib/i18n.ts, NULL = not given
   ADD COLUMN IF NOT EXISTS accepted_comment_id bigint REFERENCES boundless.comments ON DELETE SET NULL;
+
+-- Notifications (src/lib/notifications.ts) read the activity tables; these two columns give helpful marks and
+-- accepted answers a time. Existing marks get a date in the past, so the first deploy does not fill every bell.
+ALTER TABLE boundless.comment_likes ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT '2000-01-01';
+ALTER TABLE boundless.comment_likes ALTER COLUMN created_at SET DEFAULT now();
+ALTER TABLE boundless.posts ADD COLUMN IF NOT EXISTS accepted_at timestamptz;

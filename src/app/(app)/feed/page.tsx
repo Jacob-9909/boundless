@@ -96,7 +96,7 @@ export default async function Home(props: PageProps<"/feed">) {
               <Button href="/guide" label={`112 · 119 · ${t("공식 안내")}`} variant="destructive" icon={<Icon name="phone" size={14} />} className="rounded-full" />
             </li>
             <li className="shrink-0">
-              <Button href="/boards" label={`${t("게시판 전체 보기")} →`} variant="ghost" className="text-primary" />
+              <Button href="/boards" label={t("게시판 전체 보기")} variant="ghost" className="text-primary" />
             </li>
           </ul>
         </nav>
@@ -115,7 +115,7 @@ export default async function Home(props: PageProps<"/feed">) {
               </span>
               <Button href="/lounge" label={t("들어가기")} variant="ghost" className="text-primary">
                 <span className="max-sm:sr-only">{t("들어가기")}</span>
-                <span aria-hidden="true"> →</span>
+                <Icon name="next" size={16} className="sm:hidden" />
               </Button>
             </div>
             {lounge.length ? (
@@ -159,7 +159,7 @@ export default async function Home(props: PageProps<"/feed">) {
           {/* Categories at the top of the square, on every screen: filter here without leaving home.
               `relative` keeps the badges' absolute sr-only text inside the scroller; without it the page scrolls sideways on days with new posts. */}
           <nav aria-label={t("게시판")}>
-            <ul className="relative -mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:px-0 md:pb-0">
+            <ul className="relative -mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:mx-0 md:px-0 md:[mask-image:linear-gradient(to_right,black_calc(100%-3rem),transparent)] md:pr-12">
               <li className="shrink-0">
                 <FilterChip href={listHref("/feed", { sort }, { board: "" })} label={t("전체")} on={!board} />
               </li>

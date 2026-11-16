@@ -29,8 +29,7 @@ export default async function BoardPage(props: PageProps<"/b/[board]">) {
           </span>
           <div className="relative flex flex-wrap items-end justify-between gap-3 md:gap-4">
             <div className="max-w-xl">
-              <p className="station-label opacity-90">BOARD · {t(board.ko)}</p>
-              <h1 className="mt-1.5 flex items-center gap-2.5 font-display text-2xl font-extrabold md:gap-3 md:text-4xl">
+              <h1 className="flex items-center gap-2.5 font-display text-2xl font-extrabold md:gap-3 md:text-4xl">
                 <span className="flex size-9 items-center justify-center rounded-xl bg-white/20 md:size-11 md:rounded-2xl">
                   <Icon name={board.icon} size={20} />
                 </span>

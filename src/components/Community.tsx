@@ -100,7 +100,7 @@ export async function RightRail({ viewer, lang, t }: { viewer: string | null; la
                   <Avatar code={p.nationality} size={26} />
                   <span className="min-w-0">
                     <span className="line-clamp-2 text-[13px] leading-snug font-bold">{p.title}</span>
-                    <span className="text-xs font-bold text-primary">{t("답변하고 +2점")} →</span>
+                    <span className="text-xs font-bold text-primary">{t("답변하고 +2점")}</span>
                   </span>
                 </Link>
               </li>

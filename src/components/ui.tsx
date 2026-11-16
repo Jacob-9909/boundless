@@ -202,8 +202,24 @@ export function StationLabel({ children, className = "" }: { children: ReactNode
   );
 }
 
-/** Page banner: soft culture color with the member's pattern fading in from the right. */
-export function PageHead({ line, title, desc, children }: { line: string; title: string; desc?: string; children?: ReactNode }) {
+// Seoul Metro line colors. Each section of the app is a station on its own line, signed like the real ones:
+// a round line number beside the station name. Line 9's gold is left out (white digits would not read on it).
+const METRO = ["", "#0052A4", "#00A84D", "#EF7C1C", "#00A5DE", "#996CAC", "#CD7C2F", "#747F00", "#E6186C"]; // index = line number
+
+export function LineBadge({ n, size = 28 }: { n: number; size?: number }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="inline-flex shrink-0 items-center justify-center rounded-full font-display font-extrabold text-white tabular-nums ring-2 ring-white/80"
+      style={{ background: METRO[n], width: size, height: size, fontSize: Math.round(size * 0.55) }}
+    >
+      {n}
+    </span>
+  );
+}
+
+/** Page banner: soft culture color with the member's pattern fading in from the right, and the section's line badge. */
+export function PageHead({ line, title, desc, children }: { line?: number; title: string; desc?: string; children?: ReactNode }) {
   return (
     // Phones: a compact banner (about 120px) so the page's content starts on the first screen.
     <header className="relative overflow-hidden bg-soft px-4 pt-4 pb-5 md:mx-4 md:mt-6 md:rounded-3xl md:px-8 md:pt-8 md:pb-9">
@@ -213,8 +229,10 @@ export function PageHead({ line, title, desc, children }: { line: string; title:
         aria-hidden="true"
       />
       <div className="relative">
-        <StationLabel className="text-primary">{line}</StationLabel>
-        <h1 className="mt-1.5 font-display text-2xl leading-tight font-extrabold tracking-tight md:mt-2 md:text-4xl">{title}</h1>
+        <div className="flex items-center gap-2.5 md:gap-3">
+          {line && <LineBadge n={line} size={30} />}
+          <h1 className="min-w-0 font-display text-2xl leading-tight font-extrabold tracking-tight text-balance md:text-4xl">{title}</h1>
+        </div>
         {desc && <p className="mt-1.5 max-w-xl text-sm leading-relaxed opacity-80 md:mt-2 md:text-[15px]">{desc}</p>}
         {children}
       </div>
@@ -338,40 +356,46 @@ export function PostCard({ post, lang, t, showBoard = true }: { post: PostRow; l
   const waiting = asks && post.comments === 0 && !post.solved;
   return (
     <article className="group relative px-4 py-3.5 transition-colors hover:bg-paper/70 md:px-5 md:py-4">
-      <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px]">
-        {showBoard ? (
-          <>
-            <span className="flex size-5 shrink-0 items-center justify-center rounded-full text-white" style={{ background: board.color }}>
-              <Icon name={board.icon} size={11} />
-            </span>
-            <span className="font-bold whitespace-nowrap">{t(board.ko)}</span>
-            <span className="opacity-40" aria-hidden="true">
-              •
-            </span>
-            <Flag code={post.nationality} h={11} />
-          </>
-        ) : (
-          <Avatar code={post.nationality} size={22} look={post.avatar} />
-        )}
-        <span className={`whitespace-nowrap ${showBoard ? "" : "font-bold"}`}>{t("{country} 이웃", { country: countryName(post.nationality, lang) })}</span>
-        <LevelBadge points={post.points} t={t} />
-        {post.following && (
-          <span className="inline-flex items-center gap-0.5 rounded-full bg-ink px-1.5 py-px text-[11px] font-bold whitespace-nowrap text-white">
-            <Icon name="following" size={11} />
-            {t("팔로잉")}
+      {/* One line on every screen: who and where on the left (it clips before it wraps), the time pinned right.
+          The level badge waits for wider screens when the board also has to fit. */}
+      <div className="flex items-center gap-x-1.5 text-[13px] whitespace-nowrap">
+        <div className="flex min-w-0 flex-1 items-center gap-x-1.5 overflow-hidden">
+          {showBoard ? (
+            <>
+              <span className="flex size-5 shrink-0 items-center justify-center rounded-full text-white" style={{ background: board.color }}>
+                <Icon name={board.icon} size={11} />
+              </span>
+              <span className="shrink-0 font-bold">{t(board.ko)}</span>
+              <span className="mx-0.5 h-3 w-px shrink-0 bg-current opacity-25" aria-hidden="true" />
+              <Flag code={post.nationality} h={11} />
+            </>
+          ) : (
+            <Avatar code={post.nationality} size={22} look={post.avatar} />
+          )}
+          <span className={`min-w-0 truncate ${showBoard ? "" : "font-bold"}`}>{t("{country} 이웃", { country: countryName(post.nationality, lang) })}</span>
+          <span className={showBoard ? "contents max-sm:hidden" : "contents"}>
+            <LevelBadge points={post.points} t={t} />
           </span>
-        )}
-        {/* The region is how readers judge whether an answer applies to them, so it stands out from the time. */}
-        {post.region && (
-          <span className="inline-flex items-center gap-0.5 font-bold whitespace-nowrap">
-            <Icon name="pin" size={12} className="text-primary" />
-            {regionLabel(post.region, t)}
-          </span>
-        )}
-        <span className="whitespace-nowrap opacity-70">· {timeAgo(post.created_at, lang)}</span>
-        {waiting && post.bumped_at && (
-          <Badge variant="warning" icon={<Icon name="lift" size={12} />} label={t("도움 요청")} />
-        )}
+          {post.following && (
+            <span className="inline-flex items-center gap-0.5 rounded-full bg-ink px-1.5 py-px text-[11px] font-bold whitespace-nowrap text-white">
+              <Icon name="following" size={11} />
+              {t("팔로잉")}
+            </span>
+          )}
+          {/* The region is how readers judge whether an answer applies to them, so it stands out from the time. */}
+          {post.region && (
+            <span className="inline-flex shrink-0 items-center gap-0.5 font-bold">
+              <Icon name="pin" size={12} className="text-primary" />
+              {regionLabel(post.region, t)}
+            </span>
+          )}
+          {waiting && post.bumped_at && (
+            <Badge variant="warning" icon={<Icon name="lift" size={12} />} label={t("도움 요청")} />
+          )}
+        </div>
+        <time dateTime={new Date(post.created_at).toISOString()} className="shrink-0 opacity-70">
+          {timeAgo(post.created_at, lang)}
+        </time>
       </div>
 
       <div className="mt-2 flex gap-3">
@@ -403,7 +427,7 @@ export function PostCard({ post, lang, t, showBoard = true }: { post: PostRow; l
         <div className="mt-3 flex gap-2.5 border-l-2 border-primary/40 pl-3">
           <Avatar code={post.top_answer.nationality} size={22} />
           <p className="line-clamp-2 min-w-0 text-[13px] leading-relaxed [overflow-wrap:anywhere]">
-            <span className="mr-1 font-bold text-primary">{post.top_answer.accepted ? t("채택된 답변") : t("가장 도움된 답변")}</span>
+            <span className="mr-1 font-bold whitespace-nowrap text-primary">{post.top_answer.accepted ? t("채택된 답변") : t("가장 도움된 답변")}</span>
             <span className="opacity-80">{post.top_answer.body}</span>
           </p>
         </div>
@@ -440,7 +464,7 @@ export function PostCard({ post, lang, t, showBoard = true }: { post: PostRow; l
           <SolvedBadge post={post} t={t} className="ml-auto" />
         ) : (
           // On my own question "Answer →" reads like an instruction to myself; say it is waiting instead.
-          waiting && (post.mine ? <span className="ml-auto whitespace-nowrap opacity-70">{t("답변 대기")}</span> : <span className="ml-auto font-bold whitespace-nowrap text-primary">{t("답변하기")} →</span>)
+          waiting && (post.mine ? <span className="ml-auto whitespace-nowrap opacity-70">{t("답변 대기")}</span> : <span className="ml-auto font-bold whitespace-nowrap text-primary">{t("답변하기")}</span>)
         )}
       </div>
     </article>

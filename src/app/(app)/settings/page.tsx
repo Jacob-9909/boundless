@@ -55,7 +55,7 @@ export default async function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-3xl lg:ml-2 pb-6">
-      <PageHead line="LINE 05 · SETTINGS" title={t("설정")} />
+      <PageHead line={5} title={t("설정")} />
       <div className="space-y-6 px-4 py-4">
         {/* The member's profile comes first: avatar, public nationality and level, one tap from editing. */}
         {user && (

@@ -28,7 +28,7 @@ export default async function WritePage(props: PageProps<"/write">) {
     return (
       <div className="mx-auto max-w-4xl lg:ml-2 pb-6">
         <BackLink href="/feed" label={t("뒤로")} />
-        <PageHead line="WRITE · STEP 1" title={t("어디에 올릴까요?")} desc={t("이야기에 맞는 게시판을 고르면 말머리와 쓰는 방법을 안내해 드려요.")} />
+        <PageHead line={3} title={t("어디에 올릴까요?")} desc={t("이야기에 맞는 게시판을 고르면 말머리와 쓰는 방법을 안내해 드려요.")} />
         <div className="space-y-6 px-4 py-5">
           <Link
             href={`/write?space=lounge${keep}`}

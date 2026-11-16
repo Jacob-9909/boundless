@@ -494,7 +494,8 @@ export async function toggleSolved(f: FormData) {
   if (!isId(post)) return;
   // Reopening also drops the accepted answer: an open question has none.
   const rows = await q<{ solved: boolean }>(
-    `UPDATE boundless.posts SET solved = NOT solved, accepted_comment_id = CASE WHEN solved THEN NULL ELSE accepted_comment_id END
+    `UPDATE boundless.posts SET solved = NOT solved, accepted_comment_id = CASE WHEN solved THEN NULL ELSE accepted_comment_id END,
+       accepted_at = CASE WHEN solved THEN NULL ELSE accepted_at END
      WHERE id = $1 AND user_id = $2 RETURNING solved`,
     [post, user.id]
   );
@@ -511,6 +512,7 @@ export async function acceptAnswer(f: FormData) {
   const rows = await q<{ accepted: boolean }>(
     `UPDATE boundless.posts p SET
        accepted_comment_id = CASE WHEN p.accepted_comment_id = c.id THEN NULL ELSE c.id END,
+       accepted_at = CASE WHEN p.accepted_comment_id = c.id THEN NULL ELSE now() END, -- for the answerer's bell
        solved = CASE WHEN p.accepted_comment_id = c.id THEN p.solved ELSE true END
      FROM boundless.comments c
      WHERE p.id = $1 AND p.user_id = $2 AND c.id = $3 AND c.post_id = p.id

@@ -8,9 +8,8 @@ import { Icon } from "@/components/Icon";
 import { NavTabs } from "@/components/NavTabs";
 import { Avatar, LevelBadge, Notice, PageHead, PostCard, SignInRequired } from "@/components/ui";
 import { getT, getUser } from "@/lib/auth";
-import { q } from "@/lib/db";
-import { countryName, timeAgo } from "@/lib/i18n";
-import { followedNeighbors, followerCount, listPosts, myPosts, newReplies, savedPosts } from "@/lib/posts";
+import { countryName } from "@/lib/i18n";
+import { followedNeighbors, followerCount, listPosts, myPosts, savedPosts } from "@/lib/posts";
 
 export const metadata = { title: "My posts" };
 
@@ -19,42 +18,16 @@ export default async function MePage(props: PageProps<"/me">) {
   const tab = sp.tab === "saved" || sp.tab === "following" ? sp.tab : "mine";
   const [{ lang, t }, user] = await Promise.all([getT(), getUser()]);
   if (!user) return <SignInRequired t={t} next="/me" />;
-  const [posts, fresh, followed, followers] = await Promise.all([
+  const [posts, followed, followers] = await Promise.all([
     tab === "saved" ? savedPosts(user.id) : tab === "following" ? listPosts(user.id, { following: true }) : myPosts(user.id),
-    newReplies(user.id, user.seen_at),
     tab === "following" ? followedNeighbors(user.id) : Promise.resolve([]),
     followerCount(user.id),
   ]);
-  // Opening this page counts as reading the new replies (clears the nav badge).
-  if (fresh.length) await q("UPDATE boundless.users SET seen_at = now() WHERE id = $1", [user.id]);
 
   return (
     <div className="mx-auto max-w-3xl lg:ml-2 pb-6">
-      <PageHead line="LINE 04 · MY POSTS" title={t("내 글")} desc={t("나만 볼 수 있는 목록이에요. 글을 열어 답변을 확인하세요.")} />
+      <PageHead line={4} title={t("내 글")} desc={t("나만 볼 수 있는 목록이에요. 글을 열어 답변을 확인하세요.")} />
       <div className="space-y-4 px-4 py-4">
-        {fresh.length > 0 && (
-          <Card className="border-l-4 border-l-alert">
-            <p className="flex items-center gap-1.5 text-sm font-bold">
-              <Icon name="bell" size={16} className="text-alert" />
-              {t("새 답변 {n}개", { n: fresh.length })}
-            </p>
-            <ul className="mt-2 space-y-2">
-              {fresh.map((r) => (
-                <li key={r.id}>
-                  <Link href={`/posts/${r.post_id}`} className="block text-sm hover:underline">
-                    <span className="font-semibold">{r.anon_no === 0 ? t("글쓴이") : t("이웃 {n}", { n: r.anon_no })}</span>
-                    <span className="opacity-70">
-                      {" "}
-                      · {r.title} · {timeAgo(r.created_at, lang)}
-                    </span>
-                    <span className="block truncate opacity-80">{r.body}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </Card>
-        )}
-
         <NavTabs
           label={t("내 글")}
           value={tab}

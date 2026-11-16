@@ -166,7 +166,6 @@
   "댓글까지 모두 지워져요. 삭제할까요?": "Les réponses seront aussi supprimées. Supprimer ?",
   "이 댓글을 삭제할까요?": "Supprimer cette réponse ?",
   "삭제": "Supprimer",
-  "새 답변 {n}개": "{n} nouvelles réponses",
   "내가 쓴 글": "Écrit par moi",
   "저장한 글": "Enregistrés",
   "저장한 글이 없어요": "Rien d’enregistré pour l’instant",
@@ -732,5 +731,16 @@
   "내 프로필": "Mon profil",
   "아바타 만들기": "Créer un avatar",
   "가입을 환영해요! 내 아바타를 만들어 보세요": "Bienvenue ! Créez votre avatar",
-  "나중에 할게요": "Passer pour l'instant"
+  "나중에 할게요": "Passer pour l'instant",
+  "알림": "Notifications",
+  "알림 {n}개": "{n}notifications",
+  "새 알림": "Nouveau",
+  "{who}의 새 답변": "Nouvelle réponse de {who}",
+  "이웃 {n}명이 내 글에 도움돼요를 눌렀어요": "Votre message a été marqué comme utile ({n})",
+  "이웃 {n}명이 내 답변에 도움돼요를 눌렀어요": "Votre réponse a été marquée comme utile ({n})",
+  "내 답변이 채택됐어요": "Votre réponse a été acceptée",
+  "팔로우한 {country} 이웃의 새 글": "Nouveau message du {country} voisin que vous suivez",
+  "내 글과 답변에 이웃들이 남긴 반응이에요. 최근 30일만 보여 줘요.": "Ce que les voisins ont fait de vos messages et réponses au cours des 30 derniers jours.",
+  "아직 알림이 없어요": "Aucune notification pour l'instant",
+  "질문을 올리거나 답변을 달면 이웃들의 반응이 여기에 모여요.": "Posez une question ou répondez-y, et les réponses et remerciements des voisins s'affichent ici."
 }
