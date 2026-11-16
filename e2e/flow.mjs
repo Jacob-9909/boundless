@@ -180,8 +180,11 @@ await mine.getByRole("button", { name: "Delete" }).click();
 await b.getByRole("alertdialog").getByRole("button", { name: "Delete" }).click();
 await b.getByText("B second reply", { exact: true }).waitFor({ state: "detached" });
 
-await a.goto(BASE + "/me");
-await a.getByText(/\d+ new replies/).filter({ visible: true }).first().waitFor();
+// B's reply shows up in A's bell: a count on the button, then the reply itself in the list.
+await a.goto(BASE + "/feed");
+await a.getByRole("link", { name: /^\d+ notifications$/ }).first().waitFor();
+await a.goto(BASE + "/notifications");
+await a.getByText("B first reply").filter({ visible: true }).first().waitFor();
 await a.goto(postUrl);
 // Accepting a reply marks the question solved and pins that reply first.
 await a.locator("[data-comment]", { hasText: "B first reply" }).getByRole("button", { name: "Accept this answer" }).click();

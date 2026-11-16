@@ -12,7 +12,7 @@ export default async function BoardsPage() {
   const [{ t }, counts] = await Promise.all([getT(), boardCounts()]);
   return (
     <div className="mx-auto max-w-4xl lg:ml-2 pb-6">
-      <PageHead line="BOARDS" title={t("게시판")} desc={t("한국 생활의 모든 순간을 게시판별로 나눠 두었어요.")} />
+      <PageHead line={1} title={t("게시판")} desc={t("한국 생활의 모든 순간을 게시판별로 나눠 두었어요.")} />
       <div className="space-y-6 px-4 py-5">
         <Link href="/lounge" className="flex items-center gap-3 rounded-[var(--radius-container)] bg-ink p-4 text-white transition hover:brightness-110">
           <Icon name="users" size={22} />

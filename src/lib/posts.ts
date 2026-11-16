@@ -224,25 +224,6 @@ export function getComments(viewer: string | null, postId: string) {
   );
 }
 
-// Replies by others ($1 = me) on my posts or under my comments, newer than $2.
-const REPLIES = `FROM boundless.comments c JOIN boundless.posts p ON p.id = c.post_id
-     LEFT JOIN boundless.comments parent ON parent.id = c.parent_id
-     WHERE c.user_id <> $1 AND NOT c.hidden AND c.created_at > $2 AND (p.user_id = $1 OR parent.user_id = $1)`;
-
-/** Replies by others on my posts or under my comments, newer than `since`. */
-export function newReplies(viewer: string, since: Date) {
-  return q<{ id: string; post_id: string; title: string; body: string; anon_no: number; created_at: Date }>(
-    `SELECT c.id, c.post_id, p.title, left(c.body, 120) AS body, c.anon_no, c.created_at ${REPLIES}
-     ORDER BY c.created_at DESC LIMIT 20`,
-    [viewer, since]
-  );
-}
-
-export async function unreadCount(viewer: string, since: Date) {
-  const r = await q<{ n: number }>(`SELECT count(*)::int AS n ${REPLIES}`, [viewer, since]);
-  return r[0].n;
-}
-
 /** Headline numbers for the landing page. */
 export async function communityStats() {
   const r = await q<{ countries: number; posts: number; answers: number; today: number; waiting: number }>(

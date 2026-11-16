@@ -15,14 +15,15 @@ import { canViewQueue, demoEnabled, getT, getUser } from "@/lib/auth";
 import { BOARDS, GROUPS } from "@/lib/boards";
 import { cultureOf, DEFAULT_CULTURE, themeVars } from "@/lib/cultures";
 import { countryName } from "@/lib/i18n";
-import { boardCounts, myPoints, unreadCount } from "@/lib/posts";
+import { unreadNotes } from "@/lib/notifications";
+import { boardCounts, myPoints } from "@/lib/posts";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
   const [{ lang, t }, user] = await Promise.all([getT(), getUser()]);
   // A member sees the app in their own culture's colors; visitors see the neutral Seoul theme.
   const culture = user ? cultureOf(user.nationality) : DEFAULT_CULTURE;
   const [unread, counts, points] = await Promise.all([
-    user ? unreadCount(user.id, user.seen_at) : 0,
+    user ? unreadNotes(user.id, user.seen_at) : 0,
     boardCounts(),
     user ? myPoints(user.id) : Promise.resolve(null),
   ]);
@@ -33,7 +34,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
     { href: "/feed", icon: "home", label: t("홈") },
     { href: "/lounge", icon: "users", label: user ? t("{country} 라운지", { country: countryName(user.nationality, lang) }) : t("우리나라 라운지") },
     { href: "/search", icon: "search", label: t("검색") },
-    { href: "/me", icon: "file", label: t("내 글"), badge: unread },
+    { href: "/me", icon: "file", label: t("내 글") },
   ];
   const more: NavItem[] = [
     { href: "/guide", icon: "info", label: t("공식 안내") },
@@ -59,8 +60,19 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
         </form>
       }
       endContent={
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           <IconButton href="/search" label={t("검색")} icon={<Icon name="search" size={18} />} variant="ghost" className="lg:hidden" />
+          {user && (
+            // The bell: replies, thanks and accepted answers. The count sits on the button like any app's badge.
+            <span className="relative">
+              <IconButton href="/notifications" label={unread ? t("알림 {n}개", { n: unread }) : t("알림")} icon={<Icon name="bell" size={18} />} variant="ghost" />
+              {unread > 0 && (
+                <span className="pointer-events-none absolute top-0.5 right-0.5 min-w-4 rounded-full bg-alert px-1 text-center text-[11px] leading-4 font-bold text-white tabular-nums" aria-hidden="true">
+                  {unread > 9 ? "9+" : unread}
+                </span>
+              )}
+            </span>
+          )}
           <LangMenu lang={lang} label={t("화면 언어 바꾸기")} note={langNote} compact />
           {user ? (
             <Link href="/settings" className="inline-flex size-10 items-center justify-center rounded-full ring-1 ring-[var(--color-border)] transition hover:ring-[var(--color-border-emphasized)]" title={t("내 공개 국적")} aria-label={t("내 공개 국적")}>
@@ -138,7 +150,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
         <div className="pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-12">{children}</div>
       </AppShell>
       <div className="lg:hidden">
-        <BottomNav labels={{ feed: t("홈"), boards: t("게시판"), lounge: t("라운지"), me: t("내 글"), settings: t("설정") }} unread={unread} />
+        <BottomNav labels={{ feed: t("홈"), boards: t("게시판"), lounge: t("라운지"), me: t("내 글"), settings: t("설정") }} />
       </div>
     </div>
   );

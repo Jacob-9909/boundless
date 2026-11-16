@@ -9,7 +9,7 @@ export default async function GuidePage() {
   const { t } = await getT();
   return (
     <div className="mx-auto max-w-3xl lg:ml-2 pb-6">
-      <PageHead line="LINE 06 · GUIDE" title={t("공식 안내")} desc={t("커뮤니티 답변과 함께 정부·공공기관 안내를 꼭 확인하세요.")} />
+      <PageHead line={6} title={t("공식 안내")} desc={t("커뮤니티 답변과 함께 정부·공공기관 안내를 꼭 확인하세요.")} />
       <div className="space-y-6 px-4 py-4">
         <section>
           <h2 className="font-display text-lg font-extrabold">{t("전화 상담 · 긴급")}</h2>

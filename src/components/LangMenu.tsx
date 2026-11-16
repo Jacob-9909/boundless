@@ -36,11 +36,12 @@ export function LangMenu({
       <summary
         aria-label={label}
         title={label}
-        className={`flex h-[var(--size-element-md)] cursor-pointer list-none items-center gap-1.5 rounded-full px-3 text-[13px] font-bold whitespace-nowrap [&::-webkit-details-marker]:hidden ${compact ? "" : "w-full justify-center"} ${btnTone}`}
+        className={`flex h-[var(--size-element-md)] cursor-pointer list-none items-center gap-1.5 rounded-full px-3 text-[13px] font-bold whitespace-nowrap [&::-webkit-details-marker]:hidden ${compact ? "max-sm:w-10 max-sm:justify-center max-sm:px-0" : "w-full justify-center"} ${btnTone}`}
       >
         <Icon name="globe" size={16} />
-        {compact ? lang.toUpperCase() : LANG_NAMES[lang]}
-        <Icon name="down" size={14} className="opacity-70 transition group-open:rotate-180" />
+        {compact ? <span className="max-sm:sr-only">{lang.toUpperCase()}</span> : LANG_NAMES[lang]}
+        {/* Phones: just the globe in the top bar, so the logo and the bell fit beside it. */}
+        <Icon name="down" size={14} className={`opacity-70 transition group-open:rotate-180 ${compact ? "max-sm:hidden" : ""}`} />
       </summary>
       <div
         className={`absolute z-50 w-[288px] max-w-[calc(100vw-2rem)] rounded-[var(--radius-container)] bg-[var(--color-background-popover)] p-2 text-[var(--color-text-primary)] shadow-2xl ring-1 ring-[var(--color-border)] ${align === "right" ? "right-0" : "left-0"} ${up ? "bottom-full mb-2" : "top-full mt-2"}`}

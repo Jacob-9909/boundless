@@ -197,7 +197,6 @@ export const EN: Record<string, string> = {
   "삭제": "Delete",
 
   // community features
-  "새 답변 {n}개": "{n} new replies",
   "내가 쓴 글": "Written by me",
   "저장한 글": "Saved",
   "저장한 글이 없어요": "Nothing saved yet",
@@ -801,4 +800,15 @@ export const EN: Record<string, string> = {
   "아바타 만들기": "Create an avatar",
   "가입을 환영해요! 내 아바타를 만들어 보세요": "Welcome! Create your avatar",
   "나중에 할게요": "Skip for now",
+  "알림": "Notifications",
+  "알림 {n}개": "{n} notifications",
+  "새 알림": "New",
+  "{who}의 새 답변": "New reply from {who}",
+  "이웃 {n}명이 내 글에 도움돼요를 눌렀어요": "Your post was marked helpful ({n})",
+  "이웃 {n}명이 내 답변에 도움돼요를 눌렀어요": "Your answer was marked helpful ({n})",
+  "내 답변이 채택됐어요": "Your answer was accepted",
+  "팔로우한 {country} 이웃의 새 글": "New post from the {country} neighbor you follow",
+  "내 글과 답변에 이웃들이 남긴 반응이에요. 최근 30일만 보여 줘요.": "What neighbors did with your posts and answers in the last 30 days.",
+  "아직 알림이 없어요": "No notifications yet",
+  "질문을 올리거나 답변을 달면 이웃들의 반응이 여기에 모여요.": "Ask a question or answer one, and neighbors' replies and thanks show up here.",
 };

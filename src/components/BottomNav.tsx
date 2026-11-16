@@ -13,7 +13,7 @@ const ITEMS = [
 ] as const;
 
 /** Phone tab bar (Astryx has none), drawn with the Astryx tokens; the current tab reads like the selected side-nav item. */
-export function BottomNav({ labels, unread = 0 }: { labels: Record<(typeof ITEMS)[number]["key"], string>; unread?: number }) {
+export function BottomNav({ labels }: { labels: Record<(typeof ITEMS)[number]["key"], string> }) {
   const path = usePathname();
   return (
     <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-[var(--color-border)] bg-[color-mix(in_oklab,var(--color-background-body)_95%,transparent)] backdrop-blur" aria-label="Main">
@@ -31,11 +31,6 @@ export function BottomNav({ labels, unread = 0 }: { labels: Record<(typeof ITEMS
               >
                 <Icon name={it.icon} size={21} />
                 {labels[it.key]}
-                {it.key === "me" && unread > 0 && (
-                  <span className="absolute top-0.5 right-[calc(50%-20px)] min-w-4 rounded-full bg-alert px-1 text-[11px] leading-4 font-bold text-white" aria-label={`${unread}`}>
-                    {unread > 9 ? "9+" : unread}
-                  </span>
-                )}
               </Link>
             </li>
           );

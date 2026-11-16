@@ -20,7 +20,7 @@ export default async function AvatarPage(props: PageProps<"/settings/avatar">) {
     <div className="mx-auto max-w-3xl pb-8 lg:ml-2">
       {!welcome && <BackLink href="/settings" label={t("설정")} />}
       <PageHead
-        line="ME · AVATAR"
+        line={5}
         title={welcome ? t("가입을 환영해요! 내 아바타를 만들어 보세요") : t("내 아바타")}
         desc={t("사람이나 동물 캐릭터를 골라요. 사람은 사진으로 피부색과 머리색을 채울 수도 있어요.")}
       >
