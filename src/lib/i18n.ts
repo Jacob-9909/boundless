@@ -161,7 +161,8 @@ const relative = new Map<Lang, Intl.RelativeTimeFormat>();
 export function timeAgo(d: Date | string, lang: Lang) {
   const sec = Math.round((new Date(d).getTime() - Date.now()) / 1000);
   let rtf = relative.get(lang);
-  if (!rtf) relative.set(lang, (rtf = new Intl.RelativeTimeFormat(lang, { numeric: "auto" })));
+  // style "short": "16 ч назад" not "16 часов назад", so a card's one-line meta row keeps room for the region.
+  if (!rtf) relative.set(lang, (rtf = new Intl.RelativeTimeFormat(lang, { numeric: "auto", style: "short" })));
   const steps: [Intl.RelativeTimeFormatUnit, number][] = [
     ["second", 60],
     ["minute", 60],

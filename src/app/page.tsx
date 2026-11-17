@@ -7,7 +7,7 @@ import { LangMenu } from "@/components/LangMenu";
 import { cultureFonts } from "@/app/login/fonts";
 import { HelloRotator } from "@/components/HelloRotator";
 import { Icon, type IconName } from "@/components/Icon";
-import { Avatar, BoardBadge, Flag, Landmark, LINES, Logo, NationalityChip } from "@/components/ui";
+import { Avatar, BoardBadge, CultureScene, Flag, LINES, Logo, NationalityChip } from "@/components/ui";
 import { demoEnabled, getT, getUser } from "@/lib/auth";
 import { boardOf, BOARDS } from "@/lib/boards";
 import { CULTURES, DEFAULT_CULTURE, themeVars } from "@/lib/cultures";
@@ -383,8 +383,9 @@ export default async function Landing(props: PageProps<"/">) {
               </span>
             </div>
             <div className="relative overflow-hidden rounded-3xl p-6 text-white" style={{ background: "#A8242B" }}>
-              <span className="culture bg-pattern absolute inset-0 opacity-25" style={themeVars(CULTURES[1])} aria-hidden="true" />
-              <Landmark culture={CULTURES[1]} className="absolute right-0 bottom-0 h-20 w-auto opacity-80" />
+              <span className="culture contents" style={themeVars(CULTURES[1])}>
+                <CultureScene culture={CULTURES[1]} variant="banner" />
+              </span>
               <p className="relative flex items-center gap-2 text-sm font-bold text-white/80">
                 <Flag code="VN" h={13} />
                 {t("우리나라 라운지")}
@@ -423,10 +424,9 @@ export default async function Landing(props: PageProps<"/">) {
                 "culture group relative flex h-48 w-full flex-col justify-end overflow-hidden rounded-2xl bg-primary p-3.5 text-left text-white transition hover:-translate-y-1 hover:shadow-xl";
               const face = (
                 <>
-                  <span className="bg-pattern absolute inset-0 opacity-35 transition group-hover:opacity-55" aria-hidden="true" />
-                  <Landmark culture={c} className="absolute inset-x-0 bottom-0 h-auto w-full opacity-80 transition group-hover:opacity-100" />
+                  <CultureScene culture={c} variant="tile" className="transition duration-500 group-hover:scale-105" />
                   <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" aria-hidden="true" />
-                  <span className="relative font-culture text-2xl leading-tight">{c.hello}</span>
+                  <span className="relative font-culture text-[clamp(1.125rem,6vw,1.5rem)] leading-tight">{c.hello}</span>
                   <span className="relative mt-1 flex items-center gap-1.5 text-xs font-semibold opacity-90">
                     <Flag code={c.code} h={11} />
                     {c.native}
@@ -541,8 +541,8 @@ export default async function Landing(props: PageProps<"/">) {
             </ul>
             <ul className="mt-3 flex flex-wrap gap-2">
               {SITES.slice(0, 6).map((s) => (
-                <li key={s.url}>
-                  <Button href={s.url} target="_blank" rel="noopener noreferrer" label={t(s.name)} endContent={<Icon name="external" size={13} />} className="rounded-full" />
+                <li key={s.url} className="max-w-full">
+                  <Button href={s.url} target="_blank" rel="noopener noreferrer" label={t(s.name)} endContent={<Icon name="external" size={13} />} className="max-w-full rounded-full" />
                 </li>
               ))}
             </ul>

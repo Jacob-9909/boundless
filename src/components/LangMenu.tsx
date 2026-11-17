@@ -32,7 +32,7 @@ export function LangMenu({
     glass: "bg-white/15 backdrop-blur hover:bg-white/25",
   }[tone];
   return (
-    <details key={lang} className="group relative">
+    <details key={lang} data-tour="lang" className="group relative">
       <summary
         aria-label={label}
         title={label}

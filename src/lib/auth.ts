@@ -88,6 +88,8 @@ export const isDemoEmail = (email: string) => process.env.DEMO_LOGIN === "1" && 
 /** One-click sample accounts for judges and demos (always on in development). */
 export const demoEnabled = () => process.env.DEMO_LOGIN === "1" || process.env.NODE_ENV !== "production";
 export const DEMO_MODERATOR = "moderator@example.com";
+/** A country's one-click sample account (demoLogin makes "<country code>@example.com"), not a seeded or test member. */
+export const isSampleEmail = (email: string) => /^[a-z]{2}@example\.com$/.test(email);
 
 export function isAdmin(user: User | null) {
   // Demo accounts can be opened by anyone, so they never get moderation rights.

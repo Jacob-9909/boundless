@@ -160,6 +160,8 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
           {/* The text in its own card, so it reads apart from the header, the tools and the replies. */}
           <section aria-label={t("본문")}>
             <Card>
+              {/* The tour lights the language label, the text and the translate button, not the photos below. */}
+              <div data-tour="body">
               <p className="mb-3">
                 <Badge label={`${t("원문")} · ${langName(post.lang, lang)}`} />
               </p>
@@ -170,6 +172,7 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
                   <Linkify text={post.body} />
                 </div>
               )}
+              </div>
               {images.length > 0 && (
                 <ul className={`mt-5 grid gap-2 ${images.length > 1 ? "grid-cols-2" : ""}`}>
                   {images.map((im, i) => (
@@ -228,7 +231,7 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
           )}
 
           {/* Action bar: helpful, save, solved — then author or reader tools */}
-          <div className="mt-5 flex flex-wrap items-center gap-2">
+          <div className="mt-5 flex flex-wrap items-center gap-2" data-tour="actions">
             {user ? (
               <>
                 <form action={toggleLike}>

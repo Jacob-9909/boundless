@@ -71,9 +71,10 @@ export default async function SettingsPage() {
                     {countryName(user.nationality, lang)} ·{" "}
                     {user.avatar ? (user.avatar_public ? t("내 글과 댓글에도 보여요") : t("나에게만 보여요")) : t("사람이나 동물 캐릭터를 만들어요")}
                   </span>
-                </span>
-                <span className="shrink-0 text-sm font-bold text-primary group-hover:underline">
-                  {user.avatar ? t("바꾸기") : t("아바타 만들기")} <span aria-hidden="true">›</span>
+                  {/* Under the text, not beside it: beside it, long languages squeezed the text to one word per line. */}
+                  <span className="mt-1 block text-sm font-bold text-primary group-hover:underline">
+                    {user.avatar ? t("바꾸기") : t("아바타 만들기")} <span aria-hidden="true">›</span>
+                  </span>
                 </span>
               </div>
             </Card>

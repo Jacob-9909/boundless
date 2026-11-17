@@ -16,7 +16,7 @@ import { LANG_NAMES, toLang, type Lang } from "@/lib/i18n";
 import { useT } from "./I18n";
 import { Icon } from "./Icon";
 import { LangMenu } from "./LangMenu";
-import { Flag, Landmark, Logo, NationalityChip } from "./ui";
+import { CultureScene, Flag, Logo, NationalityChip } from "./ui";
 
 type Step = "email" | "code" | "profile";
 const PICKER: Culture[] = [...CULTURES, DEFAULT_CULTURE];
@@ -109,13 +109,12 @@ export function LoginScreen({
     <main style={themeVars(culture)} className="culture min-h-dvh bg-paper text-ink lg:grid lg:grid-cols-[1.15fr_1fr]">
       {/* Hero: re-skinned with the chosen culture's colors, pattern, script and greeting */}
       {/* z-10 + no overflow clip on the section, so the language menu can drop below the hero */}
-      <section className="relative z-10 flex min-h-[46svh] flex-col bg-primary px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-8 text-paper transition-colors duration-500 lg:min-h-screen lg:px-10">
+      <section className="relative z-10 flex min-h-[46svh] flex-col bg-primary px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(2rem,22vw)] lg:pb-8 text-paper transition-colors duration-500 lg:min-h-screen lg:px-10">
         <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-          <div key={`p-${culture.code}`} className="bg-pattern animate-fade-in absolute inset-0 opacity-30" />
-          <div key={`l-${culture.code}`} className="animate-fade-in absolute inset-x-0 bottom-0">
-            <Landmark culture={culture} className="ml-auto h-40 w-auto opacity-80 lg:h-56" />
-          </div>
-          <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/15 to-transparent" />
+          <CultureScene key={culture.code} culture={culture} className="animate-scene" />
+          {/* Phones: the greeting sits just above the landmark (extra bottom padding), so the bottom darkens a little.
+              Desktop: the greeting sits high in the sky, above the scene. */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-black/10 lg:bg-gradient-to-b lg:from-black/35 lg:via-black/10 lg:to-transparent" />
         </div>
 
         <div className="relative flex items-center justify-between">
@@ -125,7 +124,7 @@ export function LoginScreen({
           <LangMenu lang={lang} label={t("화면 언어 바꾸기")} note={t("한국어와 영어 밖의 언어는 기계 번역이라 어색한 문장이 있을 수 있어요. 검수하고 있어요.")} tone="glass" compact />
         </div>
 
-        <div key={`h-${culture.code}`} className="animate-fade-in relative mt-auto pt-10">
+        <div key={`h-${culture.code}`} className="animate-fade-in relative mt-auto pt-10 lg:mt-[14vh] lg:pt-0 lg:[text-shadow:0_2px_12px_rgb(0_0_0/.35)]">
           <p className="station-label flex items-center gap-1.5 opacity-90">
             {culture.code === "XX" ? <Icon name="globe" size={14} /> : <Flag code={culture.code} h={12} />}
             {culture.native}
@@ -301,11 +300,13 @@ export function LoginScreen({
               <p className="text-sm font-bold">{t("심사위원·체험용")}</p>
               <p className="text-xs opacity-70">{t("이메일 인증 없이 이 나라의 샘플 이웃으로 둘러봐요. 모든 데이터는 가상이에요.")}</p>
             </div>
-            <form action={demoLogin.bind(null, culture.code)}>
+            <form action={demoLogin.bind(null, culture.code)} className="max-w-full">
+              {/* A long label (Filipino, Russian) wraps inside the button instead of pushing past the screen edge. */}
               <Button
                 type="submit"
                 variant="primary"
                 label={t("샘플 계정으로 입장")}
+                className="h-auto min-h-[var(--size-element-md)] max-w-full py-2 [&_span]:whitespace-normal"
                 icon={culture.code === "XX" ? <Icon name="globe" size={16} /> : <Flag code={culture.code} h={12} />}
               />
             </form>

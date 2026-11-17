@@ -30,7 +30,7 @@ export function BottomNav({ labels }: { labels: Record<(typeof ITEMS)[number]["k
                 }`}
               >
                 <Icon name={it.icon} size={21} />
-                {labels[it.key]}
+                <span className="max-w-full truncate px-0.5">{labels[it.key]}</span>
               </Link>
             </li>
           );

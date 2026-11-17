@@ -3,7 +3,8 @@ import Link from "next/link";
 import { useId, type CSSProperties, type ReactNode } from "react";
 import { boardOf, DEALS, levelOf, tagOf } from "@/lib/boards";
 import { lookStyle, parseLook } from "@/lib/avatar";
-import { cultureOf, landmarkMarkup, patternUrl, type Culture } from "@/lib/cultures";
+import { cultureOf, groundMarkup, patternUrl, type Culture } from "@/lib/cultures";
+import { sceneOf } from "@/lib/scenes";
 import type { Help } from "@/lib/guide";
 import { countryName, langAutonym, regionLabel, timeAgo, type Lang, type T } from "@/lib/i18n";
 import type { PostRow } from "@/lib/posts";
@@ -69,10 +70,31 @@ export function Flag({ code, h = 14, round = false, className = "" }: { code: st
   );
 }
 
-/** The culture's landmark or landscape silhouette (static markup from lib/landmarks). */
-export function Landmark({ culture, className = "" }: { culture: Culture; className?: string }) {
+/**
+ * A culture's scene (src/lib/scenes.ts): its sky, the air strip along the top and the ground strip with the landmark.
+ * Fills its positioned parent. hero: the full sign-in panel. banner: a wide, short header with text on the left,
+ * so the scene sits to the right. tile: a small card, cropped around the landmark.
+ */
+export function CultureScene({ culture, variant = "hero", className = "" }: { culture: Culture; variant?: "hero" | "banner" | "tile"; className?: string }) {
+  const s = sceneOf(culture.code);
+  const at = variant === "banner" ? "82% 92%" : "50% 92%";
+  // hero: full width, height from the drawing's own ratio, so nothing is cropped. The air strip starts under the logo row.
+  const fit = variant === "tile" ? "slice" : "meet";
+  const air = { hero: "inset-x-0 top-14 h-auto w-full lg:top-16", banner: "top-0 right-0 h-[48%] w-auto", tile: "inset-x-0 top-0 h-[34%] w-full" }[variant];
+  const ground = { hero: "inset-x-0 bottom-0 h-auto w-full", banner: "right-0 bottom-0 h-full w-auto", tile: "inset-x-0 bottom-0 h-[62%] w-full" }[variant];
   return (
-    <svg viewBox="0 0 400 120" preserveAspectRatio="xMidYMax meet" className={className} aria-hidden="true" dangerouslySetInnerHTML={{ __html: landmarkMarkup(culture) }} />
+    <div
+      className={`absolute inset-0 overflow-hidden ${className}`}
+      style={{ background: `radial-gradient(ellipse 75% 45% at ${at}, ${s.glow}66, transparent 70%), linear-gradient(to bottom, ${s.sky[0]}, ${s.sky[1]} 55%, ${s.sky[2]})` }}
+      aria-hidden="true"
+    >
+      {/* The culture's textile pattern, faint and only in the upper sky, like a woven backdrop. */}
+      <span className="bg-pattern absolute inset-0 opacity-[.12] [mask-image:linear-gradient(to_bottom,black,transparent_60%)]" />
+      {s.air && (
+        <svg viewBox="0 0 400 110" preserveAspectRatio={`${variant === "banner" ? "xMaxYMin" : "xMidYMin"} ${fit}`} className={`absolute ${air}`} dangerouslySetInnerHTML={{ __html: s.air }} />
+      )}
+      <svg viewBox="0 0 400 136" preserveAspectRatio={`${variant === "banner" ? "xMaxYMax" : "xMidYMax"} ${fit}`} className={`absolute ${ground}`} dangerouslySetInnerHTML={{ __html: groundMarkup(culture) }} />
+    </div>
   );
 }
 
@@ -100,12 +122,12 @@ export function Avatar({ code, size = 40, look }: { code: string; size?: number;
 }
 
 /** Member level (points from answers and helpful votes). */
-export function LevelBadge({ points, t }: { points: number; t: T }) {
+export function LevelBadge({ points, t, className = "" }: { points: number; t: T; className?: string }) {
   const l = levelOf(points);
   return (
-    <span className="inline-flex items-center gap-1 rounded-full px-1.5 py-px text-[11px] font-bold whitespace-nowrap" style={{ background: l.color + "1A", color: `color-mix(in oklab, ${l.color} 40%, black)` }}>
-      <Icon name="sparkles" size={11} />
-      {t(l.ko)}
+    <span className={`inline-flex min-w-0 items-center gap-1 rounded-full px-1.5 py-px text-[11px] font-bold whitespace-nowrap ${className}`} style={{ background: l.color + "1A", color: `color-mix(in oklab, ${l.color} 40%, black)` }}>
+      <Icon name="sparkles" size={11} className="shrink-0" />
+      <span className="truncate">{t(l.ko)}</span>
     </span>
   );
 }
@@ -324,8 +346,11 @@ export function SolvedNote({ post, lang, t }: { post: Pick<PostRow, "nationality
         collapsible={false}
         icon={
           <span className="flex shrink-0 -space-x-2" aria-hidden="true">
-            {all.slice(0, 5).map((c) => (
-              <Avatar key={c} code={c} size={30} />
+            {/* Three faces on phones, five on wider screens, so the country list keeps room to read. */}
+            {all.slice(0, 5).map((c, i) => (
+              <span key={c} className={i > 2 ? "max-sm:hidden" : ""}>
+                <Avatar code={c} size={30} />
+              </span>
             ))}
           </span>
         }
@@ -365,17 +390,16 @@ export function PostCard({ post, lang, t, showBoard = true }: { post: PostRow; l
               <span className="flex size-5 shrink-0 items-center justify-center rounded-full text-white" style={{ background: board.color }}>
                 <Icon name={board.icon} size={11} />
               </span>
-              <span className="shrink-0 font-bold">{t(board.ko)}</span>
+              <span className="min-w-0 truncate font-bold">{t(board.ko)}</span>
               <span className="mx-0.5 h-3 w-px shrink-0 bg-current opacity-25" aria-hidden="true" />
               <Flag code={post.nationality} h={11} />
             </>
           ) : (
             <Avatar code={post.nationality} size={22} look={post.avatar} />
           )}
-          <span className={`min-w-0 truncate ${showBoard ? "" : "font-bold"}`}>{t("{country} 이웃", { country: countryName(post.nationality, lang) })}</span>
-          <span className={showBoard ? "contents max-sm:hidden" : "contents"}>
-            <LevelBadge points={post.points} t={t} />
-          </span>
+          {/* When the line runs out, the country gives way first, then the level, then the region; each ends in an ellipsis. */}
+          <span className={`min-w-0 shrink-[100] truncate ${showBoard ? "" : "font-bold"}`}>{t("{country} 이웃", { country: countryName(post.nationality, lang) })}</span>
+          <LevelBadge points={post.points} t={t} className={`shrink-[10] ${showBoard ? "max-sm:hidden" : ""}`} />
           {post.following && (
             <span className="inline-flex items-center gap-0.5 rounded-full bg-ink px-1.5 py-px text-[11px] font-bold whitespace-nowrap text-white">
               <Icon name="following" size={11} />
@@ -384,9 +408,9 @@ export function PostCard({ post, lang, t, showBoard = true }: { post: PostRow; l
           )}
           {/* The region is how readers judge whether an answer applies to them, so it stands out from the time. */}
           {post.region && (
-            <span className="inline-flex shrink-0 items-center gap-0.5 font-bold">
-              <Icon name="pin" size={12} className="text-primary" />
-              {regionLabel(post.region, t)}
+            <span className="inline-flex min-w-0 items-center gap-0.5 font-bold">
+              <Icon name="pin" size={12} className="shrink-0 text-primary" />
+              <span className="truncate">{regionLabel(post.region, t)}</span>
             </span>
           )}
           {waiting && post.bumped_at && (

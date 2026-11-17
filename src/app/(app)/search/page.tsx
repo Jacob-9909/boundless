@@ -33,7 +33,7 @@ export default async function SearchPage(props: PageProps<"/search">) {
   return (
     <div className="mx-auto max-w-3xl lg:ml-2 pb-6">
       <PageHead line={2} title={t("검색")} desc={t("글 원문과, 한 번이라도 번역된 글의 번역문에서 찾아요.")} />
-      <form className="space-y-3 px-4 py-4" role="search">
+      <form className="space-y-3 px-4 py-4" role="search" data-tour="search">
         {from && (
           <div className="flex items-center gap-2 text-sm">
             <input type="hidden" name="from" value={from} />
