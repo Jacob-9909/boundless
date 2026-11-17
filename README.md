@@ -7,7 +7,7 @@
 > **바로 체험:** https://boundless-virid.vercel.app
 > 첫 화면의 **샘플 계정**에서 나라를 고르면 이메일 인증 없이 그 나라 이웃으로 들어갑니다. 15개국과 그 밖의 나라(캐나다) 계정, 읽기 전용 운영자 계정이 있습니다. 모든 글과 계정은 가상 데이터입니다.
 
-![첫 화면: 여러 나라의 노선이 한국에서 만나는 노선도](docs/images/landing.png)
+![첫 화면: 여러 나라의 노선이 한국에서 만나는 노선도](docs/features/01-landing-hero.jpg)
 
 ---
 
@@ -48,9 +48,9 @@
 
 그 밖에 저장, 공유, 대댓글, 글쓰기 임시 저장, 장터 가격·거래 상태, 팝업 기간·장소, 웹 앱 설치(홈 화면 추가)를 지원합니다.
 
-| 고른 나라로 바뀌는 로그인 화면 | 일본 계정: 화면 전체가 일본어 | 러시아 계정, 휴대폰 |
+| 고른 나라로 바뀌는 로그인 화면 | 일본 계정: 화면 전체가 일본어 | 태국 계정, 휴대폰 |
 | --- | --- | --- |
-| ![베트남 테마 로그인](docs/images/login-vn.png) | ![일본어 홈](docs/images/feed-ja.png) | ![러시아어 모바일](docs/images/mobile-ru.png) |
+| ![베트남 테마 로그인](docs/features/04-login-theme-vn.jpg) | ![일본어 홈](docs/features/10-feed-japanese.jpg) | ![태국 계정 휴대폰 홈](docs/features/34-mobile-feed.jpg) |
 
 ---
 

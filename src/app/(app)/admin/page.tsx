@@ -37,6 +37,20 @@ function OpenPost({ id, t }: { id: string; t: T }) {
 
 export default async function AdminPage() {
   const [{ lang, t }, user] = await Promise.all([getT(), getUser()]);
+  // Usage metric names (track() in actions.ts) as people read them.
+  const eventName: Record<string, string> = {
+    search: t("검색"),
+    post: t("글쓰기"),
+    comment: t("답변"),
+    signup: t("가입"),
+    report: t("신고"),
+    appeal: t("재심"),
+    accepted: t("채택"),
+    solved: t("해결됨"),
+    helpful: t("도움돼요"),
+    bump: t("도움 요청"),
+    ai_check: t("AI 점검"),
+  };
   if (!canViewQueue(user)) redirect("/feed");
   // The demo moderator (judges) sees the real queue, but cannot act on it.
   const readOnly = !isAdmin(user);
@@ -95,7 +109,7 @@ export default async function AdminPage() {
       <div className="space-y-4 px-4 py-4">
         <Card className="border-l-4 border-l-primary text-sm">
           <p className="font-bold">{t("최근 7일 이용 지표")}</p>
-          <p className="mt-1 text-[var(--color-text-secondary)]">{events.length ? events.map((e) => `${e.name} ${e.n}`).join(" · ") : "—"}</p>
+          <p className="mt-1 text-[var(--color-text-secondary)]">{events.length ? events.map((e) => `${eventName[e.name] ?? e.name} ${e.n}`).join(" · ") : "—"}</p>
           <p className="mt-1 text-[var(--color-text-secondary)]" data-solve-rate>
             {t("질문 {asked}개 중 해결 {solved}개 ({rate}%), 채택 {accepted}개", {
               asked: qa.asked,

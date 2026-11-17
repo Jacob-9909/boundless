@@ -252,14 +252,17 @@ export function DemoTour({ country, lang }: { country: string; lang: Lang }) {
           </div>
         )}
         {/* Progress as dots: where you are in the whole tour. */}
-        <div className="mt-4 flex items-center gap-2">
-          <span className="flex flex-1 gap-1" aria-hidden="true">
+        {/* The buttons wrap below the dots when a long label (e.g. Vietnamese) needs the room, instead of truncating. */}
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <span className="flex shrink-0 gap-1" aria-hidden="true">
             {steps.map((_, i) => (
               <span key={i} className={`h-1.5 rounded-full ${i === state.step ? "w-4 bg-[var(--c-primary)]" : "w-1.5 bg-[var(--color-border-emphasized)]"}`} />
             ))}
           </span>
-          {state.step > 0 && <Button label={t("이전")} variant="ghost" size="sm" onClick={() => go(state.step - 1)} />}
-          <Button label={state.step === last ? t("마치기") : (step.cta ?? t("다음"))} variant="primary" size="sm" onClick={next} />
+          <span className="ml-auto flex shrink-0 gap-2">
+            {state.step > 0 && <Button label={t("이전")} variant="ghost" size="sm" onClick={() => go(state.step - 1)} />}
+            <Button label={state.step === last ? t("마치기") : (step.cta ?? t("다음"))} variant="primary" size="sm" onClick={next} />
+          </span>
         </div>
       </div>
     </div>
