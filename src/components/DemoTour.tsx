@@ -6,6 +6,7 @@
 // ponytail: hand-rolled (a box-shadow cut-out and a positioned card) instead of a tour library; ~200 lines, no dependency.
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
+import { flushSync } from "react-dom";
 import { Button } from "@astryxdesign/core/Button";
 import { Icon } from "./Icon";
 import { setLang } from "@/app/actions";
@@ -118,7 +119,8 @@ export function DemoTour({ country, lang }: { country: string; lang: Lang }) {
         const full = el.getBoundingClientRect();
         // Only the top of a tall target is lit, so the card fits under it.
         const r = full.height > window.innerHeight * TALL ? new DOMRect(full.x, full.y, full.width, window.innerHeight * TALL) : full;
-        setLit((old) => (old && old.step === at && old.rect.top === r.top && old.rect.left === r.left && old.rect.width === r.width && old.rect.height === r.height ? old : { step: at, rect: r }));
+        // flushSync paints the new box in this frame; a plain update lands a frame late and trails a smooth scroll.
+        flushSync(() => setLit((old) => (old && old.step === at && old.rect.top === r.top && old.rect.left === r.left && old.rect.width === r.width && old.rect.height === r.height ? old : { step: at, rect: r })));
       }
       // Give up looking after 4s: the card then shows centered, without a spotlight.
       if (el || performance.now() - started < 4000) raf = requestAnimationFrame(track);
@@ -197,22 +199,26 @@ export function DemoTour({ country, lang }: { country: string; lang: Lang }) {
 
   return (
     <div className="pointer-events-none fixed inset-0 z-[60]" role="presentation">
-      {/* The light: a clear box over the target, the rest of the page dimmed by its enormous shadow. Clicks pass through. */}
+      {/* The light: a clear box over the target, the rest of the page dimmed by its enormous shadow. Clicks pass through.
+          No position transition: the box is re-measured every frame and must stay glued to the target while the page
+          scrolls; easing it made the light trail far behind. The keys stop React from morphing the full-screen dim into
+          the box, which slid the light down from the top of the screen on every step. */}
       {rect ? (
         <div
+          key="light"
           aria-hidden="true"
-          className="pointer-events-none fixed rounded-xl ring-2 ring-white/80 motion-safe:transition-all motion-safe:duration-300"
+          className="pointer-events-none fixed rounded-xl ring-2 ring-white/80"
           style={{ top: rect.top - pad, left: rect.left - pad, width: rect.width + pad * 2, height: rect.height + pad * 2, boxShadow: "0 0 0 9999px rgb(10 14 30 / .58)" }}
         />
       ) : (
-        <div aria-hidden="true" className="pointer-events-none fixed inset-0 bg-[rgb(10_14_30/.58)]" />
+        <div key="dim" aria-hidden="true" className="pointer-events-none fixed inset-0 bg-[rgb(10_14_30/.58)]" />
       )}
       <div
         ref={card}
         role="dialog"
         aria-modal="false"
         aria-labelledby="tour-title"
-        className="pointer-events-auto fixed rounded-2xl bg-[var(--color-background-popover)] p-4 text-[var(--color-text-primary)] shadow-2xl ring-1 ring-black/10 motion-safe:transition-[top,left] motion-safe:duration-300"
+        className="pointer-events-auto fixed rounded-2xl bg-[var(--color-background-popover)] p-4 text-[var(--color-text-primary)] shadow-2xl ring-1 ring-black/10"
         style={style}
       >
         <div className="flex items-center gap-2">
