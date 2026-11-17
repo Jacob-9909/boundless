@@ -88,7 +88,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   );
 
   const footer = (
-    <div className="space-y-2">
+    <div key="footer" className="space-y-2">
       {user ? (
         <Link
           href={user.avatar ? "/settings" : "/settings/avatar"}
@@ -118,6 +118,12 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
       )}
       {demoUser && user && <AccountSwitcher t={t} lang={lang} current={user.nationality} />}
       <p className="px-1 text-[11px] text-[var(--color-text-secondary)]">
+        {/* The intro page explains the service. Members opening "/" go to their feed, so this line (always in view,
+            unlike the scrolling menu above) is the way back; phones also have it in settings. */}
+        <Link href="/?intro=1" className="hover:underline">
+          {t("Boundless 소개")}
+        </Link>
+        {" · "}
         <Link href="/policy" className="hover:underline">
           {t("운영 정책")}
         </Link>
@@ -137,13 +143,14 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
         banner={user ? <div className="bg-pattern h-1.5 bg-primary bg-[length:auto_24px]" aria-hidden="true" /> : undefined}
         topNav={topNav}
         sideNav={
+          // topContent and footer carry keys: Astryx SideNav puts them in a list with the menu, and React warned without them.
           <AppSideNav
             label={t("주요 메뉴")}
             main={main}
             boards={boards}
             moreLabel={t("더 보기")}
             more={more}
-            topContent={<Button href="/write" label={t("글쓰기")} variant="primary" size="lg" width="100%" icon={<Icon name="plus" size={18} />} />}
+            topContent={<Button key="write" href="/write" label={t("글쓰기")} variant="primary" size="lg" width="100%" icon={<Icon name="plus" size={18} />} />}
             footer={footer}
           />
         }
