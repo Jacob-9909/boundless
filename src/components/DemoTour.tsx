@@ -28,10 +28,12 @@ const desktop = () => window.matchMedia("(min-width: 1024px)").matches;
 type Progress = { step: number; done: boolean };
 // Progress as a tiny external store over localStorage. A blocked storage still works for the current page.
 let memory: string | null = null;
+// The post the tour opened, so 이전 from a later page can go back to it.
+let lastPost: string | null = null;
 const listeners = new Set<() => void>();
 function raw() {
   try {
-    return localStorage.getItem(KEY) ?? memory;
+    return memory ?? localStorage.getItem(KEY);
   } catch {
     return memory;
   }
@@ -166,15 +168,15 @@ export function DemoTour({ country, lang }: { country: string; lang: Lang }) {
   const go = (i: number) => {
     const to = Math.max(0, Math.min(i, last));
     const p = steps[to].path;
-    const want = typeof p === "function" ? p() : p;
-    if (want && want !== "/posts/" && pathname !== want) router.push(want);
+    const want = typeof p === "function" ? p() : p === "/posts/" ? (pathname.startsWith("/posts/") ? null : lastPost) : p;
+    if (want && pathname !== want) router.push(want);
     save({ step: to, done: false });
   };
   const next = () => {
     if (state.step === last) return save({ step: 0, done: true });
     if (step.click) {
       const link = find(step.target)?.querySelector<HTMLAnchorElement>(step.click);
-      if (link) router.push(link.getAttribute("href")!);
+      if (link) router.push((lastPost = link.getAttribute("href")!));
       // No post to open (an empty feed): skip the post steps instead of bouncing back here.
       else return go(steps.findIndex((x, i) => i > state.step && x.path !== "/posts/"));
     }
@@ -229,16 +231,18 @@ export function DemoTour({ country, lang }: { country: string; lang: Lang }) {
           <>
             <p className="mt-1 text-xs text-[var(--color-text-secondary)]">{t("{country} 샘플 계정이에요. 데이터는 모두 가상이에요.", { country })}</p>
             {/* Sample accounts open in their country's language. These two stay in their own language so anyone can read them. */}
-            {lang !== "ko" && lang !== "en" && (
-              <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-3 flex flex-wrap gap-2">
+              {lang !== "ko" && (
                 <form action={setLang.bind(null, "ko")}>
                   <Button type="submit" label="한국어로 보기" variant="secondary" size="sm" icon={<Icon name="globe" size={14} />} />
                 </form>
+              )}
+              {lang !== "en" && (
                 <form action={setLang.bind(null, "en")}>
                   <Button type="submit" label="View in English" variant="secondary" size="sm" />
                 </form>
-              </div>
-            )}
+              )}
+            </div>
           </>
         )}
         {state.step === last && (

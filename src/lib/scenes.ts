@@ -35,6 +35,11 @@ function peaks(pts: [number, number][], fill: string, op = 1) {
   return `<path d='M0 136 ${pts.map(([x, y]) => `L${x} ${y}`).join(" ")} L400 136Z' fill='${fill}'${op < 1 ? ` opacity='${op}'` : ""}/>`;
 }
 
+/** A closed shape through the given points only, e.g. a snow cap on a peak. */
+function cap(pts: [number, number][], fill: string, op = 1) {
+  return `<path d='M${pts.map(([x, y]) => `${x} ${y}`).join(" L")}Z' fill='${fill}'${op < 1 ? ` opacity='${op}'` : ""}/>`;
+}
+
 /** A soft light: rings of falling opacity, no gradients (ids collide across inline svgs). */
 function glow(x: number, y: number, r: number, color: string, core = 1) {
   return [3.2, 2.2, 1.5].map((k, i) => `<circle cx='${x}' cy='${y}' r='${f(r * k)}' fill='${color}' opacity='${[0.06, 0.1, 0.16][i]}'/>`).join("") + `<circle cx='${x}' cy='${y}' r='${r}' fill='${color}' opacity='${core}'/>`;
@@ -258,7 +263,7 @@ export const SCENES: Record<string, Scene> = {
     glow: "#FFFFFF",
     mid: "#F4F8FC",
     cut: { primary: "#C4272F" },
-    far: peaks([[0, 80], [50, 58], [80, 70], [130, 44], [170, 66], [220, 52], [270, 72], [320, 48], [360, 68], [400, 60]], "#7AA6D8", 0.85) + peaks([[110, 52], [130, 44], [150, 52]], "#FFFFFF", 0.9) + hills([104, 96, 102, 94, 100, 96, 104], "#5E9A55"),
+    far: peaks([[0, 80], [50, 58], [80, 70], [130, 44], [170, 66], [220, 52], [270, 72], [320, 48], [360, 68], [400, 60]], "#7AA6D8", 0.85) + cap([[110, 52], [130, 44], [150, 52]], "#FFFFFF", 0.9) + hills([104, 96, 102, 94, 100, 96, 104], "#5E9A55"),
     near: `<rect x='0' y='111' width='400' height='25' fill='#4E8B4A'/>` + [[112, 118, 1.3], [150, 113, 1.45], [194, 120, 1.25], [236, 115, 1.5], [278, 121, 1.2]].map(([x, y, s]) => horse(x, y, s, "#3A2414")).join(""),
     air: [[60, 30, 1], [250, 18, 0.8], [350, 44, 1.2]].map(([x, y, s]) => `<g fill='#fff' opacity='.9'><ellipse cx='${x}' cy='${y}' rx='${24 * s}' ry='${7 * s}'/><ellipse cx='${x - 8 * s}' cy='${y - 5 * s}' rx='${10 * s}' ry='${7 * s}'/><ellipse cx='${x + 8 * s}' cy='${y - 6 * s}' rx='${12 * s}' ry='${8 * s}'/></g>`).join(""),
   },
@@ -282,8 +287,8 @@ export const SCENES: Record<string, Scene> = {
     cut: { paper: "#FBE3E0" },
     far:
       peaks([[0, 70], [40, 52], [70, 62], [120, 20], [150, 40], [200, 8], [250, 36], [290, 24], [340, 56], [400, 44]], "#C99AB4") +
-      peaks([[100, 34], [120, 20], [140, 34], [128, 30]], "#FFE8E4") +
-      peaks([[182, 22], [200, 8], [218, 22], [206, 18]], "#FFE8E4"),
+      cap([[100, 34], [120, 20], [140, 34], [128, 30]], "#FFE8E4") +
+      cap([[182, 22], [200, 8], [218, 22], [206, 18]], "#FFE8E4"),
     near: band(116, 20, "#1B2A5C", (x) => `<path d='M${x} 126 l7 -7 l7 7 l-7 7Z' fill='#B0122B'/><path d='M${x + 7} 122 l3 4 l-3 4 l-3 -4Z' fill='#F4C542'/><rect x='${x}' y='117' width='14' height='1.5' fill='#F4C542' opacity='.7'/><rect x='${x}' y='133.5' width='14' height='1.5' fill='#F4C542' opacity='.7'/>`, 14),
     air: stars(10) + birds([[300, 50, 1], [316, 44, 0.8]], "#2A0A10"),
   },
@@ -322,7 +327,7 @@ export const SCENES: Record<string, Scene> = {
     glow: "#FFF3B0",
     mid: "#063645",
     cut: { extra: "#F2C200" },
-    far: peaks([[0, 86], [60, 70], [110, 82], [170, 62], [230, 80], [290, 66], [350, 82], [400, 72]], "#8FCFE0", 0.9) + peaks([[150, 70], [170, 62], [190, 70]], "#FFFFFF", 0.9) + hills([104, 98, 102, 96, 100, 98, 104], "#B9A24A", 0.7),
+    far: peaks([[0, 86], [60, 70], [110, 82], [170, 62], [230, 80], [290, 66], [350, 82], [400, 72]], "#8FCFE0", 0.9) + cap([[150, 70], [170, 62], [190, 70]], "#FFFFFF", 0.9) + hills([104, 98, 102, 96, 100, 98, 104], "#B9A24A", 0.7),
     near: band(114, 22, "#063645", (x) => `<path d='M${x + 12} 132 V124 C${x + 12} 118 ${x + 6} 116 ${x + 4} 120 C${x + 2} 123 ${x + 5} 126 ${x + 7} 124 M${x + 12} 124 C${x + 12} 118 ${x + 18} 116 ${x + 20} 120 C${x + 22} 123 ${x + 19} 126 ${x + 17} 124' fill='none' stroke='#F2C200' stroke-width='1.6' stroke-linecap='round'/>`, 24),
     air: glow(250, 26, 12, "#F2C200") + Array.from({ length: 16 }, (_, i) => { const a = (Math.PI * 2 * i) / 16; return `<path d='M${f(250 + 15 * Math.cos(a))} ${f(26 + 15 * Math.sin(a))} L${f(250 + 21 * Math.cos(a))} ${f(26 + 21 * Math.sin(a))}' stroke='#F2C200' stroke-width='2' stroke-linecap='round'/>`; }).join("") + eagle(250, 64, 1, "#F2C200"),
   },
