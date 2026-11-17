@@ -65,7 +65,7 @@ export default async function Landing(props: PageProps<"/">) {
   // Not when Back lands here from inside the app (a client fetch, Sec-Fetch-Dest "empty", not a page load):
   // redirecting then sent Back straight to the feed again, so Back seemed to do nothing after a sample sign-in.
   if (user && !sp.intro && (await headers()).get("sec-fetch-dest") !== "empty") redirect("/feed");
-  const [stats, latest, activity] = await Promise.all([communityStats(), listPosts(null, { limit: 3 }), recentActivity(null, 2)]);
+  const [stats, latest, activity] = await Promise.all([communityStats(), listPosts(user?.id ?? null, { limit: 3 }), recentActivity(user?.id ?? null, 2)]);
   const demo = demoEnabled();
   const hellos = [DEFAULT_CULTURE, ...CULTURES].map((c) => ({ code: c.code, hello: c.hello, font: c.font, color: c.c.accent }));
   const q = latest.find((p) => p.kind === "question") ?? latest[0];
