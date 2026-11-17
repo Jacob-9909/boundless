@@ -64,6 +64,11 @@
   word-break: keep-all;
 }
 
+/* A word longer than its box (a Korean centre name, a long Russian noun in a narrow tile) breaks instead of spilling out. */
+body {
+  overflow-wrap: break-word;
+}
+
 /* Asta Sans covers Latin and Hangul only. Other interface languages swap in a body face for
    their script; Latin letters stay in Asta Sans where the script face would replace them. */
 html {
@@ -118,6 +123,12 @@ body {
 
 /* Plain elements get the Astryx focus ring too; Astryx components draw their own from the same tokens. */
 @layer base {
+  /* A bare `grid` gets one auto column, which grows to fit a nowrap child and pushes the page sideways
+     (a long Russian button label did). One shrinkable column instead; any grid-cols-* utility still wins. */
+  :where(.grid) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   /* The theme's prose reset paints bare h1-h6/p/small with fixed colors and sizes. This app styles
      text by inheritance (white text on a colored banner, text-sm on a wrapper), so give it back.
      Astryx Heading and Text components keep their own styles. */
@@ -185,4 +196,33 @@ select {
 }
 .skip-link:focus {
   top: 1rem;
+}
+
+/* Under 360px the signed-in top bar has five icons; the logo mark stays and the wordmark steps aside
+   instead of showing as "b…". It stays in the accessibility tree. */
+@media (width < 360px) {
+  .astryx-top-nav .astryx-top-nav-heading > span:not(:has(svg)) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+/* A culture's scene arriving: one soft rise when the person picks a culture. Reduced motion just shows it. */
+@keyframes scene-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(1.02);
+  }
+}
+.animate-scene {
+  animation: scene-in 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-scene {
+    animation: none;
+  }
 }

@@ -2,7 +2,7 @@ import { Button } from "@astryxdesign/core/Button";
 import { WithRail } from "@/components/Community";
 import { FeedList, ListControls, listHref, parseSort } from "@/components/Feed";
 import { Icon } from "@/components/Icon";
-import { Flag, Landmark, SignInRequired } from "@/components/ui";
+import { CultureScene, Flag, SignInRequired } from "@/components/ui";
 import { getT, getUser } from "@/lib/auth";
 import { LOUNGE } from "@/lib/boards";
 import { cultureOf } from "@/lib/cultures";
@@ -40,9 +40,8 @@ export default async function LoungePage(props: PageProps<"/lounge">) {
     <WithRail viewer={user.id} lang={lang} t={t}>
       <div className="min-w-0 space-y-4">
         <header className="relative overflow-hidden rounded-2xl bg-primary p-4 text-paper md:rounded-3xl md:p-8">
-          <span className="bg-pattern absolute inset-0 opacity-30" aria-hidden="true" />
-          <span className="absolute inset-0 bg-gradient-to-r from-black/50 via-black/20 to-transparent" aria-hidden="true" />
-          <Landmark culture={culture} className="absolute right-0 bottom-0 h-20 w-auto opacity-40 sm:opacity-90 md:h-36" />
+          <CultureScene culture={culture} variant="banner" />
+          <span className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent sm:from-black/50 sm:via-black/10" aria-hidden="true" />
           <div className="relative max-w-xl">
             <p className="flex items-center gap-2 text-sm font-bold opacity-90">
               <Flag code={user.nationality} h={14} />

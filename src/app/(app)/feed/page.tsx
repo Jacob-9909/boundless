@@ -5,7 +5,7 @@ import { Card } from "@astryxdesign/core/Card";
 import { WithRail } from "@/components/Community";
 import { FeedList, FilterChip, ListControls, listHref, parseSort } from "@/components/Feed";
 import { Icon } from "@/components/Icon";
-import { Avatar, Flag, Landmark, TagText } from "@/components/ui";
+import { Avatar, CultureScene, Flag, TagText } from "@/components/ui";
 import { getT, getUser } from "@/lib/auth";
 import { BOARDS, isBoard } from "@/lib/boards";
 import { cultureOf, DEFAULT_CULTURE } from "@/lib/cultures";
@@ -38,12 +38,11 @@ export default async function Home(props: PageProps<"/feed">) {
           <Banner role="status" status="success" collapsible={false} title={t("이 작성자를 차단했어요. 이제 이 사람의 글과 댓글은 보이지 않아요. 설정에서 해제할 수 있어요.")} />
         )}
         {/* Welcome + composer, like a community header with a "create post" bar */}
-        <Card padding={0} className="overflow-hidden">
+        <Card padding={0} className="overflow-hidden" data-tour="hello">
           <div className="relative overflow-hidden bg-primary px-4 py-4 text-paper md:px-6 md:py-5">
-            <span className="bg-pattern absolute inset-0 opacity-30" aria-hidden="true" />
-            <span className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/25 to-transparent" aria-hidden="true" />
-            {/* On phones the landmark spans the card under the greeting, so it fades back there. */}
-            <Landmark culture={culture} className="absolute right-0 bottom-0 h-20 w-auto opacity-40 sm:opacity-80 md:h-24" />
+            {/* The member's home scene; on phones it spans the card under the greeting, so the left side darkens more. */}
+            <CultureScene culture={culture} variant="banner" />
+            <span className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent sm:from-black/55 sm:via-black/15" aria-hidden="true" />
             <div className="relative max-w-lg [text-shadow:0_1px_6px_rgb(0_0_0/.35)]">
               {user ? (
                 <>
@@ -103,12 +102,12 @@ export default async function Home(props: PageProps<"/feed">) {
 
         {/* My country's lounge */}
         {user && (
-          <Card padding={0} className="overflow-hidden">
+          <Card padding={0} className="overflow-hidden" data-tour="lounge">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 border-b border-[var(--color-border)] px-4 py-2.5 md:gap-x-3 md:py-3">
               <Flag code={user.nationality} h={16} />
-              {/* min-w-48: when space runs out the lock note and link wrap below, not the title.
-                  Phones show only the lock icon and the arrow, so the header stays on one line in long languages. */}
-              <p className="min-w-48 flex-1 font-bold">{t("{country} 라운지", { country })}</p>
+              {/* Phones show only the lock icon and the arrow, and the title truncates, so the header stays on one line.
+                  sm:min-w-48: wider screens wrap the lock note and link below before the title gets cut. */}
+              <p className="min-w-0 flex-1 truncate font-bold sm:min-w-48">{t("{country} 라운지", { country })}</p>
               <span className="inline-flex items-center gap-1 text-xs opacity-70" title={t("같은 국적만")}>
                 <Icon name="lock" size={13} />
                 <span className="max-sm:sr-only">{t("같은 국적만")}</span>
@@ -143,19 +142,21 @@ export default async function Home(props: PageProps<"/feed">) {
 
         {/* Everyone's square */}
         <section className="space-y-3">
+          <div data-tour="square">
           <ListControls
-            base="/feed"
-            tag=""
-            sort={sort}
-            board={board}
-            t={t}
-            lead={
-              <div>
-                <h2 className="font-display text-lg font-extrabold tracking-tight md:text-xl">{t("모두의 광장")}</h2>
-                <p className="hidden text-[13px] opacity-70 sm:block">{t("모든 나라 이웃이 함께 보는 최신 글")}</p>
-              </div>
-            }
-          />
+              base="/feed"
+              tag=""
+              sort={sort}
+              board={board}
+              t={t}
+              lead={
+                <div>
+                  <h2 className="font-display text-lg font-extrabold tracking-tight md:text-xl">{t("모두의 광장")}</h2>
+                  <p className="hidden text-[13px] opacity-70 sm:block">{t("모든 나라 이웃이 함께 보는 최신 글")}</p>
+                </div>
+              }
+            />
+          </div>
           {/* Categories at the top of the square, on every screen: filter here without leaving home.
               `relative` keeps the badges' absolute sr-only text inside the scroller; without it the page scrolls sideways on days with new posts. */}
           <nav aria-label={t("게시판")}>

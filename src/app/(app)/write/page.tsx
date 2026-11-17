@@ -4,7 +4,7 @@ import { Card } from "@astryxdesign/core/Card";
 import { createPost } from "@/app/actions";
 import { WriteForm } from "@/components/forms";
 import { Icon } from "@/components/Icon";
-import { BackLink, Flag, Landmark, PageHead, SignInRequired } from "@/components/ui";
+import { BackLink, CultureScene, Flag, PageHead, SignInRequired } from "@/components/ui";
 import { aiEnabled } from "@/lib/ai";
 import { getT, getUser } from "@/lib/auth";
 import { BOARDS, boardOf, GROUPS, isBoard, LOUNGE } from "@/lib/boards";
@@ -34,16 +34,16 @@ export default async function WritePage(props: PageProps<"/write">) {
             href={`/write?space=lounge${keep}`}
             className="relative flex items-center gap-4 overflow-hidden rounded-2xl bg-primary p-5 text-paper transition hover:-translate-y-0.5 hover:shadow-lg"
           >
-            <span className="bg-pattern absolute inset-0 opacity-25" aria-hidden="true" />
-            <Landmark culture={culture} className="absolute right-0 bottom-0 h-16 w-auto opacity-80" />
+            <CultureScene culture={culture} variant="banner" />
+            <span className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/20 to-transparent" aria-hidden="true" />
             <Flag code={user.nationality} h={28} className="relative" />
             <span className="relative">
               <span className="block font-display text-lg font-extrabold">{t("{country} 라운지", { country })}</span>
               <span className="block text-sm opacity-85">{t("같은 나라 이웃만 보는 공간. 우리말로 편하게.")}</span>
             </span>
           </Link>
-          {GROUPS.map((gr) => (
-            <section key={gr.id}>
+          {GROUPS.map((gr, i) => (
+            <section key={gr.id} data-tour={i === 0 ? "boards" : undefined}>
               <h2 className="mb-2 text-sm font-extrabold opacity-70">{t(gr.ko)}</h2>
               <ul className="grid gap-2.5 sm:grid-cols-2">
                 {BOARDS.filter((b) => b.group === gr.id).map((b) => (

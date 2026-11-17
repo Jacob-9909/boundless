@@ -278,7 +278,7 @@ export function AccountSwitcher({ t, lang, current, up = true }: { t: T; lang: L
   );
   return (
     // Popover wraps its trigger in an inline-flex div; stretch it so the button fills the sidebar instead of overflowing.
-    <div className="[&>:first-child]:w-full">
+    <div className="[&>:first-child]:w-full" data-tour="switch">
       <Popover label={label} content={list} placement={up ? "above" : "below"} width={300} padding={2} presentation="adaptive">
         <Button label={label} variant="secondary" width="100%" icon={<Icon name="users" size={16} />} endContent={<Icon name="down" size={16} />} className="text-primary" />
       </Popover>

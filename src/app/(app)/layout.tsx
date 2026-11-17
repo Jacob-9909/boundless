@@ -5,13 +5,14 @@ import { IconButton } from "@astryxdesign/core/IconButton";
 import { TopNav, TopNavHeading } from "@astryxdesign/core/TopNav";
 import { cultureFonts } from "@/app/login/fonts";
 import { BottomNav } from "@/components/BottomNav";
+import { DemoTour } from "@/components/DemoTour";
 import { AccountSwitcher } from "@/components/Community";
 import { TextField } from "@/components/fields";
 import { Icon } from "@/components/Icon";
 import { LangMenu } from "@/components/LangMenu";
 import { AppSideNav, type NavItem } from "@/components/SideNav";
 import { Avatar, Flag, LevelBadge, Logo } from "@/components/ui";
-import { canViewQueue, demoEnabled, getT, getUser } from "@/lib/auth";
+import { canViewQueue, demoEnabled, getT, getUser, isSampleEmail } from "@/lib/auth";
 import { BOARDS, GROUPS } from "@/lib/boards";
 import { cultureOf, DEFAULT_CULTURE, themeVars } from "@/lib/cultures";
 import { countryName } from "@/lib/i18n";
@@ -149,6 +150,8 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
       >
         <div className="pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-12">{children}</div>
       </AppShell>
+      {/* Sample accounts get a step-by-step tour of the app (the judges' path); real members never see it. */}
+      {demoUser && user && isSampleEmail(user.email) && <DemoTour country={countryName(user.nationality, lang)} lang={lang} />}
       <div className="lg:hidden">
         <BottomNav labels={{ feed: t("홈"), boards: t("게시판"), lounge: t("라운지"), me: t("내 글"), settings: t("설정") }} />
       </div>

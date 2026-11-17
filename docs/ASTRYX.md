@@ -46,7 +46,7 @@ Look up any component with `npx astryx component <Name>` (props, examples, themi
 | dialogs, confirm | `Dialog` / `AlertDialog` |
 | tooltips | `Tooltip` |
 
-Keep the Boundless identity pieces from `ui.tsx` as they are: `Logo`, `Flag`, `Landmark`, `Avatar`
+Keep the Boundless identity pieces from `ui.tsx` as they are: `Logo`, `Flag`, `CultureScene`, `Avatar`
 (culture pattern + flag), `LevelBadge`, `BoardBadge`, `TagText`, `NationalityChip`, `StationLabel`,
 `PageHead`, `PostCard`. They already sit on the Astryx tokens.
 
