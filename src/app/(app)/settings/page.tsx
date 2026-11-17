@@ -41,7 +41,7 @@ export default async function SettingsPage() {
     dismissed: { label: t("문제 없음으로 종료"), variant: "neutral" },
   };
   // Phones have no sidebar, so official help and the intro page are linked here, signed in or not.
-  // (The phone logo goes to the feed; only the desktop logo opens the intro page.)
+  // (The logo goes to the feed; on desktop the sidebar's bottom line links the intro page.)
   const phoneLinks = (
     <>
       <Link href="/guide" className={`${linkRow} lg:hidden`}>

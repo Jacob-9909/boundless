@@ -61,7 +61,7 @@ const ghostOnNavy = "[--color-text-primary:#fff] ring-1 ring-inset ring-white/30
 export default async function Landing(props: PageProps<"/">) {
   const sp = await props.searchParams;
   const [{ lang, t }, user] = await Promise.all([getT(), getUser()]);
-  // Members opening the site go straight to their feed; the logo's "?intro=1" link brings them back here.
+  // Members opening the site go straight to their feed; "?intro=1" (the sidebar's bottom line, or settings on phones) brings them back here.
   // Not when Back lands here from inside the app (a client fetch, Sec-Fetch-Dest "empty", not a page load):
   // redirecting then sent Back straight to the feed again, so Back seemed to do nothing after a sample sign-in.
   if (user && !sp.intro && (await headers()).get("sec-fetch-dest") !== "empty") redirect("/feed");
