@@ -48,7 +48,17 @@ Look up any component with `npx astryx component <Name>` (props, examples, themi
 
 Keep the Boundless identity pieces from `ui.tsx` as they are: `Logo`, `Flag`, `CultureScene`, `Avatar`
 (culture pattern + flag), `LevelBadge`, `BoardBadge`, `TagText`, `NationalityChip`, `StationLabel`,
-`PageHead`, `PostCard`. They already sit on the Astryx tokens.
+`PageHead`, `PostCard`, `HelpItem` / `HelpChip` (official help as a card / a small pill), `Sentences`.
+They already sit on the Astryx tokens.
+
+Hand-built pieces that Astryx has no component for:
+
+| Piece | Where | Notes |
+| --- | --- | --- |
+| Moderation dashboard | `src/components/AdminDashboard.tsx`, data in `src/lib/admin.ts` | Stat tiles on Astryx `Card`; bar charts are plain HTML (no chart library). Single-series charts use one hue (the culture primary) and a title instead of a legend; each bar has a hover `title`, each chart an `sr-only` table; axis labels only at both ends and the middle. |
+| Avatar builder | `src/components/AvatarBuilder.tsx` | Category tabs are `role="tab"` buttons switching a client-side panel; parts and swatches stay `aria-pressed` buttons (parts need 56px avatar previews, and Astryx has no swatch picker). The free color is a native `<input type="color">`. |
+| Lounge board rows | `src/app/(app)/lounge/page.tsx` (`LoungeRows`) | A CSS grid row per post with column labels on `sm` and up, two short lines on phones. |
+| Tour spotlight | `src/components/DemoTour.tsx` | A box-shadow cut-out re-measured every frame (`flushSync`, no position transition) so it stays on the target while the page scrolls. |
 
 ## Rules
 
@@ -58,4 +68,8 @@ Keep the Boundless identity pieces from `ui.tsx` as they are: `Logo`, `Flag`, `C
   `--size-element-*` to 32/40/44px (36/44/48px on touch screens); use `size="lg"` for page-level CTAs.
 - Do not hard-code hex colors for UI chrome; use culture classes (`bg-primary`, `text-ink`, `bg-soft`)
   or Astryx tokens. Board colors and flag art stay as they are.
-- Every `t("한국어")` key needs an English line in `src/lib/en.ts` (`npm run i18n`).
+- Every `t("한국어")` key needs an English line in `src/lib/en.ts` (`npm run i18n`), then
+  `node scripts/i18n-translate.mjs` fills the 14 locales. Check short labels by hand: one-word keys
+  ("조회", "공지") are the ones machine translation gets wrong.
+- Copy of two or more sentences goes through `<Sentences text={t("...")} />`, so a line never ends with
+  the first word of the next sentence. Korean already wraps by word (`word-break: keep-all` on `body`).

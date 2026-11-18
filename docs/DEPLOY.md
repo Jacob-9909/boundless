@@ -1,6 +1,6 @@
 # Boundless 배포 · 서버 이전 가이드
 
-## 지금 상태 (2026-11-07)
+## 지금 상태 (2026-11-18)
 
 | | 위치 | 비고 |
 | --- | --- | --- |
@@ -13,7 +13,7 @@ Neon 은 서울·도쿄 리전을 고를 수 없어 가장 가까운 싱가포�
 
 ### CI/CD (`.github/workflows/ci-cd.yml`)
 
-- **CI** — 모든 PR 과 `main` 푸시: lint → i18n 키 검사 → build → Postgres 서비스 위에서 e2e
+- **CI** — 모든 PR 과 `main` 푸시: lint → i18n 키 검사 → 금칙어·AI 파서·아바타 검사(`scripts/*-check.mjs`) → build → Postgres 서비스 위에서 e2e
 - **CD** — `main` 푸시에서 CI 가 통과한 뒤에만: `vercel pull` → `db/schema.sql` 적용(재실행 안전) → `vercel build --prod` → `vercel deploy --prebuilt --prod` → `/api/health` 확인
 - 필요한 저장소 시크릿은 `VERCEL_TOKEN` 하나. 프로젝트·조직 ID 는 비밀이 아니라 워크플로에 적어 두었다
 
@@ -34,9 +34,9 @@ gh secret set VERCEL_TOKEN -R Jacob-9909/boundless   # 붙여넣고 Enter
 | `DATABASE_URL`, `DATABASE_URL_UNPOOLED` 등 | ✓ | ✓ | Neon 연동이 자동 관리 |
 | `SESSION_SECRET` | ✓ | ✓ | 환경별 무작위 값 |
 | `DEMO_LOGIN=1` | ✓ | ✓ | 시연용. 첫 화면 "심사위원 · 체험용 샘플 계정"에서 나라를 누르면 그 나라 샘플 이웃(`<코드>@example.com`)으로 바로 입장, 운영자 화면은 읽기 전용 계정(`moderator@example.com`)으로 입장. `@example.com` 계정은 로그인 코드도 화면에 보여 주고, 운영 처리 권한은 받지 못함. 실제 출시 때 지운다 |
-| `EMAIL_SENDER`, `EMAIL_PASSWORD` | 미설정 | | Gmail 앱 비밀번호. **설정 전에는 실제 이메일로 가입할 수 없다** |
+| `EMAIL_SENDER`, `EMAIL_PASSWORD` | **미설정** (11-18 운영자 화면에서 확인) | | Gmail 주소와 앱 비밀번호. **설정 전에는 실제 이메일로 가입할 수 없다**(샘플 계정은 영향 없음). 아래 "로그인 메일" 참고 |
 | `ADMIN_EMAILS` | 미설정 | | 운영 큐(`/admin`) 를 볼 실제 이메일 |
-| `NVIDIA_API_KEY` | 미설정 | | NVIDIA NIM 키(build.nvidia.com). 해결된 글의 AI 요약과 글쓰기 AI 점검에 쓴다. 없으면 두 기능이 화면에 나오지 않을 뿐 나머지는 그대로 동작 |
+| `NVIDIA_API_KEY` | 설정됨 (11-18 운영자 화면에서 확인) | | NVIDIA NIM 키(build.nvidia.com). 글 자동 분류(비자·지역·위기), 해결된 글의 AI 요약, 글쓰기 AI 점검에 쓴다. 없으면 이 기능들이 화면에 나오지 않을 뿐 나머지는 그대로 동작하고, 자해 표현만 정규식으로 잡는다 |
 
 ```bash
 npx vercel env add EMAIL_SENDER production
@@ -47,11 +47,26 @@ npx vercel env add NVIDIA_API_KEY production --sensitive
 
 추가한 뒤 `main` 에 푸시하거나 Actions 에서 워크플로를 다시 실행하면 반영된다.
 
+운영자 화면(`/admin`) 맨 위 대시보드의 **시스템 상태**가 운영 서버 기준으로 AI(NVIDIA NIM), 로그인 메일(Gmail SMTP), 체험 계정이 켜져 있는지 보여 준다. 값은 보여 주지 않고 켜짐·꺼짐만 보여 주므로, 환경변수를 바꾼 뒤 여기서 반영 여부를 확인하면 된다.
+
 운영 DB 에는 시연용 가상 데이터(`db/seed.sql`)가 들어 있다. 실제 운영 전에 지우려면:
 
 ```sql
 DELETE FROM boundless.users WHERE email LIKE '%@example.com';
 ```
+
+### 로그인 메일 (Gmail SMTP)
+
+로그인 코드는 일반 Gmail 계정에서 앱 비밀번호로 보낸다(`src/lib/mail.ts`, gov24 와 같은 방식). AWS SES 같은 대량 발송 승인은 필요 없다.
+
+1. 보낼 Gmail 계정에서 2단계 인증을 켠다.
+2. Google 계정 → 보안 → 앱 비밀번호에서 16자리 비밀번호를 만든다.
+3. 위 명령으로 `EMAIL_SENDER`(Gmail 주소)와 `EMAIL_PASSWORD`(앱 비밀번호)를 production 에 넣고 다시 배포한다.
+4. 운영자 화면 시스템 상태가 "설정됨"이 되면, 실제 주소로 코드를 받아 본다.
+
+- 한도: 개인 Gmail 은 하루 약 500통(Workspace 약 2,000통). 로그인 코드는 사람마다 한 통이라 시연·시범 운영 규모에서는 충분하다.
+- 앱이 막는 것: 같은 이메일은 60초에 한 번·하루 10번, 같은 네트워크(IP, 해시로만 기록)는 1시간에 20번까지 코드를 요청할 수 있다. 메일 발송이 실패하면 그 코드를 무효로 하고 바로 다시 요청할 수 있게 하며, SMTP 가 응답하지 않으면 10~20초 안에 포기한다.
+- 나중에 바꿀 때: 하루 수백 건이 넘거나, `noreply@<서비스 도메인>` 으로 보내고 싶거나, 스팸함 비율을 낮추려면 Resend·AWS SES 같은 발송 서비스로 옮긴다. SES 는 처음에 샌드박스(인증한 주소로만, 하루 200통)라 production access 승인이 필요하고, Resend 는 승인 없이 쓰되 다른 사람에게 보내려면 도메인 인증(SPF·DKIM)이 필요하다.
 
 ### oracle_vm 샘플 DB 접속
 
@@ -149,7 +164,7 @@ psql "$NEW_DATABASE_URL" -f boundless.sql
 
 ## 출시 전 체크리스트
 
-- [ ] SMTP 설정 후 실제 메일로 가입 테스트
+- [ ] `EMAIL_SENDER`·`EMAIL_PASSWORD` 설정 → 운영자 화면 시스템 상태 "설정됨" 확인 → 실제 메일로 가입 테스트
 - [ ] `ADMIN_EMAILS` 지정, 운영 큐 접근 확인
 - [ ] 개인정보 처리방침 · 이용약관 페이지 (이메일 수집 · 보관 기간 · 국외 이전 여부). 서버가 해외 리전이면 국외 이전 고지가 필요하다
 - [ ] 팀 정책 확정 후 임시값 교체: 가입 연령(P01), 국적 정정(P02), 재심(P03), 탈퇴 데이터(P04) — 코드에서 `ponytail:` 주석으로 검색
