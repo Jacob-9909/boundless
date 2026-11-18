@@ -128,6 +128,24 @@ export async function issueCode(email: string) {
   return rows.length ? code : null;
 }
 
+/**
+ * Per network: at most 20 code requests an hour, so one client cannot mail many addresses or use up the Gmail
+ * sending quota (which would stop every sign-in). The address is kept only as a keyed hash, in the events log.
+ */
+export async function allowCodeRequest() {
+  const ip = (await headers()).get("x-forwarded-for")?.split(",")[0].trim() || "unknown";
+  const name = `code:${hmac(`ip:${ip}`).slice(0, 16)}`;
+  const r = await q<{ n: number }>("SELECT count(*)::int AS n FROM boundless.events WHERE name = $1 AND created_at > now() - interval '1 hour'", [name]);
+  if (r[0].n >= 20) return false;
+  await q("INSERT INTO boundless.events (name) VALUES ($1)", [name]);
+  return true;
+}
+
+/** The mail never went out: expire the code and lift the 60-second wait so the person can ask again at once. */
+export async function voidCode(email: string) {
+  await q("UPDATE boundless.login_codes SET expires_at = now(), created_at = now() - interval '61 seconds' WHERE email = $1", [email]);
+}
+
 /** True once per issued code. Five wrong tries burn the code. */
 export async function consumeCode(email: string, code: string) {
   const rows = await q<{ code_hash: string }>(

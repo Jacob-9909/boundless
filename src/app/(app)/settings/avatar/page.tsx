@@ -17,7 +17,7 @@ export default async function AvatarPage(props: PageProps<"/settings/avatar">) {
   const raw = String(sp.next ?? "");
   const next = raw.startsWith("/") && !raw.startsWith("//") && !raw.startsWith("/\\") ? raw : "/feed";
   return (
-    <div className="mx-auto max-w-3xl pb-8 lg:ml-2">
+    <div className="mx-auto max-w-5xl pb-8 lg:ml-2">
       {!welcome && <BackLink href="/settings" label={t("설정")} />}
       <PageHead
         line={5}

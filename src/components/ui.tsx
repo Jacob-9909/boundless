@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { useId, type CSSProperties, type ReactNode } from "react";
+import { Fragment, useId, type CSSProperties, type ReactNode } from "react";
 import { boardOf, DEALS, levelOf, tagOf } from "@/lib/boards";
 import { lookStyle, parseLook } from "@/lib/avatar";
 import { cultureOf, groundMarkup, patternUrl, type Culture } from "@/lib/cultures";
@@ -241,6 +241,26 @@ export function LineBadge({ n, size = 28 }: { n: number; size?: number }) {
 }
 
 /** Page banner: soft culture color with the member's pattern fading in from the right, and the section's line badge. */
+/**
+ * Copy of two or more sentences: each sentence is kept whole on a line when it fits, so a line never ends with the
+ * first word of the next sentence ("… 둘러볼 수 있어요. 모든 / 데이터는 가상이에요."). Sentences end at . ! ? । before
+ * a space, or right after 。！？ (Chinese and Japanese have no spaces); "2.5kg" or "U.S." stay together.
+ */
+export function Sentences({ text }: { text: string }) {
+  const parts = text.split(/(?<=[.!?।])\s+|(?<=[。！？])/).filter(Boolean);
+  if (parts.length < 2) return <>{text}</>;
+  return (
+    <>
+      {parts.map((part, i) => (
+        <Fragment key={i}>
+          {i > 0 && " "}
+          <span className="inline-block max-w-full">{part}</span>
+        </Fragment>
+      ))}
+    </>
+  );
+}
+
 export function PageHead({ line, title, desc, children }: { line?: number; title: string; desc?: string; children?: ReactNode }) {
   return (
     // Phones: a compact banner (about 120px) so the page's content starts on the first screen.
@@ -255,7 +275,11 @@ export function PageHead({ line, title, desc, children }: { line?: number; title
           {line && <LineBadge n={line} size={30} />}
           <h1 className="min-w-0 font-display text-2xl leading-tight font-extrabold tracking-tight text-balance md:text-4xl">{title}</h1>
         </div>
-        {desc && <p className="mt-1.5 max-w-xl text-sm leading-relaxed opacity-80 md:mt-2 md:text-[15px]">{desc}</p>}
+        {desc && (
+          <p className="mt-1.5 max-w-xl text-sm leading-relaxed opacity-80 md:mt-2 md:text-[15px]">
+            <Sentences text={desc} />
+          </p>
+        )}
         {children}
       </div>
     </header>
@@ -512,6 +536,22 @@ export function SignInRequired({ t, next, title, desc }: { t: T; next: string; t
 }
 
 /** One official hotline or website. External links open in a new tab. */
+/** One official contact as a small pill: number (or a link icon) and name; the description is the tooltip. */
+export function HelpChip({ h, t }: { h: Help; t: T }) {
+  return (
+    <a
+      href={h.tel ? `tel:${h.tel}` : h.url}
+      {...(h.url ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+      title={t(h.desc)}
+      className="inline-flex h-9 max-w-full items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-background-card)] px-3 text-sm transition hover:border-primary/40"
+    >
+      <Icon name={h.tel ? "phone" : "external"} size={13} className="shrink-0 text-primary" />
+      {h.tel && <b className="font-display whitespace-nowrap text-primary">{h.tel}</b>}
+      <span className="truncate">{t(h.name)}</span>
+    </a>
+  );
+}
+
 export function HelpItem({ h, t }: { h: Help; t: T }) {
   const href = h.tel ? `tel:${h.tel}` : h.url;
   return (

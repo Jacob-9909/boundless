@@ -6,6 +6,7 @@ import { after } from "next/server";
 import { redirect, RedirectType } from "next/navigation";
 import { refresh } from "next/cache";
 import {
+  allowCodeRequest,
   consumeCode,
   endSession,
   getT,
@@ -20,6 +21,7 @@ import {
   normalizeEmail,
   startSession,
   verifiedEmail,
+  voidCode,
 } from "@/lib/auth";
 import { isId, q, track } from "@/lib/db";
 import { aiEnabled, checkDraft, classifyPost, crisisFallback, summarizeThread, SUMMARY_VERSION, type DraftCheck, type Summary } from "@/lib/ai";
@@ -69,6 +71,7 @@ async function upsertUser(email: string, nationality: string) {
 export async function sendCode(rawEmail: string): Promise<Result & { devCode?: string | null }> {
   const email = normalizeEmail(rawEmail);
   if (!email) return { error: "이메일 주소를 확인해 주세요." };
+  if (!(await allowCodeRequest())) return { error: "이 네트워크에서 코드를 너무 많이 요청했어요. 1시간 뒤에 다시 시도해 주세요." };
   const code = await issueCode(email);
   if (!code) return { error: "코드를 너무 자주 요청했어요. 1분 뒤에 다시 시도해 주세요. 하루 10번까지 받을 수 있어요." };
   // Demo deployments: fictional @example.com accounts (reserved domain, nobody owns it) get the code on screen.
@@ -78,6 +81,7 @@ export async function sendCode(rawEmail: string): Promise<Result & { devCode?: s
     return { ok: true, devCode };
   } catch (e) {
     console.error("[boundless] mail failed", e);
+    await voidCode(email);
     return { error: "메일을 보내지 못했어요. 잠시 뒤 다시 시도해 주세요." };
   }
 }

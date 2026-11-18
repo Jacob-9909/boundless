@@ -1,13 +1,14 @@
+import Link from "next/link";
 import { Button } from "@astryxdesign/core/Button";
 import { WithRail } from "@/components/Community";
-import { FeedList, ListControls, listHref, parseSort } from "@/components/Feed";
+import { ListControls, listHref, MoreButton, parseSort } from "@/components/Feed";
 import { Icon } from "@/components/Icon";
-import { CultureScene, Flag, SignInRequired } from "@/components/ui";
+import { Avatar, CultureScene, Flag, LevelBadge, Notice, SignInRequired, TagText } from "@/components/ui";
 import { getT, getUser } from "@/lib/auth";
 import { LOUNGE } from "@/lib/boards";
 import { cultureOf } from "@/lib/cultures";
-import { countryName } from "@/lib/i18n";
-import { listPosts, loungeCount, memberCount } from "@/lib/posts";
+import { countryName, timeAgo, type Lang, type T } from "@/lib/i18n";
+import { listPosts, loungeCount, memberCount, PAGE, type PostRow } from "@/lib/posts";
 
 export const metadata = { title: "Lounge" };
 
@@ -74,17 +75,96 @@ export default async function LoungePage(props: PageProps<"/lounge">) {
             />
           </div>
         </header>
-        <ListControls base="/lounge" tags={LOUNGE.tags} tag={tag} sort={sort} t={t} />
-        <FeedList
-          posts={posts}
-          lang={lang}
-          t={t}
-          showBoard={false}
-          emptyTitle={t("라운지가 아직 조용해요")}
-          emptyBody={t("고향 이웃들에게 첫 인사를 남겨 보세요.")}
-          moreHref={sort === "new" ? (b) => listHref("/lounge", { tag, sort }, { before: b }) : undefined}
-        />
+        {/* The lounge reads as its own board, not the shared feed: a framed panel in the culture's color with a title
+            bar, a pinned notice and compact rows (말머리 · 제목 · 글쓴이 · 날짜 · 조회 · 도움) like a classic community board. */}
+        <section aria-label={t("{country} 라운지", { country })} className="overflow-hidden rounded-2xl border-2 border-primary/70 bg-[var(--color-background-card)]">
+          <div className="bg-pattern h-2 bg-primary bg-[length:auto_24px]" aria-hidden="true" />
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-[var(--color-border)] bg-primary/5 px-4 py-3">
+            <h2 className="flex min-w-0 items-center gap-2 font-display text-lg font-extrabold">
+              <Flag code={user.nationality} h={16} />
+              <span className="truncate">{t("{country} 라운지", { country })}</span>
+            </h2>
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[11px] font-bold text-paper">
+              <Icon name="lock" size={11} />
+              {t("같은 국적만")}
+            </span>
+            <span className="ml-auto text-xs text-[var(--color-text-secondary)] tabular-nums">
+              {t("이웃 {n}명", { n: neighbors })} · {t("글 {n}개", { n: total })}
+            </span>
+          </div>
+          <div className="px-4 pt-3 pb-2">
+            <ListControls base="/lounge" tags={LOUNGE.tags} tag={tag} sort={sort} t={t} />
+          </div>
+          <LoungeRows posts={posts} lang={lang} t={t} country={country} />
+        </section>
+        {sort === "new" && posts.length === PAGE && <MoreButton href={listHref("/lounge", { tag, sort }, { before: new Date(posts.at(-1)!.listed_at).toISOString() })} t={t} />}
       </div>
     </WithRail>
+  );
+}
+
+// A server component renders once per request, so "now" here is the request time (like timeAgo).
+const isFresh = (d: Date) => new Date(d).getTime() > Date.now() - 86_400_000;
+
+/** Board rows: one line on desktop under column labels, two short lines on a phone. A pinned notice comes first. */
+function LoungeRows({ posts, lang, t, country }: { posts: PostRow[]; lang: Lang; t: T; country: string }) {
+  const cols = "sm:grid sm:grid-cols-[4.5rem_minmax(0,1fr)_7.5rem_4.5rem_3rem_3rem] sm:items-center sm:gap-3";
+  return (
+    <div className="text-sm">
+      <div className={`hidden border-y border-[var(--color-border)] bg-[var(--color-background-muted)] px-4 py-2 text-xs font-bold text-[var(--color-text-secondary)] ${cols}`} aria-hidden="true">
+        <span className="text-center">{t("말머리")}</span>
+        <span>{t("제목")}</span>
+        <span>{t("글쓴이")}</span>
+        <span className="text-right">{t("날짜")}</span>
+        <span className="text-right">{t("조회")}</span>
+        <span className="text-right">{t("도움돼요")}</span>
+      </div>
+      <ul className="divide-y divide-[var(--color-border)]">
+        <li className={`flex items-center gap-2 bg-primary/5 px-4 py-2.5 ${cols}`}>
+          <span className="inline-flex shrink-0 justify-center">
+            <span className="rounded bg-primary px-1.5 py-0.5 text-[11px] font-bold text-paper">{t("공지")}</span>
+          </span>
+          <span className="min-w-0 font-bold sm:col-span-5">{t("{country} 이웃만 볼 수 있는 공간이에요. 우리말로 편하게 이야기해요.", { country })}</span>
+        </li>
+        {posts.map((p) => (
+          <li key={p.id}>
+            <Link href={`/posts/${p.id}`} className={`block px-4 py-2.5 transition hover:bg-primary/5 ${cols}`}>
+              <span className="hidden text-center text-xs sm:block">
+                <TagText board="lounge" tagId={p.kind} t={t} />
+              </span>
+              <span className="flex min-w-0 items-center gap-1.5">
+                <span className="sm:hidden">
+                  <TagText board="lounge" tagId={p.kind} t={t} />
+                </span>
+                <span className="truncate font-semibold">{p.title}</span>
+                {p.comments > 0 && <span className="shrink-0 text-xs font-bold text-primary tabular-nums">[{p.comments}]</span>}
+                {p.image && <Icon name="image" size={13} className="shrink-0 opacity-60" />}
+                {p.solved && <Icon name="check" size={13} className="shrink-0 text-[var(--color-success)]" />}
+                {isFresh(p.created_at) && (
+                  <span className="shrink-0 rounded-sm bg-alert px-1 text-[10px] leading-4 font-bold text-white" title={t("새 글")}>
+                    N
+                  </span>
+                )}
+              </span>
+              <span className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-[var(--color-text-secondary)] sm:mt-0">
+                <Avatar code={p.nationality} size={20} look={p.avatar} />
+                <LevelBadge points={p.points} t={t} className="min-w-0" />
+                <span className="sm:hidden">· {timeAgo(p.listed_at, lang)} · {t("조회 {n}", { n: p.views })}</span>
+              </span>
+              <span className="hidden text-right text-xs text-[var(--color-text-secondary)] tabular-nums sm:block">{timeAgo(p.listed_at, lang)}</span>
+              <span className="hidden text-right text-xs text-[var(--color-text-secondary)] tabular-nums sm:block">{p.views}</span>
+              <span className="hidden text-right text-xs text-[var(--color-text-secondary)] tabular-nums sm:block">{p.likes}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+      {!posts.length && (
+        <div className="p-4">
+          <Notice label={t("글 없음")} title={t("라운지가 아직 조용해요")}>
+            {t("고향 이웃들에게 첫 인사를 남겨 보세요.")}
+          </Notice>
+        </div>
+      )}
+    </div>
   );
 }

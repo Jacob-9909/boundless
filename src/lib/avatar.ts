@@ -54,6 +54,11 @@ export const FACES: Record<string, { eyes: string; mouth: string; eyebrows: stri
   wink: { eyes: "wink", mouth: "twinkle", eyebrows: "defaultNatural" },
   calm: { eyes: "default", mouth: "default", eyebrows: "flatNatural" },
 };
+// Each part on its own for the detailed tabs (faces above are one-tap presets). Left out: crying, dizzy, vomit and
+// screaming faces, which read badly as someone's everyday picture.
+export const EYES = ["default", "happy", "wink", "winkWacky", "squint", "side", "surprised", "hearts", "closed", "eyeRoll"];
+export const BROWS = ["defaultNatural", "default", "raisedExcitedNatural", "raisedExcited", "flatNatural", "frownNatural", "sadConcernedNatural", "sadConcerned", "upDownNatural", "upDown", "unibrowNatural", "angryNatural", "angry"];
+export const MOUTHS = ["smile", "default", "twinkle", "tongue", "serious", "eating", "disbelief", "concerned", "grimace", "sad"];
 export const ANIMALS = Object.keys(ANIMAL_ART);
 export const BACKDROPS = ["fde2e4", "ffe4cc", "fff1c1", "dff5e1", "e0f2f1", "dbeafe", "ede9fe", "f1f5f9"];
 
@@ -68,6 +73,14 @@ export type Person = {
   clothes: string;
   outfit: string;
   face: string;
+  // Detailed parts, set only when the member changed them; otherwise they come from `face` and the colors above.
+  eyes?: string;
+  brows?: string;
+  mouth?: string;
+  beardColor?: string;
+  glassesColor?: string;
+  backdrop?: string;
+  flip?: boolean;
 };
 export type Animal = { kind: "animal"; animal: string; backdrop: string };
 export type Look = Person | Animal;
@@ -90,6 +103,9 @@ const one = (o: Record<string, unknown>, k: string, list: string[], fallback?: s
   const v = o[k] ?? fallback;
   return typeof v === "string" && list.includes(v) ? v : null;
 };
+// Colors may be any RGB hex now (the builder has a free color picker); six hex digits cannot carry markup.
+const HEX = /^[0-9a-f]{6}$/;
+const color = (o: Record<string, unknown>, k: string) => (typeof o[k] === "string" && HEX.test(o[k] as string) ? (o[k] as string) : null);
 
 /** Every field must be one of the lists above; anything else (including injected SVG) is refused. */
 export function parseLook(v: unknown): Look | null {
@@ -97,19 +113,20 @@ export function parseLook(v: unknown): Look | null {
   if (!o || typeof o !== "object") return null;
   if (o.kind === "animal") {
     const animal = one(o, "animal", ANIMALS);
-    const backdrop = one(o, "backdrop", BACKDROPS);
+    const backdrop = color(o, "backdrop");
     return animal && backdrop ? { kind: "animal", animal, backdrop } : null;
   }
   if (o.kind !== undefined && o.kind !== "person") return null;
   const p: Partial<Person> = { kind: "person" };
+  for (const k of ["skin", "hair", "cover", "clothes"] as const) {
+    const val = color(o, k);
+    if (!val) return null;
+    p[k] = val;
+  }
   const fields: [keyof Person, string[], string?][] = [
-    ["skin", SKINS],
     ["top", TOPS],
-    ["hair", HAIRS],
-    ["cover", COLORS],
     ["glasses", GLASSES],
     ["beard", BEARDS],
-    ["clothes", COLORS],
     // Added after the first version; older saved looks get the defaults.
     ["outfit", OUTFITS, OUTFITS[0]],
     ["face", Object.keys(FACES), "smile"],
@@ -118,6 +135,28 @@ export function parseLook(v: unknown): Look | null {
     const val = one(o, k, list, fallback);
     if (!val) return null;
     (p as Record<string, string>)[k] = val;
+  }
+  // Optional detail: absent stays absent (older looks are unchanged); present but invalid refuses the whole look.
+  const parts: [keyof Person, string[]][] = [
+    ["eyes", EYES],
+    ["brows", BROWS],
+    ["mouth", MOUTHS],
+  ];
+  for (const [k, list] of parts) {
+    if (o[k] === undefined) continue;
+    const val = one(o, k, list);
+    if (!val) return null;
+    (p as Record<string, string>)[k] = val;
+  }
+  for (const k of ["beardColor", "glassesColor", "backdrop"] as const) {
+    if (o[k] === undefined) continue;
+    const val = color(o, k);
+    if (!val) return null;
+    p[k] = val;
+  }
+  if (o.flip !== undefined) {
+    if (typeof o.flip !== "boolean") return null;
+    if (o.flip) p.flip = true;
   }
   return p as Person;
 }
@@ -150,9 +189,13 @@ export function lookUri(l: Look) {
         facialHairColor: [l.hair],
         clothing: [l.outfit] as never,
         clothesColor: [l.clothes],
-        eyes: [face.eyes] as never,
-        eyebrows: [face.eyebrows] as never,
-        mouth: [face.mouth] as never,
+        eyes: [l.eyes ?? face.eyes] as never,
+        eyebrows: [l.brows ?? face.eyebrows] as never,
+        mouth: [l.mouth ?? face.mouth] as never,
+        // Only when chosen, so avatars saved before these options render exactly as before.
+        ...(l.beardColor ? { facialHairColor: [l.beardColor] } : {}),
+        ...(l.glassesColor ? { accessoriesColor: [l.glassesColor] } : {}),
+        flip: !!l.flip,
       }).toDataUri();
     }
     if (cache.size > 500) cache.clear();
@@ -165,7 +208,7 @@ export function lookUri(l: Look) {
 export function lookStyle(l: Look, soft: string) {
   return l.kind === "animal"
     ? { backgroundColor: `#${l.backdrop}`, backgroundImage: `url("${lookUri(l)}")`, backgroundSize: "100%", backgroundPosition: "center" }
-    : { backgroundColor: soft, backgroundImage: `url("${lookUri(l)}")`, backgroundSize: "112%", backgroundPosition: "center 30%" };
+    : { backgroundColor: l.backdrop ? `#${l.backdrop}` : soft, backgroundImage: `url("${lookUri(l)}")`, backgroundSize: "112%", backgroundPosition: "center 30%" };
 }
 
 /* ---------- reading colors from a photo, on the device ---------- */

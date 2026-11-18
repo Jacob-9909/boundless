@@ -4,12 +4,14 @@ import { Banner } from "@astryxdesign/core/Banner";
 import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
 import { moderate, resolveAppeal } from "@/app/actions";
+import { AdminDashboard } from "@/components/AdminDashboard";
 import { Icon } from "@/components/Icon";
 import { NationalityChip, Notice, PageHead } from "@/components/ui";
-import { canViewQueue, getT, getUser, isAdmin } from "@/lib/auth";
+import { adminStats } from "@/lib/admin";
+import { aiEnabled } from "@/lib/ai";
+import { canViewQueue, demoEnabled, getT, getUser, isAdmin } from "@/lib/auth";
 import { q } from "@/lib/db";
 import { ALERTS, alertOf } from "@/lib/guide";
-import { ASKING_TAGS } from "@/lib/boards";
 import { REPORT_REASONS, timeAgo, type T } from "@/lib/i18n";
 
 export const metadata = { title: "Moderation" };
@@ -55,7 +57,7 @@ export default async function AdminPage() {
   // The demo moderator (judges) sees the real queue, but cannot act on it.
   const readOnly = !isAdmin(user);
 
-  const [open, events, appeals, flagged, [qa]] = await Promise.all([
+  const [open, appeals, flagged, stats] = await Promise.all([
     q<Open>(
       `SELECT r.id, r.reason, r.details, r.created_at,
          COALESCE(r.post_id, c.post_id) AS post_id, r.comment_id IS NOT NULL AS is_comment,
@@ -68,9 +70,6 @@ export default async function AdminPage() {
        LEFT JOIN boundless.posts p ON p.id = r.post_id
        JOIN boundless.users u ON u.id = COALESCE(c.user_id, p.user_id)
        WHERE r.status = 'received' ORDER BY r.created_at LIMIT 50`,
-    ),
-    q<{ name: string; n: number }>(
-      "SELECT name, count(*)::int AS n FROM boundless.events WHERE created_at > now() - interval '7 days' GROUP BY name ORDER BY name",
     ),
     q<{ id: string; reason: string; created_at: Date; post_id: string; is_comment: boolean; excerpt: string; nationality: string }>(
       `SELECT a.id, a.reason, a.created_at, COALESCE(a.post_id, c.post_id) AS post_id, a.comment_id IS NOT NULL AS is_comment,
@@ -89,36 +88,22 @@ export default async function AdminPage() {
        ORDER BY p.alert = ANY($1::text[]) DESC, p.created_at DESC LIMIT 30`,
       [ALERTS.filter((a) => a.crisis).map((a) => a.id)]
     ),
-    // Success measure: of the questions asked this week, how many the asker marked solved or settled with an accepted answer.
-    q<{ asked: number; solved: number; accepted: number }>(
-      `SELECT count(*)::int AS asked, count(*) FILTER (WHERE solved)::int AS solved,
-         count(*) FILTER (WHERE accepted_comment_id IS NOT NULL)::int AS accepted
-       FROM boundless.posts WHERE created_at > now() - interval '7 days' AND NOT hidden AND kind = ANY($1)`,
-      [ASKING_TAGS],
-    ),
+    adminStats(),
   ]);
+  // On/off only, never a value: the demo moderator sees this too.
+  const system = { ai: aiEnabled(), mail: Boolean(process.env.EMAIL_SENDER && process.env.EMAIL_PASSWORD), demo: demoEnabled(), build: process.env.APP_BUILD ?? "" };
 
   return (
-    <div className="mx-auto max-w-3xl lg:ml-2 pb-6">
-      <PageHead title={t("운영 큐")} desc={t("접수된 신고와 재심 요청을 오래된 순서로 보여 줘요.")} />
+    <div className="mx-auto max-w-5xl lg:ml-2 pb-6">
+      <PageHead title={t("운영 대시보드")} desc={t("서비스 전체 상태를 한 화면에서 확인해요. 아래에는 신고와 재심 요청이 오래된 순서로 쌓여요.")} />
       {readOnly && (
         <div className="mx-4 mt-4">
           <Banner role="status" status="warning" collapsible={false} title={t("시연용 운영자 계정이에요. 신고 내용과 지표는 실제와 같지만 처리 버튼은 꺼져 있어요.")} />
         </div>
       )}
       <div className="space-y-4 px-4 py-4">
-        <Card className="border-l-4 border-l-primary text-sm">
-          <p className="font-bold">{t("최근 7일 이용 지표")}</p>
-          <p className="mt-1 text-[var(--color-text-secondary)]">{events.length ? events.map((e) => `${eventName[e.name] ?? e.name} ${e.n}`).join(" · ") : "—"}</p>
-          <p className="mt-1 text-[var(--color-text-secondary)]" data-solve-rate>
-            {t("질문 {asked}개 중 해결 {solved}개 ({rate}%), 채택 {accepted}개", {
-              asked: qa.asked,
-              solved: qa.solved,
-              accepted: qa.accepted,
-              rate: qa.asked ? Math.round((qa.solved / qa.asked) * 100) : 0,
-            })}
-          </p>
-        </Card>
+        <AdminDashboard s={stats} t={t} lang={lang} system={system} eventName={eventName} />
+        <h2 className="border-t border-[var(--color-border)] pt-5 font-display text-xl font-extrabold">{t("처리 큐")}</h2>
         {flagged.length > 0 && (
           <section>
             <h2 className="font-display text-lg font-extrabold">{t("AI 우선 확인 {n}건", { n: flagged.length })}</h2>

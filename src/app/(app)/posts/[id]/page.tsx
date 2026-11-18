@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge } from "@astryxdesign/core/Badge";
 import { Banner } from "@astryxdesign/core/Banner";
@@ -16,7 +17,7 @@ import { Icon } from "@/components/Icon";
 import { RightRail } from "@/components/Community";
 import { LinkCards, Linkify } from "@/components/RichText";
 import { Translatable } from "@/components/Translate";
-import { Avatar, BackLink, BoardBadge, EventLine, Flag, HelpItem, LevelBadge, MarketLine, NationalityChip, Notice, SolvedBadge, SolvedNote, TagText } from "@/components/ui";
+import { Avatar, BackLink, BoardBadge, EventLine, Flag, HelpChip, HelpItem, LevelBadge, MarketLine, NationalityChip, Notice, SolvedBadge, SolvedNote, TagText } from "@/components/ui";
 import { aiEnabled } from "@/lib/ai";
 import { getT, getUser } from "@/lib/auth";
 import { isId } from "@/lib/db";
@@ -288,16 +289,16 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
           </div>
         </div>
 
+        {/* Official help for this board as one row of pills (number + name, description on hover); the full list is /guide. */}
         {help.length > 0 && (
-          <section className="mx-4 rounded-[var(--radius-container)] bg-soft/50 p-4">
-            <p className="text-sm font-bold">{t("공식 안내도 함께 확인하세요")}</p>
-            <ul className="mt-2 space-y-2">
-              {help.map((h) => (
-                <li key={h.tel ?? h.url}>
-                  <HelpItem h={h} t={t} />
-                </li>
-              ))}
-            </ul>
+          <section aria-label={t("공식 안내도 함께 확인하세요")} className="mx-4 flex flex-wrap items-center gap-2 rounded-[var(--radius-container)] bg-soft/50 px-3 py-2.5">
+            <Link href="/guide" className="mr-1 inline-flex items-center gap-1 text-xs font-bold whitespace-nowrap opacity-80 hover:underline">
+              <Icon name="info" size={13} />
+              {t("공식 안내")} ›
+            </Link>
+            {help.map((h) => (
+              <HelpChip key={h.tel ?? h.url} h={h} t={t} />
+            ))}
           </section>
         )}
 
