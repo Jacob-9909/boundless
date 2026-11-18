@@ -47,3 +47,6 @@ next-env.d.ts
 # MiroFish community simulation working files (scripts/community)
 /.sim
 /log
+
+# Submission forms and other office documents kept next to the repo, not in it
+*.docx
