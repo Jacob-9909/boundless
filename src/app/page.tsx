@@ -7,7 +7,7 @@ import { LangMenu } from "@/components/LangMenu";
 import { cultureFonts } from "@/app/login/fonts";
 import { HelloRotator } from "@/components/HelloRotator";
 import { Icon, type IconName } from "@/components/Icon";
-import { Avatar, BoardBadge, CultureScene, Flag, LINES, Logo, NationalityChip } from "@/components/ui";
+import { Avatar, BoardBadge, CultureScene, Flag, LINES, Logo, NationalityChip, Sentences } from "@/components/ui";
 import { demoEnabled, getT, getUser } from "@/lib/auth";
 import { boardOf, BOARDS } from "@/lib/boards";
 import { CULTURES, DEFAULT_CULTURE, themeVars } from "@/lib/cultures";
@@ -140,7 +140,7 @@ export default async function Landing(props: PageProps<"/">) {
               <span className="bg-gradient-to-r from-[#7DD3FC] via-[#86EFAC] to-[#FDBA74] bg-clip-text text-transparent">{t("국경 없이 함께 풀어요.")}</span>
             </h1>
             <p className="mt-6 max-w-xl text-base leading-relaxed text-white/75 md:text-lg">
-              {t("분리수거 요일, 교통카드 충전, 외국인등록증 연장까지. 먼저 겪은 이웃의 경험을 찾고, 국적만 밝힌 채 익명으로 묻고, 답을 확인하세요.")}
+              <Sentences text={t("분리수거 요일, 교통카드 충전, 외국인등록증 연장까지. 먼저 겪은 이웃의 경험을 찾고, 국적만 밝힌 채 익명으로 묻고, 답을 확인하세요.")} />
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button href="/feed" variant="primary" size="lg" label={t("피드 둘러보기")} endContent={<Icon name="next" size={18} />} className={onNavy} />
@@ -353,7 +353,7 @@ export default async function Landing(props: PageProps<"/">) {
         <p className="station-label text-[#C0105A]">{t("게시판")}</p>
         <h2 className={sectionTitle}>{t("편의 정보만이 아니라, 한국 생활 그 자체")}</h2>
         <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-black/75">
-          {t("비자와 집 문제부터 성수동 팝업, 동네 맛집, 연애 고민, 이사하며 내놓는 중고 물건까지. 게시판마다 말머리가 있어 원하는 이야기를 바로 찾아요.")}
+          <Sentences text={t("비자와 집 문제부터 성수동 팝업, 동네 맛집, 연애 고민, 이사하며 내놓는 중고 물건까지. 게시판마다 말머리가 있어 원하는 이야기를 바로 찾아요.")} />
         </p>
         <div className="mt-8 grid gap-4 lg:grid-cols-[1.4fr_1fr]">
           <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4">
@@ -405,8 +405,9 @@ export default async function Landing(props: PageProps<"/">) {
               <p className="station-label text-[#007A38]">{t("문화 테마")}</p>
               <h2 className={sectionTitle}>{t("들어오는 순간, 당신의 문화로")}</h2>
               <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-black/75">
-                {t("로그인 화면이 고른 나라의 색과 전통 문양, 모국어 인사로 바뀌어요. 가입하면 앱 곳곳이 내 문화의 색으로 물들어요.")}
-                {demo && ` ${t("카드를 누르면 그 나라 샘플 이웃으로 바로 들어가요.")}`}
+                <Sentences
+                  text={`${t("로그인 화면이 고른 나라의 색과 전통 문양, 모국어 인사로 바뀌어요. 가입하면 앱 곳곳이 내 문화의 색으로 물들어요.")}${demo ? ` ${t("카드를 누르면 그 나라 샘플 이웃으로 바로 들어가요.")}` : ""}`}
+                />
               </p>
             </div>
             <Button
@@ -461,7 +462,7 @@ export default async function Landing(props: PageProps<"/">) {
           <p className="station-label text-[#A84F08]">{t("샘플 계정")}</p>
           <h2 className={sectionTitle}>{t("심사위원 · 체험용 샘플 계정")}</h2>
           <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-black/75">
-            {t("나라를 고르면 그 나라 이웃의 샘플 계정으로 바로 들어가요. 이메일 인증 없이 화면을 둘러볼 수 있어요. 모든 데이터는 가상이에요.")}
+            <Sentences text={t("나라를 고르면 그 나라 이웃의 샘플 계정으로 바로 들어가요. 이메일 인증 없이 화면을 둘러볼 수 있어요. 모든 데이터는 가상이에요.")} />
           </p>
           <ul className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {[...CULTURES, DEFAULT_CULTURE].map((c) => {

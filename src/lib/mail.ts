@@ -13,7 +13,16 @@ export async function sendCodeMail(to: string, code: string, t: T): Promise<stri
     console.log(`[boundless] sign-in code for ${to}: ${code}`);
     return code;
   }
-  const transport = nodemailer.createTransport({ host: "smtp.gmail.com", port: 465, secure: true, auth: { user, pass } });
+  // Timeouts: without them a stalled SMTP connection keeps the sign-in button spinning for minutes.
+  const transport = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
+    auth: { user, pass },
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 20_000,
+  });
   await transport.sendMail({
     from: `Boundless <${user}>`,
     to,

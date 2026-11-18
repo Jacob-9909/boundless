@@ -6,6 +6,9 @@ import {
   ANIMALS,
   BACKDROPS,
   BEARDS,
+  BROWS,
+  EYES,
+  MOUTHS,
   COVERS,
   DEFAULT_ANIMAL,
   DEFAULT_PERSON,
@@ -27,7 +30,17 @@ assert.equal(parseLook({ ...DEFAULT_PERSON, top: "eyepatch" }), null);
 assert.equal(parseLook({ ...DEFAULT_PERSON, clothes: undefined }), null);
 assert.equal(parseLook({ ...DEFAULT_PERSON, kind: "robot" }), null);
 assert.equal(parseLook({ kind: "animal", animal: "dragon", backdrop: BACKDROPS[0] }), null);
-assert.equal(parseLook({ kind: "animal", animal: "cat", backdrop: "ff0000" }), null);
+assert.equal(parseLook({ kind: "animal", animal: "cat", backdrop: "red" }), null, "colors are six hex digits");
+// The free color picker: any hex color is fine, anything else is refused.
+assert.equal(parseLook({ ...DEFAULT_PERSON, skin: "c68642" })?.skin, "c68642");
+assert.equal(parseLook({ ...DEFAULT_PERSON, hair: "#c68642" }), null);
+// Detailed parts: kept when valid, refused when not, absent stays absent.
+const detailed = { ...DEFAULT_PERSON, eyes: "hearts", brows: "upDown", mouth: "tongue", beardColor: "aa3300", glassesColor: "112233", backdrop: "dbeafe", flip: true };
+assert.deepEqual(parseLook(detailed), detailed);
+assert.equal(parseLook({ ...DEFAULT_PERSON, eyes: "xDizzy" }), null, "left-out faces are refused");
+assert.equal(parseLook({ ...DEFAULT_PERSON, flip: "yes" }), null);
+assert.equal(parseLook({ ...DEFAULT_PERSON, backdrop: "<svg>" }), null);
+assert.deepEqual(parseLook({ ...DEFAULT_PERSON, flip: false }), DEFAULT_PERSON, "flip off is not stored");
 assert.equal(parseLook("hijab"), null);
 // A look saved before outfits and faces existed still loads, with the defaults.
 const { kind, outfit, face, ...older } = DEFAULT_PERSON;
@@ -42,6 +55,11 @@ for (const glasses of GLASSES) lookUri({ ...DEFAULT_PERSON, glasses });
 for (const beard of BEARDS) lookUri({ ...DEFAULT_PERSON, beard });
 for (const outfit of OUTFITS) lookUri({ ...DEFAULT_PERSON, outfit });
 for (const face of Object.keys(FACES)) lookUri({ ...DEFAULT_PERSON, face });
+for (const eyes of EYES) lookUri({ ...DEFAULT_PERSON, eyes });
+for (const brows of BROWS) lookUri({ ...DEFAULT_PERSON, brows });
+for (const mouth of MOUTHS) lookUri({ ...DEFAULT_PERSON, mouth });
+assert.notEqual(lookUri({ ...DEFAULT_PERSON, flip: true }), lookUri(DEFAULT_PERSON), "flip changes the drawing");
+assert.equal(lookUri({ ...DEFAULT_PERSON }), lookUri(parseLook(DEFAULT_PERSON)), "an old look draws the same as before");
 for (const animal of ANIMALS) assert.ok(decodeURIComponent(lookUri({ ...DEFAULT_ANIMAL, animal })).includes("<circle"), `${animal} draws`);
 
 assert.equal(nearest([253, 231, 214], SKINS), "fde7d6");

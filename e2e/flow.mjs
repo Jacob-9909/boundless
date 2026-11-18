@@ -250,6 +250,8 @@ await visitor.getByRole("heading", { level: 1, name: title }).waitFor();
 // A builds an avatar with a hijab. It stays private until A shows it on posts.
 const authorAvatar = visitor.locator("header [data-look]");
 await a.goto(BASE + "/settings/avatar");
+// The builder shows one category at a time; head coverings live under Hair.
+await a.getByRole("tab", { name: "Hair", exact: true }).click();
 await a.getByRole("button", { name: "Hijab", exact: true }).click();
 await a.getByText("Hijab or hat color").filter({ visible: true }).first().waitFor();
 await a.getByRole("button", { name: "Save", exact: true }).click();
