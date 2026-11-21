@@ -39,8 +39,8 @@ gh secret set VERCEL_TOKEN -R Jacob-9909/boundless   # 붙여넣고 Enter
 | `EMAIL_SENDER`, `EMAIL_PASSWORD` | **미설정** (11-18 운영자 화면에서 확인) | | Gmail 주소와 앱 비밀번호. **설정 전에는 실제 이메일로 가입할 수 없다**(샘플 계정은 영향 없음). 아래 "로그인 메일" 참고 |
 | `ADMIN_EMAILS` | 미설정 | | 운영 큐(`/admin`) 를 볼 실제 이메일 |
 | `NVIDIA_API_KEY` | 설정됨 (11-18 운영자 화면에서 확인) | | NVIDIA NIM 키(build.nvidia.com). 글 자동 분류(비자·지역·위기), 해결된 글의 AI 요약, 글쓰기 AI 점검에 쓴다. 없으면 이 기능들이 화면에 나오지 않을 뿐 나머지는 그대로 동작하고, 자해 표현만 정규식으로 잡는다 |
-| `CRON_SECRET` | **미설정** | | 매일 정리 작업(`/api/cron/cleanup`)의 인증값. Vercel Cron 이 `Authorization: Bearer` 로 보낸다. 없으면 정리 작업이 401 로 거절돼 오래된 요청 기록·만료 코드·삭제된 사진 파일이 쌓인다 |
-| `BLOB_STORE_ID` | 미설정 | ✓ | Blob 저장소를 프로젝트에 연결하면 자동으로 들어온다(OIDC). 없으면 사진을 예전처럼 Postgres 에 저장한다. 아래 "사진 저장소" |
+| `CRON_SECRET` | 설정됨 (11-21, 첫 호출 200 확인) | | 매일 정리 작업(`/api/cron/cleanup`)의 인증값. Vercel Cron 이 `Authorization: Bearer` 로 보낸다. 없으면 정리 작업이 401 로 거절돼 오래된 요청 기록·만료 코드·삭제된 사진 파일이 쌓인다 |
+| `BLOB_READ_WRITE_TOKEN` | 연결됨 (11-21) | ✓ | 비공개 Blob 저장소 `boundless-images`(`sin1`)를 연결하면 자동으로 들어온다(OIDC 로 연결한 저장소는 `BLOB_STORE_ID`). 둘 다 없으면 사진을 예전처럼 Postgres 에 저장한다. 연결할 때 운영 DB 사진은 0장이라 옮길 것이 없었다. 아래 "사진 저장소" |
 | `ALERT_WEBHOOK_URL` | 선택 | | Slack·Discord 수신 웹훅. 서버 오류를 종류별로 10분에 한 번 보낸다. 같은 값을 GitHub 저장소 시크릿에도 넣으면 업타임 실패도 온다 |
 | `PRIVACY_CONTACT` | 선택 | | 운영 정책 "개인정보 국외 처리" 끝에 보이는 개인정보 문의처(팀 공용 메일 등). 개인 메일은 넣지 않는다 |
 
@@ -123,7 +123,8 @@ DATABASE_URL=<운영 DATABASE_URL_UNPOOLED> BLOB_READ_WRITE_TOKEN=<저장소 토
 
 - **목표**: RPO 24시간(Neon 자체를 잃는 최악의 경우), RTO 1시간.
 - **운영 정책과 맞출 것**: `/policy` 는 "백업에 최대 7일 남는다"고 안내한다. Neon 보관 기간을 7일보다 길게 바꾸면 정책 문구도 같이 고친다.
-- **필요한 시크릿**: `BACKUP_PASSPHRASE`(긴 무작위 문자열). 이 값이 없으면 아무도 백업을 풀 수 없으니 GitHub 밖(팀 비밀번호 관리자)에도 보관한다.
+- **필요한 시크릿**: `BACKUP_PASSPHRASE`(긴 무작위 문자열). 이 값이 없으면 아무도 백업을 풀 수 없으니 GitHub 밖에도 보관한다. 지금 값의 사본은 관리자 Mac 키체인의 `boundless-backup-passphrase` 항목에 있다(`security find-generic-password -s boundless-backup-passphrase -w`). 팀 비밀번호 관리자로도 옮겨 둔다. `CRON_SECRET` 사본은 `boundless-cron-secret` 항목이다.
+- **버전**: Neon 은 PostgreSQL 18 이다. 워크플로가 서버 버전을 읽어 같은 버전의 `pg_dump` 와 복원 서버를 쓴다. 손으로 복구할 때도 그 버전 이상의 클라이언트를 쓴다.
 
 ```bash
 openssl rand -base64 32                               # 출력값을 비밀번호 관리자에 먼저 저장
@@ -260,10 +261,11 @@ psql "$NEW_DATABASE_URL" -f boundless.sql
 - [ ] `ADMIN_EMAILS` 지정, 운영 큐 접근 확인
 - [x] 운영 정책에 보관 기간과 개인정보 국외 처리(업체·국가·항목·기간·거부 방법) 고지 (`/policy#retention`, `#overseas`). 가입 동의 문구에도 국외 처리를 넣었다
 - [ ] 위 정책 문구 법률 검토, 이용약관 별도 페이지, 개인정보 보호책임자 지정과 `PRIVACY_CONTACT` 설정
-- [ ] `CRON_SECRET` 설정 후 Vercel → Cron Jobs 에서 첫 실행 200 확인
+- [x] `CRON_SECRET` 설정, 첫 호출 200 확인 (11-21)
 - [ ] 팀 정책 확정 후 임시값 교체: 가입 연령(P01), 국적 정정(P02), 재심(P03), 탈퇴 데이터(P04) — 코드에서 `ponytail:` 주석으로 검색
-- [ ] `BACKUP_PASSPHRASE` 시크릿 등록, Backup 워크플로 첫 실행 성공 확인, Neon PITR 보관 기간 확인(정책의 "최대 7일"과 맞추기)
-- [ ] Blob 저장소 연결 후 `scripts/images-to-blob.mjs` 로 기존 사진 옮기기
+- [x] `BACKUP_PASSPHRASE` 시크릿 등록, Backup 첫 실행 성공(복원 확인: 회원 62·글 59·댓글 255) (11-21)
+- [ ] Neon PITR 보관 기간 확인(정책의 "최대 7일"과 맞추기)
+- [x] Blob 저장소 연결 (11-21). 운영 DB 사진은 0장이라 옮길 것 없음
 - [ ] `ALERT_WEBHOOK_URL`(Vercel 환경변수와 GitHub 시크릿) 설정 후 알림 받아 보기
 - [ ] 문화별 인사말을 각 언어 원어민에게 검수 (특히 크메르어 · 네팔어 · 힌디어)
 - [ ] 화면 문구 기계 번역(`src/lib/locales/*.json`)을 원어민 검수. 대부분은 Google 무료 웹 엔드포인트로 만들었고(요청이 많으면 429 로 막힘), 프랑스어·힌디어 전체와 재심·운영 정책 문구는 AI가 직접 번역했다. 초기 Google 번역분은 모두 AI가 다시 번역하거나 고쳤다(핵심 용어 63줄, 짧은 메뉴·버튼 700여 줄, 긴 안내 문장 151줄). 원어민 검수는 아직이다. 출시 전 유료 번역 API 나 사람 번역으로 교체
