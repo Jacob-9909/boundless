@@ -60,6 +60,7 @@ for (const brows of BROWS) lookUri({ ...DEFAULT_PERSON, brows });
 for (const mouth of MOUTHS) lookUri({ ...DEFAULT_PERSON, mouth });
 assert.notEqual(lookUri({ ...DEFAULT_PERSON, flip: true }), lookUri(DEFAULT_PERSON), "flip changes the drawing");
 assert.equal(lookUri({ ...DEFAULT_PERSON }), lookUri(parseLook(DEFAULT_PERSON)), "an old look draws the same as before");
+assert.ok(decodeURIComponent(lookUri({ ...DEFAULT_PERSON, glasses: "round" })).includes("#3c4f5c"), "unchosen glasses stay slate, as in DiceBear 9");
 for (const animal of ANIMALS) assert.ok(decodeURIComponent(lookUri({ ...DEFAULT_ANIMAL, animal })).includes("<circle"), `${animal} draws`);
 
 assert.equal(nearest([253, 231, 214], SKINS), "fde7d6");
