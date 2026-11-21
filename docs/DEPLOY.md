@@ -94,7 +94,7 @@ DELETE FROM boundless.users WHERE email LIKE '%@example.com';
 - **관리자**(admin): 운영자 권한에 더해, `/admin` 맨 아래 "운영진"에서 회원 이메일로 역할을 주고 뺀다
 - `ADMIN_EMAILS` 에 있는 주소는 DB 역할과 상관없이 관리자다. 첫 관리자를 만드는 방법이자, 실수로 모두 권한을 잃었을 때 돌아오는 길이다. 자기 역할과 `ADMIN_EMAILS` 관리자의 역할은 화면에서 바꿀 수 없다
 - 샘플 계정(`@example.com`, 체험용 운영자 포함)은 어떤 역할도 받지 못한다
-- 모든 결정은 `boundless.staff_log` 에 누가·언제·무엇을 했는지 남고, `/admin` "처리 기록"에 최근 30건이 보인다. 체험용 운영자 화면에서는 이메일을 가린다
+- 모든 결정은 `boundless.staff_log` 에 누가·언제·무엇을 했는지 남고, `/admin` "처리 기록"에 최근 30건이 보인다. 이메일은 관리자에게만 그대로 보이고, 운영자와 체험용 운영자에게는 가려진다
 
 ### 사진 저장소 (Vercel Blob)
 
@@ -111,7 +111,7 @@ DATABASE_URL=<운영 DATABASE_URL_UNPOOLED> BLOB_READ_WRITE_TOKEN=<저장소 토
 ### 모니터링과 알림
 
 - **서버 오류**: `src/instrumentation.ts` 가 페이지·라우트·서버 액션에서 잡히지 않은 오류를 JSON 한 줄로 남긴다(`level`, `where`, `path`, `digest`, `build`). 요청 헤더와 쿠키는 남기지 않는다. Vercel → Logs 에서 `"level":"error"` 로 찾는다. 사용자가 보는 오류 화면의 digest 와 같은 값이다. `ALERT_WEBHOOK_URL` 이 있으면 같은 오류를 종류별로 10분에 한 번 웹훅으로도 보낸다.
-- **가동 확인**: `uptime.yml` 이 매시 `/api/health` 를 부른다. DB 에 닿지 못하면 503 이다. 실패한 실행은 GitHub 이 저장소 관리자에게 메일로 알리고, 저장소 시크릿 `ALERT_WEBHOOK_URL` 이 있으면 웹훅으로도 보낸다. 무료 Actions 시간 안에 두려고 매시로 했다. 1~5분 간격이 필요하면 UptimeRobot·Better Stack 같은 외부 모니터에 같은 URL 을 건다.
+- **가동 확인**: `uptime.yml` 이 매시 `/api/health` 를 부른다. DB 에 닿지 못하면 503 이다. GitHub 은 실패한 예약 실행을 cron 줄을 마지막으로 바꾼 사람에게만, 그 사람의 Actions 알림이 켜져 있을 때만 메일로 보낸다. 모두가 보는 알림은 저장소 시크릿 `ALERT_WEBHOOK_URL` 이니 꼭 설정한다. 무료 Actions 시간 안에 두려고 매시로 했다. 1~5분 간격이 필요하면 UptimeRobot·Better Stack 같은 외부 모니터에 같은 URL 을 건다.
 - Sentry 같은 오류 추적 서비스를 붙일 때는 `src/instrumentation.ts` 한 곳만 바꾸면 된다.
 
 ### 백업과 복구
@@ -149,7 +149,7 @@ pg_restore -d "$NEW_DATABASE_URL" --no-owner --exit-on-error restore.dump
 rm restore.dump
 ```
 
-그다음 `node scripts/db.mjs db/migrations` 로 이후 마이그레이션을 맞추고, `DATABASE_URL` 을 바꿔 배포한 뒤 `/api/health` 를 확인한다. **분기마다 한 번** 이 절차를 빈 DB 에 실제로 해 보고 걸린 시간을 여기에 적는다.
+그다음 `DATABASE_URL="$NEW_DATABASE_URL" node scripts/db.mjs db/migrations` 로 이후 마이그레이션을 맞추고, `DATABASE_URL` 을 바꿔 배포한 뒤 `/api/health` 를 확인한다. **분기마다 한 번** 이 절차를 빈 DB 에 실제로 해 보고 걸린 시간을 여기에 적는다.
 
 ### oracle_vm 샘플 DB 접속
 

@@ -937,6 +937,6 @@ export const EN: Record<string, string> = {
   "NVIDIA Corporation(미국): 글 분류, 해결된 글 요약, 글쓰기 점검. 전화번호·등록번호·이메일을 지운 글 제목과 본문. 결과만 Boundless에 저장해요.": "NVIDIA Corporation (USA): post labels, summaries of solved posts, the writing check. Post titles and text with phone numbers, ID numbers and emails removed. Only the results are stored by Boundless.",
   "Translated srl(이탈리아, MyMemory): 번역 버튼을 누른 글과 댓글의 본문. 번역 결과는 Boundless에 저장해요.": "Translated srl (Italy, MyMemory): the text of posts and comments you press Translate on. Boundless stores the translations.",
   "GitHub Inc.(미국): 장애 복구용 백업 파일. 암호화한 데이터베이스 전체. 7일 뒤 자동 삭제.": "GitHub Inc. (USA): disaster-recovery backup files. The whole database, encrypted. Deleted automatically after 7 days.",
-  "국외 처리를 원하지 않으면 가입하지 않거나 언제든 탈퇴할 수 있어요. 이 처리 없이는 서비스를 제공할 수 없어요.": "If you don’t want your data processed abroad, don’t sign up, or delete your account at any time. The service can’t run without it.",
+  "국외 처리를 원하지 않으면 가입하지 않거나 언제든 탈퇴할 수 있어요. 이 처리 없이는 서비스를 제공할 수 없어요.": "If you don’t want your data processed abroad, you can choose not to sign up, and you can delete your account at any time. The service can’t run without this processing.",
   "개인정보 문의: {contact}": "Privacy contact: {contact}",
 };

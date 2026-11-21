@@ -866,6 +866,6 @@
   "NVIDIA Corporation(미국): 글 분류, 해결된 글 요약, 글쓰기 점검. 전화번호·등록번호·이메일을 지운 글 제목과 본문. 결과만 Boundless에 저장해요.": "NVIDIA Corporation (USA): mga label ng post, mga buod ng mga nalutas na post, ang pagsusuri sa pagsulat. Mag-post ng mga pamagat at text na may mga numero ng telepono, numero ng ID at email na inalis. Ang mga resulta lang ang iniimbak ng Boundless.",
   "Translated srl(이탈리아, MyMemory): 번역 버튼을 누른 글과 댓글의 본문. 번역 결과는 Boundless에 저장해요.": "Translated srl (Italy, MyMemory): ang teksto ng mga post at komento na pinindot mo ang Translate. Iniimbak ng walang hangganan ang mga pagsasalin.",
   "GitHub Inc.(미국): 장애 복구용 백업 파일. 암호화한 데이터베이스 전체. 7일 뒤 자동 삭제.": "GitHub Inc. (USA): mga backup na file sa pagbawi ng kalamidad. Ang buong database, naka-encrypt. Awtomatikong tinanggal pagkatapos ng 7 araw.",
-  "국외 처리를 원하지 않으면 가입하지 않거나 언제든 탈퇴할 수 있어요. 이 처리 없이는 서비스를 제공할 수 없어요.": "Kung ayaw mong maproseso ang iyong data sa ibang bansa, huwag mag-sign up, o tanggalin ang iyong account anumang oras. Ang serbisyo ay hindi maaaring tumakbo nang wala ito.",
-  "개인정보 문의: {contact}": "Privacy contact: {contact}"
+  "국외 처리를 원하지 않으면 가입하지 않거나 언제든 탈퇴할 수 있어요. 이 처리 없이는 서비스를 제공할 수 없어요.": "Kung ayaw mong maproseso ang iyong data sa ibang bansa, maaari kang hindi mag-sign up, at maaari mong burahin ang iyong account anumang oras. Hindi gagana ang serbisyo kung wala ang pagprosesong ito.",
+  "개인정보 문의: {contact}": "Contact para sa privacy: {contact}"
 }

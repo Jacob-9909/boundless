@@ -1,4 +1,5 @@
 import { Pool } from "pg";
+import { sslFor } from "./pg-ssl";
 
 let pool: Pool | null = null;
 
@@ -6,10 +7,7 @@ export function db() {
   if (!pool) {
     const url = process.env.DATABASE_URL;
     if (!url) throw new Error("DATABASE_URL is not configured");
-    // Local dev DBs (docker, PGlite) run without TLS. Everything else must present a certificate that verifies:
-    // rejectUnauthorized: false let anyone on the network path pose as the database.
-    const isLocal = /@(localhost|127\.0\.0\.1)(:\d+)?\//.test(url);
-    pool = new Pool({ connectionString: url, ssl: !isLocal, max: 3 });
+    pool = new Pool({ connectionString: url, ssl: sslFor(url), max: 3 });
   }
   return pool;
 }
@@ -19,6 +17,25 @@ export const isId = (s: string) => /^\d{1,18}$/.test(s);
 
 export async function q<T extends object>(sql: string, params: unknown[] = []) {
   return (await db().query<T>(sql, params)).rows;
+}
+
+export type Query = typeof q;
+
+/** Runs fn on one connection inside one transaction: what it writes commits together or not at all. */
+export async function tx<R>(fn: (run: Query) => Promise<R>): Promise<R> {
+  const client = await db().connect();
+  const run: Query = async <T extends object>(sql: string, params: unknown[] = []) => (await client.query<T>(sql, params)).rows;
+  try {
+    await client.query("BEGIN");
+    const result = await fn(run);
+    await client.query("COMMIT");
+    return result;
+  } catch (e) {
+    await client.query("ROLLBACK").catch(() => {});
+    throw e;
+  } finally {
+    client.release();
+  }
 }
 
 export function track(name: string, userId: string | null = null) {

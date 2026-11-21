@@ -6,6 +6,12 @@
 const lastAlert = new Map<string, number>();
 const ALERT_EVERY_MS = 10 * 60_000;
 
+/** Stable kind of error: where, which route, and the SQLSTATE or error class. Messages can carry input values. */
+function alertKey(where: string, err: unknown, route: unknown) {
+  const code = typeof err === "object" && err !== null && "code" in err ? String(err.code) : err instanceof Error ? err.name : typeof err;
+  return `${where}:${route ?? ""}:${code}`;
+}
+
 export async function reportError(where: string, err: unknown, extra: Record<string, unknown> = {}) {
   const e = err instanceof Error ? err : new Error(String(err));
   // React replaces Server Component errors with a digest; the same digest is in the browser's error screen.
@@ -22,9 +28,12 @@ export async function reportError(where: string, err: unknown, extra: Record<str
     })
   );
   const hook = process.env.ALERT_WEBHOOK_URL;
-  const key = `${where}:${e.message}`;
-  if (!hook || Date.now() - (lastAlert.get(key) ?? 0) < ALERT_EVERY_MS) return;
-  lastAlert.set(key, Date.now());
+  const key = alertKey(where, err, extra.route);
+  const now = Date.now();
+  if (!hook || now - (lastAlert.get(key) ?? 0) < ALERT_EVERY_MS) return;
+  // Forget expired entries so a long-running server does not keep every kind it ever saw.
+  for (const [k, at] of lastAlert) if (now - at >= ALERT_EVERY_MS) lastAlert.delete(k);
+  lastAlert.set(key, now);
   const text = `[Boundless] ${where}${extra.path ? ` ${extra.path}` : ""}: ${e.message}${digest ? ` (digest ${digest})` : ""}`.slice(0, 900);
   // Slack reads `text`, Discord reads `content`.
   await fetch(hook, {

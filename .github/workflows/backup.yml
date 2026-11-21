@@ -2,7 +2,8 @@ name: Backup
 
 # Daily logical backup of the production database, kept apart from Neon's own point-in-time restore.
 # Each run also restores the dump into a throwaway Postgres and counts rows, so a backup that cannot be
-# restored fails here instead of on the day it is needed. GitHub emails the repo admins when a run fails.
+# restored fails here instead of on the day it is needed. A failed scheduled run is emailed only to the person who
+# last changed the cron line (if their Actions notifications are on), so someone should watch the Actions tab.
 # Secrets: VERCEL_TOKEN (already used by CI/CD) and BACKUP_PASSPHRASE (long random string; without it the
 # files cannot be read, so keep a copy outside GitHub). Restore steps: docs/DEPLOY.md "백업과 복구".
 

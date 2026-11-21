@@ -36,7 +36,7 @@ const meta = "flex flex-wrap items-center gap-2 text-xs";
 
 type LogLine = { id: string; actor_email: string; action: string; post_id: string | null; subject_email: string | null; detail: string | null; created_at: Date };
 
-/** "moderator@gmail.com" -> "m***@gmail.com": the demo moderator account is public, staff addresses are not. */
+/** "moderator@gmail.com" -> "m***@gmail.com". Only admins, who grant roles by email, see addresses in full. */
 const mask = (email: string) => email.replace(/^(.)[^@]*/, "$1***");
 
 function OpenPost({ id, t }: { id: string; t: T }) {
@@ -242,10 +242,10 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
                 {log.map((l) => (
                   <li key={l.id} className="flex min-h-11 flex-wrap items-center gap-2 px-4 py-2">
                     <Badge variant={l.action === "hide" || l.action === "uphold" ? "error" : l.action === "role" ? "info" : "neutral"} label={actionName[l.action] ?? l.action} />
-                    <span className="text-[var(--color-text-secondary)]">{readOnly ? mask(l.actor_email) : l.actor_email}</span>
+                    <span className="text-[var(--color-text-secondary)]">{admin ? l.actor_email : mask(l.actor_email)}</span>
                     {l.action === "role" && l.subject_email && (
                       <span>
-                        {readOnly ? mask(l.subject_email) : l.subject_email} → {roleName[l.detail ?? ""] ?? l.detail}
+                        {admin ? l.subject_email : mask(l.subject_email)} → {roleName[l.detail ?? ""] ?? l.detail}
                       </span>
                     )}
                     <span className="ml-auto text-xs text-[var(--color-text-secondary)]">{timeAgo(l.created_at, lang)}</span>

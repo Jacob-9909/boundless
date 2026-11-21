@@ -3,14 +3,14 @@
 // Usage: DATABASE_URL=... BLOB_READ_WRITE_TOKEN=... node scripts/images-to-blob.mjs
 //   (vercel env pull gives both; the token is under the connected store's ".env.local" tab)
 import { randomUUID } from "node:crypto";
-import { put } from "@vercel/blob";
+import { del, put } from "@vercel/blob";
 import pg from "pg";
+import { sslFor } from "../src/lib/pg-ssl.ts";
 
 const url = process.env.DATABASE_URL;
 if (!url) throw new Error("DATABASE_URL is not set");
 if (!process.env.BLOB_READ_WRITE_TOKEN && !process.env.BLOB_STORE_ID) throw new Error("BLOB_READ_WRITE_TOKEN is not set");
-const local = /@(localhost|127\.0\.0\.1)(:\d+)?\//.test(url);
-const client = new pg.Client({ connectionString: url, ssl: !local });
+const client = new pg.Client({ connectionString: url, ssl: sslFor(url) });
 await client.connect();
 
 let moved = 0;
@@ -20,8 +20,10 @@ try {
     if (!rows.length) break;
     for (const r of rows) {
       const { pathname } = await put(`posts/${r.post_id}/${randomUUID()}`, r.data, { access: "private", contentType: r.mime });
-      await client.query("UPDATE boundless.post_images SET blob = $2, data = NULL WHERE id = $1 AND blob IS NULL", [r.id, pathname]);
-      moved++;
+      const { rowCount } = await client.query("UPDATE boundless.post_images SET blob = $2, data = NULL WHERE id = $1 AND blob IS NULL", [r.id, pathname]);
+      // The photo was deleted (or moved by another run) while uploading: drop the copy nobody points to.
+      if (rowCount) moved++;
+      else await del(pathname);
     }
     console.log(`moved ${moved}`);
   }

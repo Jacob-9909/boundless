@@ -27,7 +27,7 @@ import {
   verifiedEmail,
   voidCode,
 } from "@/lib/auth";
-import { isId, q, track } from "@/lib/db";
+import { isId, q, track, tx, type Query } from "@/lib/db";
 import { aiEnabled, checkDraft, classifyPost, crisisFallback, summarizeThread, SUMMARY_VERSION, type DraftCheck, type Summary } from "@/lib/ai";
 import { ASKING_TAGS, BOARDS, boardOf, DEALS, isBoard, LOUNGE } from "@/lib/boards";
 import { isCountry, isLang, isRegion, isVisa, langName, POST_LANGS, READ_LANGS, readLangOf, REGIONS, REPORT_REASONS } from "@/lib/i18n";
@@ -604,11 +604,11 @@ async function targetOwner(f: FormData) {
 }
 
 /** Moderation hides or restores one target: a comment when there is one, else the post. */
-async function setHidden(t: { post_id: string | null; comment_id: string | null }, hidden: boolean) {
-  if (t.comment_id) await q("UPDATE boundless.comments SET hidden = $2 WHERE id = $1", [t.comment_id, hidden]);
-  else await q("UPDATE boundless.posts SET hidden = $2 WHERE id = $1", [t.post_id, hidden]);
+async function setHidden(t: { post_id: string | null; comment_id: string | null }, hidden: boolean, run: Query = q) {
+  if (t.comment_id) await run("UPDATE boundless.comments SET hidden = $2 WHERE id = $1", [t.comment_id, hidden]);
+  else await run("UPDATE boundless.posts SET hidden = $2 WHERE id = $1", [t.post_id, hidden]);
   // An AI summary may quote hidden text; it is made again from what stays visible.
-  await q("DELETE FROM boundless.post_summaries WHERE post_id = COALESCE($1, (SELECT post_id FROM boundless.comments WHERE id = $2))", [t.post_id, t.comment_id]);
+  await run("DELETE FROM boundless.post_summaries WHERE post_id = COALESCE($1, (SELECT post_id FROM boundless.comments WHERE id = $2))", [t.post_id, t.comment_id]);
 }
 
 export async function reportContent(_: Result, f: FormData): Promise<Result> {
@@ -655,13 +655,16 @@ export async function resolveAppeal(f: FormData) {
   const id = str(f, "appeal");
   const action = str(f, "action");
   if (!isId(id) || (action !== "restore" && action !== "uphold")) return;
-  const r = await q<{ post_id: string | null; comment_id: string | null }>(
-    "UPDATE boundless.appeals SET status = $2, resolved_at = now() WHERE id = $1 AND status = 'received' RETURNING post_id, comment_id",
-    [id, action === "restore" ? "restored" : "upheld"]
-  );
-  if (!r[0]) return;
-  if (action === "restore") await setHidden(r[0], false);
-  await staffLog(user!, action, { appeal: id, post: r[0].post_id, comment: r[0].comment_id });
+  // The decision, the content change and its log line commit together; an appeal already decided changes nothing.
+  await tx(async (run) => {
+    const r = await run<{ post_id: string | null; comment_id: string | null }>(
+      "UPDATE boundless.appeals SET status = $2, resolved_at = now() WHERE id = $1 AND status = 'received' RETURNING post_id, comment_id",
+      [id, action === "restore" ? "restored" : "upheld"]
+    );
+    if (!r[0]) return;
+    if (action === "restore") await setHidden(r[0], false, run);
+    await staffLog(user!, action, { appeal: id, post: r[0].post_id, comment: r[0].comment_id }, run);
+  });
   refresh();
 }
 
@@ -753,7 +756,8 @@ export async function deleteAccount(f: FormData) {
   );
   await q("DELETE FROM boundless.post_summaries WHERE post_id IN (SELECT post_id FROM boundless.comments WHERE user_id = $1)", [user.id]);
   await q("DELETE FROM boundless.users WHERE id = $1", [user.id]);
-  purgeLater();
+  // /policy says photos go at once: wait for the files. If Blob fails, blob_trash keeps them for the daily cleanup.
+  await purgeBlobs().catch((e) => reportError("purgeBlobs", e));
   await endSession();
   redirect("/");
 }
@@ -764,9 +768,10 @@ export async function deleteAccount(f: FormData) {
 async function staffLog(
   actor: { id: string; email: string },
   action: "hide" | "dismiss" | "restore" | "uphold" | "role",
-  target: { report?: string; appeal?: string; post?: string | null; comment?: string | null; subject?: string; detail?: string }
+  target: { report?: string; appeal?: string; post?: string | null; comment?: string | null; subject?: string; detail?: string },
+  run: Query = q
 ) {
-  await q(
+  await run(
     `INSERT INTO boundless.staff_log (actor_id, actor_email, action, report_id, appeal_id, post_id, comment_id, subject_email, detail)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
     [actor.id, actor.email, action, target.report ?? null, target.appeal ?? null, target.post ?? null, target.comment ?? null, target.subject ?? null, target.detail ?? null]
@@ -779,20 +784,24 @@ export async function moderate(f: FormData) {
   const id = str(f, "report");
   const action = str(f, "action");
   if (!isId(id) || (action !== "hide" && action !== "dismiss")) return;
-  const r = await q<{ post_id: string | null; comment_id: string | null }>(
-    "SELECT post_id, comment_id FROM boundless.reports WHERE id = $1",
-    [id]
-  );
-  if (!r[0]) return;
-  const { post_id, comment_id } = r[0];
-  if (action === "hide") await setHidden(r[0], true);
-  // Resolve every open report on the same target together.
-  await q(
-    `UPDATE boundless.reports SET status = $1, resolved_at = now()
-     WHERE status = 'received' AND (CASE WHEN $2::bigint IS NOT NULL THEN comment_id = $2::bigint ELSE post_id = $3::bigint AND comment_id IS NULL END)`,
-    [action === "hide" ? "actioned" : "dismissed", comment_id, post_id]
-  );
-  await staffLog(user!, action, { report: id, post: post_id, comment: comment_id });
+  // One transaction, and only while the report is still open: FOR UPDATE makes a second click or a second
+  // moderator wait, then find it decided and change (and log) nothing.
+  await tx(async (run) => {
+    const r = await run<{ post_id: string | null; comment_id: string | null }>(
+      "SELECT post_id, comment_id FROM boundless.reports WHERE id = $1 AND status = 'received' FOR UPDATE",
+      [id]
+    );
+    if (!r[0]) return;
+    const { post_id, comment_id } = r[0];
+    if (action === "hide") await setHidden(r[0], true, run);
+    // Resolve every open report on the same target together.
+    await run(
+      `UPDATE boundless.reports SET status = $1, resolved_at = now()
+       WHERE status = 'received' AND (CASE WHEN $2::bigint IS NOT NULL THEN comment_id = $2::bigint ELSE post_id = $3::bigint AND comment_id IS NULL END)`,
+      [action === "hide" ? "actioned" : "dismissed", comment_id, post_id]
+    );
+    await staffLog(user!, action, { report: id, post: post_id, comment: comment_id }, run);
+  });
   refresh();
 }
 
@@ -809,8 +818,10 @@ export async function setStaffRole(f: FormData) {
   if (!email || !["member", "moderator", "admin"].includes(role)) return back("invalid");
   if (email === user!.email || envAdmins().includes(email)) return back("fixed");
   if (isDemoEmail(email) || isSampleEmail(email) || email === DEMO_MODERATOR) return back("sample");
-  const rows = await q("UPDATE boundless.users SET role = $2 WHERE email = $1 RETURNING id", [email, role]);
-  if (!rows.length) return back("unknown");
-  await staffLog(user!, "role", { subject: email, detail: role });
-  back("ok");
+  const changed = await tx(async (run) => {
+    const rows = await run("UPDATE boundless.users SET role = $2 WHERE email = $1 RETURNING id", [email, role]);
+    if (rows.length) await staffLog(user!, "role", { subject: email, detail: role }, run);
+    return rows.length > 0;
+  });
+  back(changed ? "ok" : "unknown");
 }

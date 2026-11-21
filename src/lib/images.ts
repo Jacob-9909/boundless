@@ -19,7 +19,10 @@ export async function saveImages(postId: string, images: Upload[]) {
     try {
       await q("INSERT INTO boundless.post_images (post_id, mime, blob) VALUES ($1, $2, $3)", [postId, im.mime, pathname]);
     } catch (e) {
-      await del(pathname).catch(() => {});
+      // No row points at the file (e.g. the post was deleted meanwhile). If it cannot go now, the cleanup does it.
+      await del(pathname).catch(() =>
+        q("INSERT INTO boundless.blob_trash (pathname) VALUES ($1) ON CONFLICT DO NOTHING", [pathname]).catch(() => {})
+      );
       throw e;
     }
   }

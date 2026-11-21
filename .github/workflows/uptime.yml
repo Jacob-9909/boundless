@@ -1,8 +1,9 @@
 name: Uptime
 
-# Hourly look at production. A failed run makes GitHub email the repo admins; with the ALERT_WEBHOOK_URL
-# secret (Slack or Discord incoming webhook) it also posts there. Hourly keeps it inside the free Actions
-# minutes; for checks every minute use an external monitor on the same URL (docs/DEPLOY.md "모니터링").
+# Hourly look at production. GitHub emails a failed scheduled run only to the person who last changed the cron
+# line, and only if their Actions notifications are on; the ALERT_WEBHOOK_URL secret (Slack or Discord incoming
+# webhook) is the alert everyone sees, so set it. Hourly keeps it inside the free Actions minutes; for checks
+# every minute use an external monitor on the same URL (docs/DEPLOY.md "모니터링과 알림").
 
 on:
   schedule:
@@ -17,7 +18,12 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: GET /api/health
-        run: curl -fsS --retry 3 --retry-delay 20 --retry-all-errors --max-time 20 https://boundless-virid.vercel.app/api/health
+        # Exactly 200 with ok:true. A redirect (deployment protection, a login page) does not count as up.
+        run: |
+          code=$(curl -sS -o health.json -w '%{http_code}' --retry 3 --retry-delay 20 --retry-all-errors --max-time 20 \
+            https://boundless-virid.vercel.app/api/health) || true
+          echo "HTTP $code $(head -c 200 health.json 2>/dev/null)"
+          test "$code" = 200 && grep -q '"ok":true' health.json
       - name: Alert
         if: failure()
         env:

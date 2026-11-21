@@ -7,12 +7,11 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import pg from "pg";
+import { sslFor } from "../src/lib/pg-ssl.ts";
 
 const url = process.env.DATABASE_URL;
 if (!url) throw new Error("DATABASE_URL is not set");
-// Local dev DBs (docker, PGlite) run without TLS; anything else must present a valid certificate.
-const local = /@(localhost|127\.0\.0\.1)(:\d+)?\//.test(url);
-const client = new pg.Client({ connectionString: url, ssl: !local });
+const client = new pg.Client({ connectionString: url, ssl: sslFor(url) });
 // RAISE WARNING in a migration (e.g. 0004 when pg_trgm is missing) shows up in the deploy log.
 client.on("notice", (n) => n.severity !== "NOTICE" && console.warn(`${n.severity}: ${n.message}`));
 await client.connect();

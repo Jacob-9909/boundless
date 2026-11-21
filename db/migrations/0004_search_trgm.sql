@@ -6,11 +6,15 @@ DO $$ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE WARNING 'pg_trgm unavailable (%): search runs without trigram indexes', SQLERRM;
 END $$;
-DO $$ BEGIN
-  IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_trgm') THEN
-    CREATE INDEX IF NOT EXISTS posts_title_trgm ON boundless.posts USING gin (title gin_trgm_ops);
-    CREATE INDEX IF NOT EXISTS posts_body_trgm ON boundless.posts USING gin (body gin_trgm_ops);
-    CREATE INDEX IF NOT EXISTS translations_title_trgm ON boundless.translations USING gin (title gin_trgm_ops);
-    CREATE INDEX IF NOT EXISTS translations_body_trgm ON boundless.translations USING gin (body gin_trgm_ops);
+-- The operator class is named with the extension's own schema: it may already be installed somewhere
+-- (e.g. an "extensions" schema) that is not on the search_path.
+DO $$ DECLARE ext text;
+BEGIN
+  SELECT n.nspname INTO ext FROM pg_extension e JOIN pg_namespace n ON n.oid = e.extnamespace WHERE e.extname = 'pg_trgm';
+  IF ext IS NOT NULL THEN
+    EXECUTE format('CREATE INDEX IF NOT EXISTS posts_title_trgm ON boundless.posts USING gin (title %I.gin_trgm_ops)', ext);
+    EXECUTE format('CREATE INDEX IF NOT EXISTS posts_body_trgm ON boundless.posts USING gin (body %I.gin_trgm_ops)', ext);
+    EXECUTE format('CREATE INDEX IF NOT EXISTS translations_title_trgm ON boundless.translations USING gin (title %I.gin_trgm_ops)', ext);
+    EXECUTE format('CREATE INDEX IF NOT EXISTS translations_body_trgm ON boundless.translations USING gin (body %I.gin_trgm_ops)', ext);
   END IF;
 END $$;
