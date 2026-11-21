@@ -1,5 +1,5 @@
--- Boundless schema. Idempotent: safe to re-run.
--- Apply: psql "$DATABASE_URL" -f db/schema.sql
+-- Boundless schema up to 2026-11-21 (was db/schema.sql). Idempotent, so it also records cleanly on databases
+-- that already had it. Later changes go in new numbered files; scripts/db.mjs applies each once.
 -- On shared servers an admin creates the schema for the app role; CREATE SCHEMA IF NOT EXISTS would
 -- still demand CREATE on the database, so only create it when missing (local, CI).
 DO $$ BEGIN

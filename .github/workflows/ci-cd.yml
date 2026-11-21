@@ -33,7 +33,7 @@ jobs:
       - run: node --no-warnings scripts/ai-check.mjs
       - run: node --no-warnings scripts/avatar-check.mjs
       - run: npm run build
-      - run: node scripts/db.mjs db/schema.sql db/seed.sql
+      - run: node scripts/db.mjs db/migrations db/seed.sql
       # e2e runs against the dev server: without SMTP it shows the sign-in code on screen.
       - name: e2e
         run: |
@@ -88,11 +88,11 @@ jobs:
         run: test -n "$VERCEL_TOKEN" || (echo "::error::Add the VERCEL_TOKEN repository secret (see docs/DEPLOY.md)"; exit 1)
       - run: npm ci
       - run: npx vercel@65.12.1 pull --yes --environment=production --token="$VERCEL_TOKEN"
-      # Schema is idempotent; apply it before the new code goes live.
+      # Pending migrations (db/migrations), before the new code goes live. Each must keep the running code working.
       - name: Migrate
         run: |
           set -a; . .vercel/.env.production.local; set +a
-          DATABASE_URL="$DATABASE_URL_UNPOOLED" node scripts/db.mjs db/schema.sql
+          DATABASE_URL="$DATABASE_URL_UNPOOLED" node scripts/db.mjs db/migrations
       - run: npx vercel@65.12.1 build --prod --token="$VERCEL_TOKEN"
       - run: npx vercel@65.12.1 deploy --prebuilt --prod --token="$VERCEL_TOKEN"
       - name: Health check

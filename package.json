@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db": "node --env-file=.env.local scripts/db.mjs db/schema.sql db/seed.sql",
+    "db": "node --env-file=.env.local scripts/db.mjs db/migrations db/seed.sql",
     "i18n": "node scripts/i18n-check.mjs",
     "e2e": "node e2e/flow.mjs"
   },
@@ -17,6 +17,7 @@
     "@dicebear/avataaars": "9.4.2",
     "@dicebear/core": "9.4.3",
     "@stylexjs/stylex": "^0.19.2",
+    "@vercel/blob": "2.8.2",
     "next": "16.4.5",
     "nodemailer": "^10.3.1",
     "pg": "^8.23.1",

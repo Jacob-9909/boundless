@@ -4,7 +4,7 @@ import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
 import { Collapsible } from "@astryxdesign/core/Collapsible";
 import { LangMenu } from "@/components/LangMenu";
-import { setReadLang, setRegion, signOut, unblockAll } from "@/app/actions";
+import { setReadLang, setRegion, signOut, signOutEverywhere, unblockAll } from "@/app/actions";
 import { SelectField } from "@/components/fields";
 import { NationalityForm } from "@/components/forms";
 import { Icon } from "@/components/Icon";
@@ -188,6 +188,10 @@ export default async function SettingsPage() {
               <div className="flex flex-wrap items-center gap-2 px-4 py-3">
                 <form action={signOut}>
                   <Button type="submit" label={t("로그아웃")} variant="secondary" />
+                </form>
+                {/* Lost phone or a shared computer: every session ends, this one too. */}
+                <form action={signOutEverywhere}>
+                  <Button type="submit" label={t("모든 기기에서 로그아웃")} variant="ghost" />
                 </form>
                 <div className="ml-auto">
                   <DeleteAccount />

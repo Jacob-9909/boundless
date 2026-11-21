@@ -6,9 +6,10 @@ export function db() {
   if (!pool) {
     const url = process.env.DATABASE_URL;
     if (!url) throw new Error("DATABASE_URL is not configured");
-    // Local dev DBs (docker, PGlite) run without SSL.
+    // Local dev DBs (docker, PGlite) run without TLS. Everything else must present a certificate that verifies:
+    // rejectUnauthorized: false let anyone on the network path pose as the database.
     const isLocal = /@(localhost|127\.0\.0\.1)(:\d+)?\//.test(url);
-    pool = new Pool({ connectionString: url, ssl: isLocal ? false : { rejectUnauthorized: false }, max: 3 });
+    pool = new Pool({ connectionString: url, ssl: !isLocal, max: 3 });
   }
   return pool;
 }

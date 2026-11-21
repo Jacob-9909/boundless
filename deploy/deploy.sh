@@ -19,7 +19,7 @@ echo "building $(git rev-parse --short HEAD)"
 
 npm ci --no-audit --no-fund
 set -a; . "$ROOT/.env"; set +a
-node scripts/db.mjs db/schema.sql
+node scripts/db.mjs db/migrations
 npm run build
 
 rm -rf "$ROOT/app.new"

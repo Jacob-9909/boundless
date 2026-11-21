@@ -19,6 +19,21 @@ const nextConfig: NextConfig = {
   env: { APP_BUILD: sha ? `${day} · ${sha}` : day },
   // Posts carry up to four photos, each shrunk in the browser to well under 600 KB (Vercel allows 4.5 MB).
   experimental: { serverActions: { bodySizeLimit: "3mb" } },
+  // Every response, API routes included. The Content-Security-Policy itself is per request, in src/proxy.ts.
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()" },
+        ],
+      },
+    ];
+  },
   turbopack: {
     rules: {
       "*.css": {

@@ -1,0 +1,63 @@
+name: Backup
+
+# Daily logical backup of the production database, kept apart from Neon's own point-in-time restore.
+# Each run also restores the dump into a throwaway Postgres and counts rows, so a backup that cannot be
+# restored fails here instead of on the day it is needed. GitHub emails the repo admins when a run fails.
+# Secrets: VERCEL_TOKEN (already used by CI/CD) and BACKUP_PASSPHRASE (long random string; without it the
+# files cannot be read, so keep a copy outside GitHub). Restore steps: docs/DEPLOY.md "백업과 복구".
+
+on:
+  schedule:
+    - cron: "0 18 * * *" # 03:00 KST
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    services:
+      restore:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      VERCEL_ORG_ID: team_n6RysxNek0puntAZW4aJmVcZ
+      VERCEL_PROJECT_ID: prj_Jo82mFSFN1XNeHCJ59CoKWiHqggd
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+    steps:
+      - name: Check secrets
+        run: |
+          test -n "$VERCEL_TOKEN" || (echo "::error::Add the VERCEL_TOKEN repository secret"; exit 1)
+          test -n "$BACKUP_PASSPHRASE" || (echo "::error::Add the BACKUP_PASSPHRASE repository secret (docs/DEPLOY.md)"; exit 1)
+      - run: npx --yes vercel@65.12.1 pull --yes --environment=production --token="$VERCEL_TOKEN"
+      # pg_dump from the postgres:17 image: the runner's own client is older than the server and refuses to dump it.
+      - name: Dump and encrypt
+        run: |
+          set -a; . .vercel/.env.production.local; set +a
+          name="boundless-$(date -u +%Y%m%d-%H%M).dump"
+          docker run --rm postgres:17 pg_dump --format=custom --no-owner --no-privileges --schema=boundless "$DATABASE_URL_UNPOOLED" \
+            | openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:BACKUP_PASSPHRASE -out "$name.enc"
+          rm -f .vercel/.env.production.local
+          echo "BACKUP=$name.enc" >> "$GITHUB_ENV"
+          ls -l "$name.enc"
+      - name: Restore test
+        run: |
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:BACKUP_PASSPHRASE -in "$BACKUP" -out restore.dump
+          # Trigram indexes need the extension before their tables come back (db/migrations/0004).
+          docker run --rm --network host -e PGPASSWORD=postgres -v "$PWD:/w" postgres:17 sh -c '
+            psql -h localhost -U postgres -qc "CREATE EXTENSION IF NOT EXISTS pg_trgm" &&
+            pg_restore -h localhost -U postgres -d postgres --no-owner --exit-on-error /w/restore.dump &&
+            psql -h localhost -U postgres -c "SELECT (SELECT count(*) FROM boundless.users) AS users, (SELECT count(*) FROM boundless.posts) AS posts, (SELECT count(*) FROM boundless.comments) AS comments, (SELECT max(version) FROM boundless.schema_migrations) AS schema"'
+          rm -f restore.dump
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.BACKUP }}
+          path: ${{ env.BACKUP }}
+          retention-days: 7
+          if-no-files-found: error
