@@ -128,9 +128,12 @@ export function listPosts(
   if (opts.board) add("p.topic = ?", opts.board);
   if (opts.tag) add("p.kind = ?", opts.tag);
   // Original text, plus any cached translation, so "recycling" also finds a Vietnamese post someone translated.
+  // Written as one id list so each side can use its trigram indexes (db/migrations/0004); an OR with a
+  // correlated EXISTS made Postgres read every post.
   if (opts.query)
     add(
-      "(p.title ILIKE ? OR p.body ILIKE ? OR EXISTS (SELECT 1 FROM boundless.translations tr WHERE tr.item = 'p:' || p.id AND (tr.title ILIKE ? OR tr.body ILIKE ?)))",
+      `p.id IN (SELECT id FROM boundless.posts WHERE title ILIKE ? OR body ILIKE ?
+                UNION ALL SELECT substr(item, 3)::bigint FROM boundless.translations WHERE item LIKE 'p:%' AND (title ILIKE ? OR body ILIKE ?))`,
       likeEscape(opts.query)
     );
   if (opts.nationality) add("u.nationality = ?", opts.nationality);

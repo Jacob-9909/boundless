@@ -247,6 +247,26 @@ await appealItem.waitFor({ state: "detached" });
 await visitor.goto(postUrl);
 await visitor.getByRole("heading", { level: 1, name: title }).waitFor();
 
+// Both decisions are in the decision log. The admin makes B a moderator: B gets the queue but not role
+// management, and loses the queue again once the role is taken back.
+const emailB = `e2e-b-${run}@example.com`;
+await admin.goto(BASE + "/admin");
+const decisions = admin.locator("section", { has: admin.locator("#log-title") });
+await decisions.getByText("Hid reported content").first().waitFor();
+await decisions.getByText("Restored on appeal").first().waitFor();
+await admin.getByLabel("Member email").fill(emailB);
+await admin.getByRole("button", { name: "Change role" }).click();
+await admin.locator("#staff li", { hasText: emailB }).waitFor();
+await b.goto(BASE + "/admin");
+await b.getByRole("heading", { name: "Decision log" }).waitFor();
+assert.equal(await b.locator("#staff").count(), 0, "a moderator cannot manage roles");
+await pick(admin, "Role", "Member");
+await admin.getByLabel("Member email").fill(emailB);
+await admin.getByRole("button", { name: "Change role" }).click();
+await admin.locator("#staff li", { hasText: emailB }).waitFor({ state: "detached" });
+await b.goto(BASE + "/admin");
+await b.waitForURL(BASE + "/feed");
+
 // A builds an avatar with a hijab. It stays private until A shows it on posts.
 const authorAvatar = visitor.locator("header [data-look]");
 await a.goto(BASE + "/settings/avatar");
@@ -297,6 +317,16 @@ await a.getByRole("heading", { name: /only for neighbors from Vietnam/ }).waitFo
 await judge.getByLabel(VI["화면 언어 바꾸기"]).first().click();
 await judge.getByRole("button", { name: "한국어", exact: true }).click();
 await judge.waitForFunction(() => document.documentElement.lang === "ko");
+
+// B signs out on every device: a copy of B's old session cookie no longer signs anyone in.
+const stolen = await b.context().cookies();
+await b.goto(BASE + "/settings");
+await b.getByRole("button", { name: "Sign out on every device" }).click();
+await b.waitForURL(BASE + "/login");
+const thief = await newUser();
+await thief.context().addCookies(stolen);
+await thief.goto(BASE + "/settings");
+await thief.getByRole("link", { name: "Sign in" }).first().waitFor();
 
 assert.deepEqual(pageErrors, [], "no uncaught page errors");
 await browser.close();

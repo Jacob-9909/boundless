@@ -20,7 +20,11 @@ export type User = {
   read_lang: string | null;
   avatar: unknown; // Look (src/lib/avatar.ts) or null
   avatar_public: boolean;
+  role: Role;
+  session_version: number;
 };
+
+export type Role = "member" | "moderator" | "admin";
 
 function secret() {
   const s = process.env.SESSION_SECRET;
@@ -58,21 +62,33 @@ const cookieOpts = (maxAge: number) => ({
   maxAge,
 });
 
+// The session cookie holds "<user id>:<session_version>". Cookies from before versions existed hold only the id
+// and count as version 0, so the change signed nobody out.
 export const getUser = cache(async (): Promise<User | null> => {
-  const id = unseal((await cookies()).get(SESSION)?.value);
+  const [id, version = "0"] = unseal((await cookies()).get(SESSION)?.value)?.split(":") ?? [];
   if (!id) return null;
-  const rows = await q<User>("SELECT id, email, nationality, nationality_changed_at, region, seen_at, read_lang, avatar, avatar_public FROM boundless.users WHERE id = $1", [id]);
-  return rows[0] ?? null;
+  const rows = await q<User>(
+    "SELECT id, email, nationality, nationality_changed_at, region, seen_at, read_lang, avatar, avatar_public, role, session_version FROM boundless.users WHERE id = $1",
+    [id]
+  );
+  return rows[0] && String(rows[0].session_version) === version ? rows[0] : null;
 });
 
 export async function startSession(userId: string) {
+  const rows = await q<{ session_version: number }>("SELECT session_version FROM boundless.users WHERE id = $1", [userId]);
   const jar = await cookies();
-  jar.set(SESSION, seal(userId, SESSION_DAYS * 86400), cookieOpts(SESSION_DAYS * 86400));
+  jar.set(SESSION, seal(`${userId}:${rows[0].session_version}`, SESSION_DAYS * 86400), cookieOpts(SESSION_DAYS * 86400));
   jar.delete(VERIFIED);
 }
 
 export async function endSession() {
   (await cookies()).delete(SESSION);
+}
+
+/** Signs the member out on every device: each cookie issued before now carries a stale version. */
+export async function endEverySession(userId: string) {
+  await q("UPDATE boundless.users SET session_version = session_version + 1 WHERE id = $1", [userId]);
+  await endSession();
 }
 
 export async function markVerified(email: string) {
@@ -91,16 +107,25 @@ export const DEMO_MODERATOR = "moderator@example.com";
 /** A country's one-click sample account (demoLogin makes "<country code>@example.com"), not a seeded or test member. */
 export const isSampleEmail = (email: string) => /^[a-z]{2}@example\.com$/.test(email);
 
+/** ADMIN_EMAILS: admins by configuration, which is how the first admin exists before anyone can grant a role. */
+export const envAdmins = () => (process.env.ADMIN_EMAILS ?? "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+
+// Demo accounts can be opened by anyone, so they never get staff rights, whatever their row says.
+const staff = (user: User | null): user is User => !!user && !isDemoEmail(user.email);
+
+/** Admins moderate and also grant or remove staff roles (/admin). */
 export function isAdmin(user: User | null) {
-  // Demo accounts can be opened by anyone, so they never get moderation rights.
-  if (!user || isDemoEmail(user.email)) return false;
-  const list = (process.env.ADMIN_EMAILS ?? "").split(",").map((s) => s.trim().toLowerCase());
-  return list.includes(user.email);
+  return staff(user) && (user.role === "admin" || envAdmins().includes(user.email));
 }
 
-/** Real admins act on reports; the demo moderator may only look (read-only queue). */
+/** Moderators act on reports and appeals. */
+export function canModerate(user: User | null) {
+  return isAdmin(user) || (staff(user) && user.role === "moderator");
+}
+
+/** Staff act on the queue; the demo moderator may only look (read-only queue). */
 export function canViewQueue(user: User | null) {
-  return isAdmin(user) || (!!user && demoEnabled() && user.email === DEMO_MODERATOR);
+  return canModerate(user) || (!!user && demoEnabled() && user.email === DEMO_MODERATOR);
 }
 
 export function normalizeEmail(raw: unknown) {

@@ -118,13 +118,16 @@
 | 영역 | 사용 |
 | --- | --- |
 | 앱 | Next.js 16 (App Router, Server Actions), React 19, Tailwind CSS 4 |
-| 데이터 | PostgreSQL (Neon), ORM 없이 SQL 직접 작성 |
-| 로그인 | 이메일 6자리 코드 + 서명 쿠키 세션 |
+| 데이터 | PostgreSQL (Neon), ORM 없이 SQL 직접 작성. 스키마는 번호 붙은 마이그레이션(`db/migrations`), 검색은 trigram 인덱스 |
+| 사진 | Vercel Blob(비공개)이 연결돼 있으면 Blob, 없으면 Postgres. 어느 쪽이든 같은 공개 규칙으로 내려 줍니다 |
+| 로그인 | 이메일 6자리 코드 + 서명 쿠키 세션. "모든 기기에서 로그아웃"으로 서버에서 세션을 끊을 수 있습니다 |
+| 운영 | 운영자·관리자 역할, 모든 처리 결정을 남기는 처리 기록 |
+| 보안·운영 | 요청마다 nonce 를 쓰는 CSP와 보안 헤더, 서버 오류 JSON 로그와 웹훅 알림, 매시 가동 확인, 매일 암호화 백업과 복원 검증 |
 | 화면 언어 | 한국어 문장을 키로 쓰는 언어별 사전 16개 (`src/lib/en.ts`, `src/lib/locales/*.json`). 현재 화면 언어의 문구만 브라우저로 보냅니다. |
 | 글 번역 | MyMemory 무료 API + DB 캐시 |
 | 배포 | Vercel. `main`에 푸시하면 GitHub Actions가 lint, 문구 검사, 빌드, e2e를 돌리고 통과하면 자동 배포합니다. |
 
-e2e 테스트는 실제 Postgres 위에서 이 흐름을 끝까지 확인합니다. 가입, 글쓰기, 익명 호칭, 도움돼요·저장·대댓글, 새 답변 알림, 해결·수정, 검색, 신고, 차단, 운영자 가리기, 재심 요청과 복구, 탈퇴, 샘플 계정의 국적 언어 전환, 라운지 접근 제한.
+e2e 테스트는 실제 Postgres 위에서 이 흐름을 끝까지 확인합니다. 가입, 글쓰기, 익명 호칭, 도움돼요·저장·대댓글, 새 답변 알림, 해결·수정, 검색, 신고, 차단, 운영자 가리기, 재심 요청과 복구, 처리 기록, 운영자 역할 주고 빼기, 탈퇴, 샘플 계정의 국적 언어 전환, 라운지 접근 제한, 모든 기기에서 로그아웃(예전 쿠키 무효).
 
 <details>
 <summary>로컬 실행과 검사</summary>
@@ -132,7 +135,7 @@ e2e 테스트는 실제 Postgres 위에서 이 흐름을 끝까지 확인합니�
 ```bash
 npm install
 cp .env.example .env.local        # DATABASE_URL, SESSION_SECRET, ADMIN_EMAILS 채우기
-npm run db                        # 스키마 + 가상 시드 데이터 (example.com 계정)
+npm run db                        # 마이그레이션 + 가상 시드 데이터 (example.com 계정)
 npm run dev
 ```
 
@@ -154,9 +157,10 @@ BASE_URL=http://localhost:3000 npm run e2e
 - `src/app/page.tsx` 소개 첫 화면, `src/app/login/` 문화별 로그인
 - `src/app/(app)/` 홈, 게시판, 라운지, 검색, 글쓰기·수정, 글, 내 글, 공식 안내, 운영 정책, 설정, 운영 대시보드·처리 큐
 - `src/app/actions.ts` 모든 쓰기 동작 (Server Actions)
-- `src/lib/` 세션(`auth.ts`), 조회(`posts.ts`), 게시판(`boards.ts`), 문화 테마(`cultures.ts`, `landmarks.ts`, 장면 `scenes.ts`), 공식 안내(`guide.ts`), 화면 언어(`i18n.ts`, `messages.ts`, `locales/`), 글 번역(`translate.ts`)
-- `db/schema.sql` 스키마(재실행 안전), `db/seed.sql` 가상 데이터, `db/community.sql` 가상 이웃 45명의 지난 7일 활동(seed 다음에 적용, `scripts/community/community.py` 로 생성)
-- `e2e/flow.mjs` 전체 흐름 테스트, `.github/workflows/ci-cd.yml` CI/CD
+- `src/lib/` 세션·역할(`auth.ts`), 조회(`posts.ts`), 게시판(`boards.ts`), 문화 테마(`cultures.ts`, `landmarks.ts`, 장면 `scenes.ts`), 공식 안내(`guide.ts`), 화면 언어(`i18n.ts`, `messages.ts`, `locales/`), 글 번역(`translate.ts`), 사진 저장(`images.ts`), 오류 로그(`log.ts`)
+- `src/proxy.ts` CSP, `src/instrumentation.ts` 서버 오류 보고, `src/app/api/cron/cleanup` 매일 정리 작업
+- `db/migrations/` 스키마(번호 순서로 한 번씩 적용), `db/seed.sql` 가상 데이터, `db/community.sql` 가상 이웃 45명의 지난 7일 활동(seed 다음에 적용, `scripts/community/community.py` 로 생성)
+- `e2e/flow.mjs` 전체 흐름 테스트, `.github/workflows/` CI/CD(`ci-cd.yml`), 백업(`backup.yml`), 가동 확인(`uptime.yml`)
 
 </details>
 

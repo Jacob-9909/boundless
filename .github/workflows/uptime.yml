@@ -1,0 +1,34 @@
+name: Uptime
+
+# Hourly look at production. GitHub emails a failed scheduled run only to the person who last changed the cron
+# line, and only if their Actions notifications are on; the ALERT_WEBHOOK_URL secret (Slack or Discord incoming
+# webhook) is the alert everyone sees, so set it. Hourly keeps it inside the free Actions minutes; for checks
+# every minute use an external monitor on the same URL (docs/DEPLOY.md "모니터링과 알림").
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: GET /api/health
+        # Exactly 200 with ok:true. A redirect (deployment protection, a login page) does not count as up.
+        run: |
+          code=$(curl -sS -o health.json -w '%{http_code}' --retry 3 --retry-delay 20 --retry-all-errors --max-time 20 \
+            https://boundless-virid.vercel.app/api/health) || true
+          echo "HTTP $code $(head -c 200 health.json 2>/dev/null)"
+          test "$code" = 200 && grep -q '"ok":true' health.json
+      - name: Alert
+        if: failure()
+        env:
+          HOOK: ${{ secrets.ALERT_WEBHOOK_URL }}
+        run: |
+          test -n "$HOOK" || exit 0
+          msg="[Boundless] health check failed: https://boundless-virid.vercel.app/api/health ($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)"
+          curl -fsS -H 'content-type: application/json' -d "{\"text\":\"$msg\",\"content\":\"$msg\"}" "$HOOK"

@@ -283,7 +283,7 @@ export function LoginScreen({
                   <p className="mt-2 text-xs opacity-70">{t("글마다 다른 익명 호칭이 붙고, 이메일은 비공개예요.")}</p>
                 </div>
               )}
-              <CheckboxInput label={t("만 14세 이상이며, 개인정보를 올리지 않는 커뮤니티 규칙에 동의해요.")} value={agreed} onChange={setAgreed} />
+              <CheckboxInput label={t("만 14세 이상이며, 개인정보를 올리지 않는 커뮤니티 규칙과 운영 정책(개인정보 국외 처리 포함)에 동의해요.")} value={agreed} onChange={setAgreed} />
               <TextLink href="/policy" target="_blank" type="inherit" weight="bold" hasUnderline className="-mt-2 inline-flex min-h-11 items-center text-xs">
                 {t("운영 정책 보기")} <Icon name="external" size={12} className="inline" />
               </TextLink>

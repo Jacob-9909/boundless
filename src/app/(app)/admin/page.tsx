@@ -3,13 +3,14 @@ import { Badge } from "@astryxdesign/core/Badge";
 import { Banner } from "@astryxdesign/core/Banner";
 import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
-import { moderate, resolveAppeal } from "@/app/actions";
+import { moderate, resolveAppeal, setStaffRole } from "@/app/actions";
 import { AdminDashboard } from "@/components/AdminDashboard";
+import { SelectField, TextField } from "@/components/fields";
 import { Icon } from "@/components/Icon";
 import { NationalityChip, Notice, PageHead } from "@/components/ui";
 import { adminStats } from "@/lib/admin";
 import { aiEnabled } from "@/lib/ai";
-import { canViewQueue, demoEnabled, getT, getUser, isAdmin } from "@/lib/auth";
+import { canModerate, canViewQueue, demoEnabled, envAdmins, getT, getUser, isAdmin } from "@/lib/auth";
 import { q } from "@/lib/db";
 import { ALERTS, alertOf } from "@/lib/guide";
 import { REPORT_REASONS, timeAgo, type T } from "@/lib/i18n";
@@ -33,12 +34,17 @@ type Open = {
 const item = "border-l-4 text-sm";
 const meta = "flex flex-wrap items-center gap-2 text-xs";
 
+type LogLine = { id: string; actor_email: string; action: string; post_id: string | null; subject_email: string | null; detail: string | null; created_at: Date };
+
+/** "moderator@gmail.com" -> "m***@gmail.com". Only admins, who grant roles by email, see addresses in full. */
+const mask = (email: string) => email.replace(/^(.)[^@]*/, "$1***");
+
 function OpenPost({ id, t }: { id: string; t: T }) {
   return <Button href={`/posts/${id}`} label={t("원문 보기")} variant="ghost" icon={<Icon name="external" size={15} />} className="ml-auto" />;
 }
 
-export default async function AdminPage() {
-  const [{ lang, t }, user] = await Promise.all([getT(), getUser()]);
+export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
+  const [{ lang, t }, user, { staff: staffResult }] = await Promise.all([getT(), getUser(), searchParams]);
   // Usage metric names (track() in actions.ts) as people read them.
   const eventName: Record<string, string> = {
     search: t("검색"),
@@ -55,9 +61,25 @@ export default async function AdminPage() {
   };
   if (!canViewQueue(user)) redirect("/feed");
   // The demo moderator (judges) sees the real queue, but cannot act on it.
-  const readOnly = !isAdmin(user);
+  const readOnly = !canModerate(user);
+  const admin = isAdmin(user);
+  const roleName: Record<string, string> = { member: t("일반 회원"), moderator: t("운영자"), admin: t("관리자") };
+  const actionName: Record<string, string> = {
+    hide: t("신고 글 가림"),
+    dismiss: t("신고 문제 없음"),
+    restore: t("재심 복구"),
+    uphold: t("재심 가림 유지"),
+    role: t("역할 변경"),
+  };
+  const staffNote: Record<string, { status: "success" | "error"; title: string }> = {
+    ok: { status: "success", title: t("역할을 바꿨어요.") },
+    unknown: { status: "error", title: t("그 이메일로 가입한 회원이 없어요.") },
+    fixed: { status: "error", title: t("내 역할과 ADMIN_EMAILS에 있는 관리자의 역할은 여기서 바꿀 수 없어요.") },
+    sample: { status: "error", title: t("체험용 샘플 계정에는 역할을 줄 수 없어요.") },
+    invalid: { status: "error", title: t("이메일과 역할을 확인해 주세요.") },
+  };
 
-  const [open, appeals, flagged, stats] = await Promise.all([
+  const [open, appeals, flagged, stats, log, staffRows] = await Promise.all([
     q<Open>(
       `SELECT r.id, r.reason, r.details, r.created_at,
          COALESCE(r.post_id, c.post_id) AS post_id, r.comment_id IS NOT NULL AS is_comment,
@@ -89,7 +111,14 @@ export default async function AdminPage() {
       [ALERTS.filter((a) => a.crisis).map((a) => a.id)]
     ),
     adminStats(),
+    q<LogLine>(
+      `SELECT id, actor_email, action, COALESCE(post_id, (SELECT c.post_id FROM boundless.comments c WHERE c.id = comment_id)) AS post_id,
+         subject_email, detail, created_at
+       FROM boundless.staff_log ORDER BY created_at DESC LIMIT 30`,
+    ),
+    admin ? q<{ email: string; role: string }>("SELECT email, role FROM boundless.users WHERE role <> 'member' ORDER BY role, email") : [],
   ]);
+  const team = [...envAdmins().map((email) => ({ email, role: "admin", env: true })), ...staffRows.filter((r) => !envAdmins().includes(r.email)).map((r) => ({ ...r, env: false }))];
   // On/off only, never a value: the demo moderator sees this too.
   const system = { ai: aiEnabled(), mail: Boolean(process.env.EMAIL_SENDER && process.env.EMAIL_PASSWORD), demo: demoEnabled(), build: process.env.APP_BUILD ?? "" };
 
@@ -201,6 +230,72 @@ export default async function AdminPage() {
             </li>
           ))}
         </ul>
+
+        <section aria-labelledby="log-title" className="border-t border-[var(--color-border)] pt-5">
+          <h2 id="log-title" className="font-display text-xl font-extrabold">{t("처리 기록")}</h2>
+          <p className="mb-2 text-xs text-[var(--color-text-secondary)]">{t("운영진이 내린 결정이 누가, 언제, 무엇을 했는지와 함께 남아요. 최근 30건이에요.")}</p>
+          {log.length === 0 ? (
+            <Notice title={t("아직 처리 기록이 없어요")} />
+          ) : (
+            <Card padding={0}>
+              <ul className="divide-y divide-[var(--color-border)] text-sm">
+                {log.map((l) => (
+                  <li key={l.id} className="flex min-h-11 flex-wrap items-center gap-2 px-4 py-2">
+                    <Badge variant={l.action === "hide" || l.action === "uphold" ? "error" : l.action === "role" ? "info" : "neutral"} label={actionName[l.action] ?? l.action} />
+                    <span className="text-[var(--color-text-secondary)]">{admin ? l.actor_email : mask(l.actor_email)}</span>
+                    {l.action === "role" && l.subject_email && (
+                      <span>
+                        {admin ? l.subject_email : mask(l.subject_email)} → {roleName[l.detail ?? ""] ?? l.detail}
+                      </span>
+                    )}
+                    <span className="ml-auto text-xs text-[var(--color-text-secondary)]">{timeAgo(l.created_at, lang)}</span>
+                    {l.post_id && <Button href={`/posts/${l.post_id}`} label={t("보기")} variant="ghost" />}
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
+        </section>
+
+        {admin && (
+          <section id="staff" aria-labelledby="staff-title" className="scroll-mt-20 border-t border-[var(--color-border)] pt-5">
+            <h2 id="staff-title" className="font-display text-xl font-extrabold">{t("운영진")}</h2>
+            <p className="mb-3 text-xs text-[var(--color-text-secondary)]">
+              {t("운영자는 신고와 재심을 처리하고, 관리자는 여기서 역할도 줄 수 있어요. ADMIN_EMAILS에 있는 관리자는 환경변수에서만 바꿔요.")}
+            </p>
+            {staffResult && staffNote[String(staffResult)] && (
+              <div className="mb-3">
+                <Banner role="status" status={staffNote[String(staffResult)].status} collapsible={false} title={staffNote[String(staffResult)].title} />
+              </div>
+            )}
+            <Card padding={0}>
+              <ul className="divide-y divide-[var(--color-border)] text-sm">
+                {team.map((m) => (
+                  <li key={m.email} className="flex min-h-11 flex-wrap items-center gap-2 px-4 py-2">
+                    <span className="font-bold">{m.email}</span>
+                    <Badge variant={m.role === "admin" ? "info" : "neutral"} label={roleName[m.role]} />
+                    {m.env && <span className="text-xs text-[var(--color-text-secondary)]">ADMIN_EMAILS</span>}
+                  </li>
+                ))}
+              </ul>
+            </Card>
+            <form action={setStaffRole} className="mt-3 flex flex-wrap items-end gap-2">
+              <div className="min-w-56 flex-1">
+                <TextField name="email" label={t("회원 이메일")} type="email" width="100%" isRequired />
+              </div>
+              <div className="w-40">
+                <SelectField
+                  name="role"
+                  label={t("역할")}
+                  defaultValue="moderator"
+                  width="100%"
+                  options={(["moderator", "admin", "member"] as const).map((r) => ({ value: r, label: roleName[r] }))}
+                />
+              </div>
+              <Button type="submit" label={t("역할 바꾸기")} variant="primary" />
+            </form>
+          </section>
+        )}
       </div>
     </div>
   );

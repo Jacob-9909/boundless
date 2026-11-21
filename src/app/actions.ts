@@ -7,8 +7,11 @@ import { redirect, RedirectType } from "next/navigation";
 import { refresh } from "next/cache";
 import {
   allowCodeRequest,
+  canModerate,
   consumeCode,
+  endEverySession,
   endSession,
+  envAdmins,
   getT,
   DEMO_MODERATOR,
   demoEnabled,
@@ -16,6 +19,7 @@ import {
   getUser,
   isAdmin,
   isDemoEmail,
+  isSampleEmail,
   issueCode,
   markVerified,
   normalizeEmail,
@@ -23,7 +27,7 @@ import {
   verifiedEmail,
   voidCode,
 } from "@/lib/auth";
-import { isId, q, track } from "@/lib/db";
+import { isId, q, track, tx, type Query } from "@/lib/db";
 import { aiEnabled, checkDraft, classifyPost, crisisFallback, summarizeThread, SUMMARY_VERSION, type DraftCheck, type Summary } from "@/lib/ai";
 import { ASKING_TAGS, BOARDS, boardOf, DEALS, isBoard, LOUNGE } from "@/lib/boards";
 import { isCountry, isLang, isRegion, isVisa, langName, POST_LANGS, READ_LANGS, readLangOf, REGIONS, REPORT_REASONS } from "@/lib/i18n";
@@ -34,6 +38,8 @@ import { parseLook } from "@/lib/avatar";
 import { BUMP_AFTER_H, listPosts } from "@/lib/posts";
 import { translateItem } from "@/lib/translate";
 import { sendCodeMail } from "@/lib/mail";
+import { purgeBlobs, saveImages, type Upload } from "@/lib/images";
+import { reportError } from "@/lib/log";
 
 // Errors are returned as Korean dictionary keys; the client translates them.
 export type Result = { error?: string; ok?: boolean };
@@ -137,6 +143,13 @@ export async function signOut() {
   redirect("/");
 }
 
+/** Lost phone, shared computer: ends this member's sessions on every device, this one included. */
+export async function signOutEverywhere() {
+  const user = await requireUser();
+  await endEverySession(user.id);
+  redirect("/login");
+}
+
 export async function setLang(lang: string) {
   if (!isLang(lang)) return;
   (await cookies()).set("lang", lang, { path: "/", maxAge: 365 * 86400, sameSite: "lax" });
@@ -160,7 +173,7 @@ function sniff(b: Buffer) {
 
 /** Photos attached to the post form. The browser shrinks them first (forms.tsx), so 600 KB is generous. */
 async function readImages(f: FormData) {
-  const images: { mime: string; data: Buffer }[] = [];
+  const images: Upload[] = [];
   for (const v of f.getAll("images")) {
     if (!(v instanceof File) || v.size === 0) continue;
     if (v.size > 600_000) return { error: "사진은 한 장에 600KB까지 올릴 수 있어요." };
@@ -173,9 +186,8 @@ async function readImages(f: FormData) {
   return { images };
 }
 
-async function saveImages(postId: string, images: { mime: string; data: Buffer }[]) {
-  for (const im of images) await q("INSERT INTO boundless.post_images (post_id, mime, data) VALUES ($1, $2, $3)", [postId, im.mime, im.data]);
-}
+/** After the response: delete the Blob files of photo rows just removed (the rows themselves are already gone). */
+const purgeLater = () => after(() => purgeBlobs().catch((e) => reportError("purgeBlobs", e)));
 
 function readPost(f: FormData) {
   const values = {
@@ -297,6 +309,7 @@ export async function updatePost(postId: string, _: PostState, f: FormData): Pro
   );
   if (rows.length) {
     await q("DELETE FROM boundless.post_images WHERE post_id = $1 AND id = ANY($2::bigint[])", [postId, drop]);
+    if (drop.length) purgeLater();
     await saveImages(postId, files.images!);
     await classify(postId, values.title, values.body, false);
   }
@@ -568,6 +581,7 @@ export async function deleteOwn(f: FormData) {
       [post, user.id]
     );
     await q("DELETE FROM boundless.posts WHERE id = $1 AND user_id = $2", [post, user.id]);
+    purgeLater();
     redirect("/me");
   }
 }
@@ -590,11 +604,11 @@ async function targetOwner(f: FormData) {
 }
 
 /** Moderation hides or restores one target: a comment when there is one, else the post. */
-async function setHidden(t: { post_id: string | null; comment_id: string | null }, hidden: boolean) {
-  if (t.comment_id) await q("UPDATE boundless.comments SET hidden = $2 WHERE id = $1", [t.comment_id, hidden]);
-  else await q("UPDATE boundless.posts SET hidden = $2 WHERE id = $1", [t.post_id, hidden]);
+async function setHidden(t: { post_id: string | null; comment_id: string | null }, hidden: boolean, run: Query = q) {
+  if (t.comment_id) await run("UPDATE boundless.comments SET hidden = $2 WHERE id = $1", [t.comment_id, hidden]);
+  else await run("UPDATE boundless.posts SET hidden = $2 WHERE id = $1", [t.post_id, hidden]);
   // An AI summary may quote hidden text; it is made again from what stays visible.
-  await q("DELETE FROM boundless.post_summaries WHERE post_id = COALESCE($1, (SELECT post_id FROM boundless.comments WHERE id = $2))", [t.post_id, t.comment_id]);
+  await run("DELETE FROM boundless.post_summaries WHERE post_id = COALESCE($1, (SELECT post_id FROM boundless.comments WHERE id = $2))", [t.post_id, t.comment_id]);
 }
 
 export async function reportContent(_: Result, f: FormData): Promise<Result> {
@@ -637,15 +651,20 @@ export async function appeal(_: Result, f: FormData): Promise<Result> {
 /** Moderator decision on an appeal: restore the content, or keep it hidden. */
 export async function resolveAppeal(f: FormData) {
   const user = await getUser();
-  if (!isAdmin(user)) redirect("/feed");
+  if (!canModerate(user)) redirect("/feed");
   const id = str(f, "appeal");
   const action = str(f, "action");
   if (!isId(id) || (action !== "restore" && action !== "uphold")) return;
-  const r = await q<{ post_id: string | null; comment_id: string | null }>(
-    "UPDATE boundless.appeals SET status = $2, resolved_at = now() WHERE id = $1 AND status = 'received' RETURNING post_id, comment_id",
-    [id, action === "restore" ? "restored" : "upheld"]
-  );
-  if (r[0] && action === "restore") await setHidden(r[0], false);
+  // The decision, the content change and its log line commit together; an appeal already decided changes nothing.
+  await tx(async (run) => {
+    const r = await run<{ post_id: string | null; comment_id: string | null }>(
+      "UPDATE boundless.appeals SET status = $2, resolved_at = now() WHERE id = $1 AND status = 'received' RETURNING post_id, comment_id",
+      [id, action === "restore" ? "restored" : "upheld"]
+    );
+    if (!r[0]) return;
+    if (action === "restore") await setHidden(r[0], false, run);
+    await staffLog(user!, action, { appeal: id, post: r[0].post_id, comment: r[0].comment_id }, run);
+  });
   refresh();
 }
 
@@ -737,30 +756,72 @@ export async function deleteAccount(f: FormData) {
   );
   await q("DELETE FROM boundless.post_summaries WHERE post_id IN (SELECT post_id FROM boundless.comments WHERE user_id = $1)", [user.id]);
   await q("DELETE FROM boundless.users WHERE id = $1", [user.id]);
+  // /policy says photos go at once: wait for the files. If Blob fails, blob_trash keeps them for the daily cleanup.
+  await purgeBlobs().catch((e) => reportError("purgeBlobs", e));
   await endSession();
   redirect("/");
 }
 
 /* ---------- moderation ---------- */
 
+/** One line in staff_log per decision: who, what, on which target. */
+async function staffLog(
+  actor: { id: string; email: string },
+  action: "hide" | "dismiss" | "restore" | "uphold" | "role",
+  target: { report?: string; appeal?: string; post?: string | null; comment?: string | null; subject?: string; detail?: string },
+  run: Query = q
+) {
+  await run(
+    `INSERT INTO boundless.staff_log (actor_id, actor_email, action, report_id, appeal_id, post_id, comment_id, subject_email, detail)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+    [actor.id, actor.email, action, target.report ?? null, target.appeal ?? null, target.post ?? null, target.comment ?? null, target.subject ?? null, target.detail ?? null]
+  );
+}
+
 export async function moderate(f: FormData) {
   const user = await getUser();
-  if (!isAdmin(user)) redirect("/feed");
+  if (!canModerate(user)) redirect("/feed");
   const id = str(f, "report");
   const action = str(f, "action");
   if (!isId(id) || (action !== "hide" && action !== "dismiss")) return;
-  const r = await q<{ post_id: string | null; comment_id: string | null }>(
-    "SELECT post_id, comment_id FROM boundless.reports WHERE id = $1",
-    [id]
-  );
-  if (!r[0]) return;
-  const { post_id, comment_id } = r[0];
-  if (action === "hide") await setHidden(r[0], true);
-  // Resolve every open report on the same target together.
-  await q(
-    `UPDATE boundless.reports SET status = $1, resolved_at = now()
-     WHERE status = 'received' AND (CASE WHEN $2::bigint IS NOT NULL THEN comment_id = $2::bigint ELSE post_id = $3::bigint AND comment_id IS NULL END)`,
-    [action === "hide" ? "actioned" : "dismissed", comment_id, post_id]
-  );
+  // One transaction, and only while the report is still open: FOR UPDATE makes a second click or a second
+  // moderator wait, then find it decided and change (and log) nothing.
+  await tx(async (run) => {
+    const r = await run<{ post_id: string | null; comment_id: string | null }>(
+      "SELECT post_id, comment_id FROM boundless.reports WHERE id = $1 AND status = 'received' FOR UPDATE",
+      [id]
+    );
+    if (!r[0]) return;
+    const { post_id, comment_id } = r[0];
+    if (action === "hide") await setHidden(r[0], true, run);
+    // Resolve every open report on the same target together.
+    await run(
+      `UPDATE boundless.reports SET status = $1, resolved_at = now()
+       WHERE status = 'received' AND (CASE WHEN $2::bigint IS NOT NULL THEN comment_id = $2::bigint ELSE post_id = $3::bigint AND comment_id IS NULL END)`,
+      [action === "hide" ? "actioned" : "dismissed", comment_id, post_id]
+    );
+    await staffLog(user!, action, { report: id, post: post_id, comment: comment_id }, run);
+  });
   refresh();
+}
+
+/**
+ * Admins grant or remove staff roles by email. ADMIN_EMAILS admins stay admins whatever the row says, so the
+ * list in the environment is the way back in; nobody can change their own role.
+ */
+export async function setStaffRole(f: FormData) {
+  const user = await getUser();
+  if (!isAdmin(user)) redirect("/feed");
+  const email = normalizeEmail(str(f, "email"));
+  const role = str(f, "role");
+  const back = (result: string) => redirect(`/admin?staff=${result}#staff`);
+  if (!email || !["member", "moderator", "admin"].includes(role)) return back("invalid");
+  if (email === user!.email || envAdmins().includes(email)) return back("fixed");
+  if (isDemoEmail(email) || isSampleEmail(email) || email === DEMO_MODERATOR) return back("sample");
+  const changed = await tx(async (run) => {
+    const rows = await run("UPDATE boundless.users SET role = $2 WHERE email = $1 RETURNING id", [email, role]);
+    if (rows.length) await staffLog(user!, "role", { subject: email, detail: role }, run);
+    return rows.length > 0;
+  });
+  back(changed ? "ok" : "unknown");
 }
