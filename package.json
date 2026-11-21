@@ -15,7 +15,7 @@
     "@astryxdesign/core": "^0.7.15",
     "@astryxdesign/theme-neutral": "^0.7.15",
     "@dicebear/avataaars": "9.4.2",
-    "@dicebear/core": "9.4.3",
+    "@dicebear/core": "10.7.0",
     "@stylexjs/stylex": "^0.19.2",
     "@vercel/blob": "2.8.2",
     "next": "16.4.5",
