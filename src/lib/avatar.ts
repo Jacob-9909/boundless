@@ -2,8 +2,8 @@
 // personal and commercial use) or one of our own animals (src/lib/animals.ts). Only these choices are stored, never
 // a photo: the builder reads colors from a photo on the device. Shared by the server (validation, rendering) and the
 // builder in the browser.
-import { createAvatar } from "@dicebear/core";
-import * as avataaars from "@dicebear/avataaars";
+import { Avatar, Style } from "@dicebear/core";
+import avataaarsDefinition from "@dicebear/styles/avataaars.json" with { type: "json" };
 // .ts so scripts/avatar-check.mjs can load this file with plain Node.
 import { ANIMAL_ART, animalSvg } from "./animals.ts";
 
@@ -161,6 +161,7 @@ export function parseLook(v: unknown): Look | null {
   return p as Person;
 }
 
+const avataaars = new Style(avataaarsDefinition);
 const cache = new Map<string, string>();
 
 /** The avatar as an SVG data URI. ponytail: an in-memory cache per process; there are only so many looks. */
@@ -170,32 +171,29 @@ export function lookUri(l: Look) {
   if (!uri) {
     if (l.kind === "animal") uri = `data:image/svg+xml;utf8,${encodeURIComponent(animalSvg(l.animal))}`;
     else {
-      const off = (v: string) => (v === "none" ? { p: 0, v: undefined } : { p: 100, v: [v] });
-      const top = off(l.top);
-      const glasses = off(l.glasses);
-      const beard = off(l.beard);
+      // DiceBear 10: component options end in `Variant` (and refuse an undefined one), `flip` names a direction.
+      const part = (name: string, v: string) =>
+        v === "none" ? { [`${name}Probability`]: 0 } : { [`${name}Variant`]: [v], [`${name}Probability`]: 100 };
       const face = FACES[l.face] ?? FACES.smile;
-      uri = createAvatar(avataaars, {
+      uri = new Avatar(avataaars, {
         seed: "boundless",
         skinColor: [l.skin],
-        top: top.v as never,
-        topProbability: top.p,
+        ...part("top", l.top),
         hairColor: [l.hair],
         hatColor: [l.cover],
-        accessories: glasses.v as never,
-        accessoriesProbability: glasses.p,
-        facialHair: beard.v as never,
-        facialHairProbability: beard.p,
+        ...part("accessories", l.glasses),
+        ...part("facialHair", l.beard),
         facialHairColor: [l.hair],
-        clothing: [l.outfit] as never,
+        clothesVariant: [l.outfit] as never,
         clothesColor: [l.clothes],
-        eyes: [l.eyes ?? face.eyes] as never,
-        eyebrows: [l.brows ?? face.eyebrows] as never,
-        mouth: [l.mouth ?? face.mouth] as never,
+        eyesVariant: [l.eyes ?? face.eyes] as never,
+        eyebrowsVariant: [l.brows ?? face.eyebrows] as never,
+        mouthVariant: [l.mouth ?? face.mouth] as never,
         // Only when chosen, so avatars saved before these options render exactly as before.
         ...(l.beardColor ? { facialHairColor: [l.beardColor] } : {}),
-        ...(l.glassesColor ? { accessoriesColor: [l.glassesColor] } : {}),
-        flip: !!l.flip,
+        // Unchosen glasses keep the slate DiceBear 9 drew for our seed; DiceBear 10 would pick pink.
+        accessoriesColor: [l.glassesColor ?? "3c4f5c"],
+        flip: l.flip ? "horizontal" : "none",
       }).toDataUri();
     }
     if (cache.size > 500) cache.clear();
