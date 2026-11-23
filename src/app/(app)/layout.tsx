@@ -53,7 +53,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   const topNav = (
     <TopNav
       label={t("상단 메뉴")}
-      heading={<TopNavHeading logo={<Logo word={false} size={28} />} heading="boundless" headingHref="/feed" />}
+      heading={<TopNavHeading logo={<Logo word={false} size={28} mine={user && culture.code !== DEFAULT_CULTURE.code ? culture.c.primary : undefined} />} heading="boundless" headingHref="/feed" />}
       centerContent={
         // Desktop: search sits in the bar like any community site. Phones get the icon below instead.
         <form action="/search" role="search" className="w-full max-w-md max-lg:hidden">

@@ -119,7 +119,8 @@ export function LoginScreen({
 
         <div className="relative flex items-center justify-between">
           <Link href="/" className="text-paper" aria-label="Boundless home">
-            <Logo />
+            {/* The newest patch takes the picked culture's color; the hero is painted in its primary, so use the accent. */}
+            <Logo mine={culture.code === DEFAULT_CULTURE.code ? undefined : culture.c.accent} />
           </Link>
           <LangMenu lang={lang} label={t("화면 언어 바꾸기")} note={t("한국어와 영어 밖의 언어는 기계 번역이라 어색한 문장이 있을 수 있어요. 검수하고 있어요.")} tone="glass" compact />
         </div>
