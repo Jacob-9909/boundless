@@ -24,27 +24,45 @@ import { Icon, type IconName } from "./Icon";
 export const LINES = ["#0052A4", "#00A84D", "#EF7C1C", "#00A5DE", "#996CAC", "#E6186C", "#CD7C2F", "#747F00"];
 
 /**
- * Logo: ㅂ, the Korean letter for the b in boundless. The taller stroke is the neighbor who came first, the shorter
- * one the newcomer, and the bar is the hand between them; the colors run from one to the other. The top stays open.
- * Same drawing as src/app/icon.svg.
+ * Logo: ㅂ, the Korean letter for the b in boundless, sewn like a jogakbo (조각보), the wrapping cloth pieced
+ * together from scraps. Each patch is a Seoul subway line color. The small patch at the top right is the newest
+ * one, the newcomer: pass `mine` to sew it in the member's own culture color. Seams are open gaps, so the mark
+ * sits on any background. Same drawing as src/app/icon.svg (see docs/brand/logo-concepts.html).
  */
-export function Logo({ className = "", size = 30, word = true }: { className?: string; size?: number; word?: boolean }) {
-  // The phone header renders two logos and hides one; a shared gradient id inside a hidden svg would not paint.
+const LOGO_SHAPE = "M8 8H16V17H32V8H40V40H8ZM16 25V32H32V25Z"; // 48 box, strokes 8 thick, open top
+const LOGO_PATCHES: [string, string][] = [
+  ["0,0 27,0 27,30 0,30", LINES[3]],
+  ["27,14 48,14 48,48 24,48 24,30 27,30", LINES[4]],
+  ["0,30 24,30 24,48 0,48", LINES[1]],
+];
+const LOGO_MINE = "27,0 48,0 48,14 27,14";
+// Each seam crosses one stroke and ends in open space, so the letter's outline never breaks.
+const LOGO_SEAMS = "M31 14H41M27 16V26M7 30H17M24 31V41";
+
+export function Logo({ className = "", size = 30, word = true, mine = LINES[2] }: { className?: string; size?: number; word?: boolean; mine?: string }) {
+  // The phone header renders two logos and hides one; a shared clip or mask id inside a hidden svg would not paint.
   const id = useId();
+  // Wider seams at small sizes so they stay visible.
+  const gap = size <= 24 ? 2.4 : size <= 40 ? 1.8 : 1.4;
   return (
-    <span className={`inline-flex items-center ${className}`} style={{ gap: size * 0.2 }}>
-      <svg width={size} height={size} viewBox="0 0 40 40" aria-hidden="true" className="shrink-0">
+    <span className={`inline-flex items-center ${className}`} style={{ gap: size * 0.24 }}>
+      <svg width={size} height={size} viewBox="4 4 40 40" aria-hidden="true" className="shrink-0">
         <defs>
-          <linearGradient id={id} x1="8" y1="0" x2="32" y2="0" gradientUnits="userSpaceOnUse">
-            <stop offset="0" stopColor="#3C8DFF" />
-            <stop offset=".33" stopColor="#8B5CF6" />
-            <stop offset=".67" stopColor="#FF5A7A" />
-            <stop offset="1" stopColor="#FF8A2A" />
-          </linearGradient>
+          <clipPath id={`${id}c`}>
+            <path d={LOGO_SHAPE} />
+          </clipPath>
+          <mask id={`${id}m`} maskUnits="userSpaceOnUse" x="0" y="0" width="48" height="48">
+            <rect width="48" height="48" fill="#fff" />
+            <path d={LOGO_SEAMS} stroke="#000" strokeWidth={gap} />
+          </mask>
         </defs>
-        <g fill="none" stroke={`url(#${id})`} strokeWidth="6.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M10 6v21a6 6 0 0 0 6 6h8a6 6 0 0 0 6-6V12" />
-          <path d="M10 20h20" />
+        <g clipPath={`url(#${id}c)`}>
+          <g mask={`url(#${id}m)`}>
+            {LOGO_PATCHES.map(([points, fill]) => (
+              <polygon key={points} points={points} fill={fill} />
+            ))}
+            <polygon points={LOGO_MINE} fill={mine} />
+          </g>
         </g>
       </svg>
       {word && (
