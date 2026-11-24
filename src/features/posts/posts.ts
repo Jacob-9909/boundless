@@ -1,4 +1,4 @@
-import { ASKING_TAGS } from "@/lib/boards";
+import { ASKING_TAGS } from "@/features/posts/boards";
 import { isId, q } from "@/lib/db";
 
 export type PostRow = {
@@ -35,9 +35,9 @@ export type PostRow = {
   following: boolean; // the viewer follows this author
   helpers: string[] | null; // solved posts: nationalities of the neighbors who answered
   top_answer: { body: string; nationality: string; likes: number; accepted: boolean } | null;
-  avatar: unknown; // the author's cartoon avatar when they chose to show it on posts (src/lib/avatar.ts)
+  avatar: unknown; // the author's cartoon avatar when they chose to show it on posts (src/features/avatar/avatar.ts)
   ai_visa: string | null; // visa code the AI read from the text; '' = the author removed it
-  alert: string | null; // ALERTS id (src/lib/guide.ts), only ever selected for the author
+  alert: string | null; // ALERTS id (src/features/guide/guide.ts), only ever selected for the author
 };
 
 export type CommentRow = {

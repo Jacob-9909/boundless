@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { Card } from "@astryxdesign/core/Card";
-import { FilterChip } from "@/components/Feed";
+import { FilterChip } from "@/features/posts/Feed";
 import { Icon, type IconName } from "@/components/Icon";
 import { PageHead } from "@/components/ui";
-import { getT } from "@/lib/auth";
+import { getT } from "@/features/auth/auth";
 
 export const metadata = { title: "Policy" };
 

@@ -5,19 +5,19 @@ import { IconButton } from "@astryxdesign/core/IconButton";
 import { TopNav, TopNavHeading } from "@astryxdesign/core/TopNav";
 import { cultureFonts } from "@/app/login/fonts";
 import { BottomNav } from "@/components/BottomNav";
-import { DemoTour } from "@/components/DemoTour";
-import { AccountSwitcher } from "@/components/Community";
+import { DemoTour } from "@/features/guide/DemoTour";
+import { AccountSwitcher } from "@/features/posts/Community";
 import { TextField } from "@/components/fields";
 import { Icon } from "@/components/Icon";
-import { LangMenu } from "@/components/LangMenu";
+import { LangMenu } from "@/features/i18n/LangMenu";
 import { AppSideNav, type NavItem } from "@/components/SideNav";
 import { Avatar, Flag, LevelBadge, Logo } from "@/components/ui";
-import { canViewQueue, demoEnabled, getT, getUser, isSampleEmail } from "@/lib/auth";
-import { BOARDS, GROUPS } from "@/lib/boards";
-import { cultureOf, DEFAULT_CULTURE, themeVars } from "@/lib/cultures";
-import { countryName } from "@/lib/i18n";
-import { unreadNotes } from "@/lib/notifications";
-import { boardCounts, myPoints } from "@/lib/posts";
+import { canViewQueue, demoEnabled, getT, getUser, isSampleEmail } from "@/features/auth/auth";
+import { BOARDS, GROUPS } from "@/features/posts/boards";
+import { cultureOf, DEFAULT_CULTURE, themeVars } from "@/features/culture/cultures";
+import { countryName } from "@/features/i18n/i18n";
+import { unreadNotes } from "@/features/notifications/notifications";
+import { boardCounts, myPoints } from "@/features/posts/posts";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
   const [{ lang, t }, user] = await Promise.all([getT(), getUser()]);

@@ -10,21 +10,21 @@ import { Icon as AstryxIcon } from "@astryxdesign/core/Icon";
 import { IconButton } from "@astryxdesign/core/IconButton";
 import { Tooltip } from "@astryxdesign/core/Tooltip";
 import { acceptAnswer, addComment, bumpPost, clearAiVisa, setDeal, toggleFollow, toggleLike, toggleSave, toggleSolved } from "@/app/actions";
-import { AiSummary } from "@/components/AiSummary";
-import { CommentForm, AppealForm, ViewCount } from "@/components/forms";
-import { DeleteButton, ShareButton } from "@/components/Share";
+import { AiSummary } from "@/features/ai/AiSummary";
+import { CommentForm, AppealForm, ViewCount } from "@/features/posts/forms";
+import { DeleteButton, ShareButton } from "@/features/posts/Share";
 import { Icon } from "@/components/Icon";
-import { RightRail } from "@/components/Community";
+import { RightRail } from "@/features/posts/Community";
 import { LinkCards, Linkify } from "@/components/RichText";
-import { Translatable } from "@/components/Translate";
+import { Translatable } from "@/features/translation/Translatable";
 import { Avatar, BackLink, BoardBadge, EventLine, Flag, HelpChip, HelpItem, LevelBadge, MarketLine, NationalityChip, Notice, SolvedBadge, SolvedNote, TagText } from "@/components/ui";
-import { aiEnabled } from "@/lib/ai";
-import { getT, getUser } from "@/lib/auth";
+import { aiEnabled } from "@/features/ai/ai";
+import { getT, getUser } from "@/features/auth/auth";
 import { isId } from "@/lib/db";
-import { boardOf, DEALS, tagOf } from "@/lib/boards";
-import { alertOf, helpFor, hotline } from "@/lib/guide";
-import { countryName, langName, readLangOf, regionLabel, timeAgo, visaLabel, type Lang, type T } from "@/lib/i18n";
-import { BUMP_AFTER_H, canBump, getComments, getPost, postImages, type CommentRow } from "@/lib/posts";
+import { boardOf, DEALS, tagOf } from "@/features/posts/boards";
+import { alertOf, helpFor, hotline } from "@/features/guide/guide";
+import { countryName, langName, readLangOf, regionLabel, timeAgo, visaLabel, type Lang, type T } from "@/features/i18n/i18n";
+import { BUMP_AFTER_H, canBump, getComments, getPost, postImages, type CommentRow } from "@/features/posts/posts";
 
 export default async function PostPage(props: PageProps<"/posts/[id]">) {
   const { id } = await props.params;
@@ -360,7 +360,7 @@ export default async function PostPage(props: PageProps<"/posts/[id]">) {
   );
 }
 
-/** Author only: numbers to call when the AI read an emergency or a crisis in the post (ALERTS in src/lib/guide.ts). */
+/** Author only: numbers to call when the AI read an emergency or a crisis in the post (ALERTS in src/features/guide/guide.ts). */
 function AlertCard({ id, t }: { id: string; t: T }) {
   const a = alertOf(id);
   if (!a) return null;

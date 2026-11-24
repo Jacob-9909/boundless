@@ -1,6 +1,6 @@
-import { getUser } from "@/lib/auth";
+import { getUser } from "@/features/auth/auth";
 import { isId, q } from "@/lib/db";
-import { imageBody } from "@/lib/images";
+import { imageBody } from "@/features/posts/images";
 
 /** A post's photo, under the same rules as the post: never once hidden, lounge photos only for that nationality. */
 export async function GET(_req: Request, ctx: RouteContext<"/api/img/[id]">) {

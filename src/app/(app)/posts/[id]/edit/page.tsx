@@ -1,12 +1,12 @@
 import { notFound } from "next/navigation";
 import { updatePost } from "@/app/actions";
-import { WriteForm } from "@/components/forms";
+import { WriteForm } from "@/features/posts/forms";
 import { BackLink, SignInRequired } from "@/components/ui";
-import { aiEnabled } from "@/lib/ai";
-import { getT, getUser } from "@/lib/auth";
-import { boardOf } from "@/lib/boards";
-import { countryName, langName, POST_LANGS } from "@/lib/i18n";
-import { getPost, postImages } from "@/lib/posts";
+import { aiEnabled } from "@/features/ai/ai";
+import { getT, getUser } from "@/features/auth/auth";
+import { boardOf } from "@/features/posts/boards";
+import { countryName, langName, POST_LANGS } from "@/features/i18n/i18n";
+import { getPost, postImages } from "@/features/posts/posts";
 
 export const metadata = { title: "Edit" };
 

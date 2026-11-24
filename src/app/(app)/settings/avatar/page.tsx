@@ -1,10 +1,10 @@
 import { Button } from "@astryxdesign/core/Button";
-import { AvatarBuilder } from "@/components/AvatarBuilder";
+import { AvatarBuilder } from "@/features/avatar/AvatarBuilder";
 import { Icon } from "@/components/Icon";
 import { BackLink, PageHead, SignInRequired } from "@/components/ui";
-import { getT, getUser } from "@/lib/auth";
-import { parseLook } from "@/lib/avatar";
-import { cultureOf } from "@/lib/cultures";
+import { getT, getUser } from "@/features/auth/auth";
+import { parseLook } from "@/features/avatar/avatar";
+import { cultureOf } from "@/features/culture/cultures";
 
 export const metadata = { title: "Avatar" };
 

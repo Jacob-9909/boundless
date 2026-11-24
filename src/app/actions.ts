@@ -26,19 +26,19 @@ import {
   startSession,
   verifiedEmail,
   voidCode,
-} from "@/lib/auth";
+} from "@/features/auth/auth";
 import { isId, q, track, tx, type Query } from "@/lib/db";
-import { aiEnabled, checkDraft, classifyPost, crisisFallback, summarizeThread, SUMMARY_VERSION, type DraftCheck, type Summary } from "@/lib/ai";
-import { ASKING_TAGS, BOARDS, boardOf, DEALS, isBoard, LOUNGE } from "@/lib/boards";
-import { isCountry, isLang, isRegion, isVisa, langName, POST_LANGS, READ_LANGS, readLangOf, REGIONS, REPORT_REASONS } from "@/lib/i18n";
-import { EN } from "@/lib/en";
-import { isAbusive } from "@/lib/moderation";
-import { stripPII } from "@/lib/pii";
-import { parseLook } from "@/lib/avatar";
-import { BUMP_AFTER_H, listPosts } from "@/lib/posts";
-import { translateItem } from "@/lib/translate";
-import { sendCodeMail } from "@/lib/mail";
-import { purgeBlobs, saveImages, type Upload } from "@/lib/images";
+import { aiEnabled, checkDraft, classifyPost, crisisFallback, summarizeThread, SUMMARY_VERSION, type DraftCheck, type Summary } from "@/features/ai/ai";
+import { ASKING_TAGS, BOARDS, boardOf, DEALS, isBoard, LOUNGE } from "@/features/posts/boards";
+import { isCountry, isLang, isRegion, isVisa, langName, POST_LANGS, READ_LANGS, readLangOf, REGIONS, REPORT_REASONS } from "@/features/i18n/i18n";
+import { EN } from "@/features/i18n/en";
+import { isAbusive } from "@/features/posts/moderation";
+import { stripPII } from "@/features/posts/pii";
+import { parseLook } from "@/features/avatar/avatar";
+import { BUMP_AFTER_H, listPosts } from "@/features/posts/posts";
+import { translateItem } from "@/features/translation/translate";
+import { sendCodeMail } from "@/features/auth/mail";
+import { purgeBlobs, saveImages, type Upload } from "@/features/posts/images";
 import { reportError } from "@/lib/log";
 
 // Errors are returned as Korean dictionary keys; the client translates them.
@@ -252,7 +252,7 @@ export async function createPost(_: PostState, f: FormData): Promise<PostState> 
 }
 
 /**
- * Reads a filed post once for the visa it mentions, its region and an emergency or crisis (src/lib/ai.ts).
+ * Reads a filed post once for the visa it mentions, its region and an emergency or crisis (src/features/ai/ai.ts).
  * The region is filled in only when the author left it empty on a new post; an author-removed visa ('') stays removed.
  * Without the AI, plain words of suicide still raise the crisis card.
  * Posting waits up to 8 s so the author usually sees a crisis card at once. The free endpoint can take up to 25 s,
@@ -373,7 +373,7 @@ export async function translate(kind: "p" | "c", id: string): Promise<{ title?: 
   return out ?? { error: "지금은 번역할 수 없어요. 잠시 뒤 다시 시도해 주세요." };
 }
 
-/* ---------- AI helpers (src/lib/ai.ts) ---------- */
+/* ---------- AI helpers (src/features/ai/ai.ts) ---------- */
 
 export type SummaryView = Summary & { refs: { id: string; no: number }[] };
 

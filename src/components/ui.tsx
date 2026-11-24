@@ -1,13 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Fragment, useId, type CSSProperties, type ReactNode } from "react";
-import { boardOf, DEALS, levelOf, tagOf } from "@/lib/boards";
-import { lookStyle, parseLook } from "@/lib/avatar";
-import { cultureOf, groundMarkup, patternUrl, type Culture } from "@/lib/cultures";
-import { sceneOf } from "@/lib/scenes";
-import type { Help } from "@/lib/guide";
-import { countryName, langAutonym, regionLabel, timeAgo, type Lang, type T } from "@/lib/i18n";
-import type { PostRow } from "@/lib/posts";
+import { boardOf, DEALS, levelOf, tagOf } from "@/features/posts/boards";
+import { lookStyle, parseLook } from "@/features/avatar/avatar";
+import { cultureOf, groundMarkup, patternUrl, type Culture } from "@/features/culture/cultures";
+import { sceneOf } from "@/features/culture/scenes";
+import type { Help } from "@/features/guide/guide";
+import { countryName, langAutonym, regionLabel, timeAgo, type Lang, type T } from "@/features/i18n/i18n";
+import type { PostRow } from "@/features/posts/posts";
 import { toggleLike } from "@/app/actions";
 import { Badge } from "@astryxdesign/core/Badge";
 import { Banner } from "@astryxdesign/core/Banner";
@@ -89,7 +89,7 @@ export function Flag({ code, h = 14, round = false, className = "" }: { code: st
 }
 
 /**
- * A culture's scene (src/lib/scenes.ts): its sky, the air strip along the top and the ground strip with the landmark.
+ * A culture's scene (src/features/culture/scenes.ts): its sky, the air strip along the top and the ground strip with the landmark.
  * Fills its positioned parent. hero: the full sign-in panel. banner: a wide, short header with text on the left,
  * so the scene sits to the right. tile: a small card, cropped around the landmark.
  */
@@ -117,7 +117,7 @@ export function CultureScene({ culture, variant = "hero", className = "" }: { cu
 }
 
 /** Anonymous avatar: the author's culture pattern in a circle, with their flag as a badge. */
-/** The culture pattern with a flag, or the member's cartoon avatar (src/lib/avatar.ts) with the same flag. */
+/** The culture pattern with a flag, or the member's cartoon avatar (src/features/avatar/avatar.ts) with the same flag. */
 export function Avatar({ code, size = 40, look }: { code: string; size?: number; look?: unknown }) {
   const c = cultureOf(code);
   const l = look ? parseLook(look) : null;

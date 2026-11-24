@@ -2,9 +2,9 @@ import Link from "next/link";
 import { Card } from "@astryxdesign/core/Card";
 import { Icon, type IconName } from "@/components/Icon";
 import { Flag, Notice, PageHead, SignInRequired } from "@/components/ui";
-import { getT, getUser } from "@/lib/auth";
-import { countryName, timeAgo } from "@/lib/i18n";
-import { markNotesRead, notes, type Note, type NoteKind } from "@/lib/notifications";
+import { getT, getUser } from "@/features/auth/auth";
+import { countryName, timeAgo } from "@/features/i18n/i18n";
+import { markNotesRead, notes, type Note, type NoteKind } from "@/features/notifications/notifications";
 
 export const metadata = { title: "Notifications" };
 

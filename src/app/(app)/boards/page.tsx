@@ -2,9 +2,9 @@ import Link from "next/link";
 import { Button } from "@astryxdesign/core/Button";
 import { Icon } from "@/components/Icon";
 import { PageHead } from "@/components/ui";
-import { getT } from "@/lib/auth";
-import { BOARDS, GROUPS } from "@/lib/boards";
-import { boardCounts } from "@/lib/posts";
+import { getT } from "@/features/auth/auth";
+import { BOARDS, GROUPS } from "@/features/posts/boards";
+import { boardCounts } from "@/features/posts/posts";
 
 export const metadata = { title: "Boards" };
 

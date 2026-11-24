@@ -148,7 +148,7 @@ export async function checkDraft(d: { title: string; body: string; board: string
 
 /* ---------- classify a post when it is filed ---------- */
 
-// Ids match ALERTS in src/lib/guide.ts (scripts/ai-check.mjs checks). Each line is what the model reads.
+// Ids match ALERTS in src/features/guide/guide.ts (scripts/ai-check.mjs checks). Each line is what the model reads.
 const ALERT_TEXT: Record<string, string> = {
   self_harm: "the writer is thinking about suicide or hurting themselves",
   abuse: "domestic violence or sexual violence against the writer",

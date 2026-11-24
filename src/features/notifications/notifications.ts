@@ -1,6 +1,6 @@
 // The bell: what neighbors did with my posts and answers, read straight from the activity tables (no inbox table).
 // users.seen_at is when I last opened the list; anything newer is unread.
-import { q } from "./db";
+import { q } from "../../lib/db";
 
 export type NoteKind = "reply" | "like" | "helpful" | "accepted" | "following";
 export type Note = {

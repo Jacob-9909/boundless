@@ -1,9 +1,9 @@
 import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
 import { blockAuthor } from "@/app/actions";
-import { ReportForm } from "@/components/forms";
+import { ReportForm } from "@/features/posts/forms";
 import { BackLink, PageHead, SignInRequired } from "@/components/ui";
-import { getT, getUser } from "@/lib/auth";
+import { getT, getUser } from "@/features/auth/auth";
 
 export const metadata = { title: "Report" };
 

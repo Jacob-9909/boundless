@@ -3,9 +3,9 @@
 import { useState, useTransition } from "react";
 import { Button } from "@astryxdesign/core/Button";
 import { translate } from "@/app/actions";
-import { Icon } from "./Icon";
-import { useT } from "./I18n";
-import { Linkify } from "./RichText";
+import { Icon } from "../../components/Icon";
+import { useT } from "../i18n/I18nProvider";
+import { Linkify } from "../../components/RichText";
 
 /**
  * Shows a post body or comment in its original language, with a button that adds a translation

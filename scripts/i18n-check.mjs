@@ -1,5 +1,5 @@
-// Fails when a Korean UI key used in src/ has no English line in src/lib/en.ts.
-// Also lists lines a machine translation in src/lib/locales/ still lacks (those fall back to English).
+// Fails when a Korean UI key used in src/ has no English line in src/features/i18n/en.ts.
+// Also lists lines a machine translation in src/features/i18n/locales/ still lacks (those fall back to English).
 // Usage: node scripts/i18n-check.mjs
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
@@ -23,7 +23,7 @@ for (const f of files) {
   }
 }
 
-const en = readFileSync("src/lib/en.ts", "utf8");
+const en = readFileSync("src/features/i18n/en.ts", "utf8");
 const keys = new Set([...en.matchAll(/^\s*"([^"]+)":/gm)].map((m) => m[1]));
 const missing = [...used].filter((k) => !keys.has(k));
 const unused = [...keys].filter((k) => !used.has(k));
@@ -32,8 +32,8 @@ if (missing.length) {
   console.log(`missing (${missing.length}):\n` + missing.map((k) => `  ${JSON.stringify(k)}: "",`).join("\n"));
   process.exit(1);
 }
-for (const f of readdirSync("src/lib/locales")) {
-  const loc = JSON.parse(readFileSync(join("src/lib/locales", f), "utf8"));
+for (const f of readdirSync("src/features/i18n/locales")) {
+  const loc = JSON.parse(readFileSync(join("src/features/i18n/locales", f), "utf8"));
   const gap = [...keys].filter((k) => !loc[k]);
   if (gap.length) console.log(`${f}: ${gap.length} lines fall back to English (run node scripts/i18n-translate.mjs)`);
 }

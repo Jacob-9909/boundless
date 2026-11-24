@@ -8,10 +8,10 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { flushSync } from "react-dom";
 import { Button } from "@astryxdesign/core/Button";
-import { Icon } from "./Icon";
+import { Icon } from "../../components/Icon";
 import { setLang } from "@/app/actions";
-import type { Lang } from "@/lib/i18n";
-import { useT } from "./I18n";
+import type { Lang } from "@/features/i18n/i18n";
+import { useT } from "../i18n/I18nProvider";
 
 type Step = {
   title: string;

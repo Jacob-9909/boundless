@@ -3,17 +3,17 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Button } from "@astryxdesign/core/Button";
 import { demoLogin } from "@/app/actions";
-import { LangMenu } from "@/components/LangMenu";
+import { LangMenu } from "@/features/i18n/LangMenu";
 import { cultureFonts } from "@/app/login/fonts";
-import { HelloRotator } from "@/components/HelloRotator";
+import { HelloRotator } from "@/features/culture/HelloRotator";
 import { Icon, type IconName } from "@/components/Icon";
 import { Avatar, BoardBadge, CultureScene, Flag, LINES, Logo, NationalityChip, Sentences } from "@/components/ui";
-import { demoEnabled, getT, getUser } from "@/lib/auth";
-import { boardOf, BOARDS } from "@/lib/boards";
-import { CULTURES, DEFAULT_CULTURE, themeVars } from "@/lib/cultures";
-import { HOTLINES, SITES } from "@/lib/guide";
-import { countryName, timeAgo } from "@/lib/i18n";
-import { communityStats, listPosts, recentActivity } from "@/lib/posts";
+import { demoEnabled, getT, getUser } from "@/features/auth/auth";
+import { boardOf, BOARDS } from "@/features/posts/boards";
+import { CULTURES, DEFAULT_CULTURE, themeVars } from "@/features/culture/cultures";
+import { HOTLINES, SITES } from "@/features/guide/guide";
+import { countryName, timeAgo } from "@/features/i18n/i18n";
+import { communityStats, listPosts, recentActivity } from "@/features/posts/posts";
 
 export const metadata = { title: { absolute: "Boundless · 국경 없이, 한국 생활을 함께" } };
 

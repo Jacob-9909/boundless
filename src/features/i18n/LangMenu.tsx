@@ -1,7 +1,7 @@
 import { Button } from "@astryxdesign/core/Button";
 import { setLang } from "@/app/actions";
-import { LANG_NAMES, LANGS, MACHINE_LANGS, type Lang } from "@/lib/i18n";
-import { Icon } from "./Icon";
+import { LANG_NAMES, LANGS, MACHINE_LANGS, type Lang } from "@/features/i18n/i18n";
+import { Icon } from "../../components/Icon";
 
 /**
  * Interface-language picker. No hooks, so server pages and the client login screen both use it.

@@ -1,6 +1,6 @@
 // Numbers for the moderator dashboard (/admin): the whole service at a glance, read straight from the tables.
 // ponytail: plain aggregate queries on every visit; cache or roll them up if the tables get large.
-import { ASKING_TAGS } from "@/lib/boards";
+import { ASKING_TAGS } from "@/features/posts/boards";
 import { q } from "@/lib/db";
 
 const n = (v: unknown) => Number(v ?? 0);

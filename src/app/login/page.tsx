@@ -1,9 +1,9 @@
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { LoginScreen } from "@/components/LoginScreen";
-import { demoEnabled, getT, getUser } from "@/lib/auth";
-import { cultureFromLanguages, cultureOf } from "@/lib/cultures";
-import { sortedCountries } from "@/lib/i18n";
+import { LoginScreen } from "@/features/auth/LoginScreen";
+import { demoEnabled, getT, getUser } from "@/features/auth/auth";
+import { cultureFromLanguages, cultureOf } from "@/features/culture/cultures";
+import { sortedCountries } from "@/features/i18n/i18n";
 import { cultureFonts } from "./fonts";
 
 export const metadata = { title: "Sign in" };

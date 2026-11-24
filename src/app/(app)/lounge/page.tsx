@@ -1,14 +1,14 @@
 import Link from "next/link";
 import { Button } from "@astryxdesign/core/Button";
-import { WithRail } from "@/components/Community";
-import { ListControls, listHref, MoreButton, parseSort } from "@/components/Feed";
+import { WithRail } from "@/features/posts/Community";
+import { ListControls, listHref, MoreButton, parseSort } from "@/features/posts/Feed";
 import { Icon } from "@/components/Icon";
 import { Avatar, CultureScene, Flag, LevelBadge, Notice, SignInRequired, TagText } from "@/components/ui";
-import { getT, getUser } from "@/lib/auth";
-import { LOUNGE } from "@/lib/boards";
-import { cultureOf } from "@/lib/cultures";
-import { countryName, timeAgo, type Lang, type T } from "@/lib/i18n";
-import { listPosts, loungeCount, memberCount, PAGE, type PostRow } from "@/lib/posts";
+import { getT, getUser } from "@/features/auth/auth";
+import { LOUNGE } from "@/features/posts/boards";
+import { cultureOf } from "@/features/culture/cultures";
+import { countryName, timeAgo, type Lang, type T } from "@/features/i18n/i18n";
+import { listPosts, loungeCount, memberCount, PAGE, type PostRow } from "@/features/posts/posts";
 
 export const metadata = { title: "Lounge" };
 

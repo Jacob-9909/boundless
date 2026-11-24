@@ -2,9 +2,9 @@
 import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import { Asta_Sans, Bricolage_Grotesque, Noto_Sans, Noto_Sans_Khmer, Noto_Sans_Thai } from "next/font/google";
-import { I18n } from "@/components/I18n";
-import { getLang } from "@/lib/auth";
-import { dictOf } from "@/lib/messages";
+import { I18n } from "@/features/i18n/I18nProvider";
+import { getLang } from "@/features/auth/auth";
+import { dictOf } from "@/features/i18n/messages";
 import { Providers } from "./providers";
 
 // Display: Bricolage Grotesque for Latin; Asta Sans carries Hangul and body text (picked with the design skill's font data).

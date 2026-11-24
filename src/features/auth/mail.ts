@@ -1,5 +1,5 @@
 import nodemailer from "nodemailer";
-import type { T } from "@/lib/i18n";
+import type { T } from "@/features/i18n/i18n";
 
 /**
  * Sends the sign-in code through Gmail SMTP (same EMAIL_SENDER / EMAIL_PASSWORD setup as gov24).

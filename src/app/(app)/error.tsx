@@ -2,7 +2,7 @@
 
 import { Banner } from "@astryxdesign/core/Banner";
 import { Button } from "@astryxdesign/core/Button";
-import { useT } from "@/components/I18n";
+import { useT } from "@/features/i18n/I18nProvider";
 
 export default function ErrorPage({ reset }: { error: Error; reset: () => void }) {
   const t = useT();
