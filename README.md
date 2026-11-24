@@ -16,7 +16,7 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-4169E1?logo=postgresql&logoColor=white)
 ![Vercel](https://img.shields.io/badge/Deploy-Vercel-000000?logo=vercel)
 
-[**서비스 바로가기**](https://boundless-virid.vercel.app) · [기능 안내](docs/FEATURES.md) · [배포·운영 가이드](docs/DEPLOY.md) · [보안 정책](SECURITY.md) · [기여 가이드](CONTRIBUTING.md)
+[**서비스 바로가기**](https://boundless-virid.vercel.app) · [기능 안내](docs/FEATURES.md) · [배포·운영 가이드](docs/DEPLOY.md) · [보안 정책](.github/SECURITY.md) · [기여 가이드](.github/CONTRIBUTING.md)
 
 </div>
 
@@ -160,11 +160,13 @@ flowchart LR
 │   └── community.sql        가상 이웃 45명의 7일 활동
 ├── scripts/                 DB 적용, 문구·금칙어·AI·아바타 검사, 데이터 이전
 ├── e2e/                     전체 흐름 테스트
-├── infra/vm/                Vercel 밖 리눅스 VM 배포용 systemd 유닛과 배포 스크립트
+├── infra/                   Vercel 밖 리눅스 VM 배포용 systemd 유닛과 배포 스크립트
 ├── docs/                    기능 안내, 배포·운영 가이드, 디자인 시스템, 브랜드, 스크린샷
 ├── public/                  국기 이미지, robots.txt
-└── .github/                 워크플로, Dependabot, PR 템플릿
+└── .github/                 워크플로, Dependabot, PR 템플릿, 보안 정책, 기여 가이드
 ```
+
+루트에 남은 파일은 도구가 루트에 있어야 읽는 설정입니다: `package.json`·`package-lock.json`(npm), `next.config.ts`·`AGENTS.md`(Next.js), `tsconfig.json`, `eslint.config.mjs`, `vercel.json`, `.env.example`, `.gitignore`.
 
 ## 시작하기
 
@@ -224,7 +226,7 @@ E2E는 가입, 글쓰기, 익명 호칭, 도움돼요·저장·대댓글, 새 �
 - **권한:** 운영자·관리자 역할을 분리하고, 모든 운영 결정을 처리 기록에 남깁니다. 샘플 계정은 어떤 권한도 받지 못합니다.
 - **개인정보 처리:** 보관 기간과 국외 처리(업체·국가·항목·기간)를 운영 정책(`/policy`)에 고지합니다. 탈퇴하면 계정과 작성물을 바로 지웁니다.
 
-취약점은 공개 이슈 대신 [SECURITY.md](SECURITY.md)의 절차로 알려 주세요.
+취약점은 공개 이슈 대신 [.github/SECURITY.md](.github/SECURITY.md)의 절차로 알려 주세요.
 
 ## 제품 결정
 
@@ -301,5 +303,5 @@ E2E는 가입, 글쓰기, 익명 호칭, 도움돼요·저장·대댓글, 새 �
 | [docs/DEPLOY.md](docs/DEPLOY.md) | 현재 인프라, 환경 변수, 마이그레이션, 백업·복구, 서버 이전, 출시 전 체크리스트 |
 | [docs/ASTRYX.md](docs/ASTRYX.md) | Astryx 디자인 시스템 연결 방식과 규칙 |
 | [docs/brand/logo-concepts.html](docs/brand/logo-concepts.html) | 로고 콘셉트, 배경·문화·크기별 시안 |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | 브랜치·커밋 규칙, PR 절차, 로컬 검사 |
-| [SECURITY.md](SECURITY.md) | 취약점 제보 절차 |
+| [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md) | 브랜치·커밋 규칙, PR 절차, 로컬 검사 |
+| [.github/SECURITY.md](.github/SECURITY.md) | 취약점 제보 절차 |
