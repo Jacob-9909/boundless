@@ -1,10 +1,10 @@
 # Boundless 배포 · 서버 이전 가이드
 
-## 지금 상태 (2026-11-18)
+## 지금 상태 (2026-11-24)
 
 | | 위치 | 비고 |
 | --- | --- | --- |
-| 코드 | GitHub `Jacob-9909/boundless` (private) | |
+| 코드 | GitHub `Jacob-9909/boundless` (public) | |
 | 앱 | Vercel 프로젝트 `boundless` → https://boundless-virid.vercel.app | 함수 리전 `sin1`(싱가포르, `vercel.json`) |
 | 운영 DB | Neon Postgres `boundless-db` (Vercel Marketplace, `sin1`) | `DATABASE_URL`(풀링)·`DATABASE_URL_UNPOOLED` 자동 주입. production·preview 가 같은 DB 를 씀 |
 | 샘플 DB | oracle_vm PostgreSQL 17, 스키마 `boundless`, 역할 `boundless` | 가상 데이터만. 외부 포트 막힘, SSH 터널로만 접속 |
@@ -17,7 +17,7 @@ Neon 은 서울·도쿄 리전을 고를 수 없어 가장 가까운 싱가포�
 - **CD** — `main` 푸시에서 CI 가 통과한 뒤에만: `vercel pull` → 밀린 마이그레이션 적용(`db/migrations`, 아래 "스키마 변경") → `vercel build --prod` → `vercel deploy --prebuilt --prod` → `/api/health` 확인
 - **Backup** (`backup.yml`) — 매일 03:00 KST 운영 DB 덤프 → 암호화 → 임시 Postgres 에 복원해 행 수 확인 → 7일 보관 (아래 "백업과 복구")
 - **Uptime** (`uptime.yml`) — 매시 `/api/health` 확인, 실패하면 GitHub 메일과 웹훅 알림 (아래 "모니터링과 알림")
-- 필요한 저장소 시크릿은 `VERCEL_TOKEN` 하나. 프로젝트·조직 ID 는 비밀이 아니라 워크플로에 적어 두었다
+- 저장소 시크릿: 배포용 `VERCEL_TOKEN`, 백업 암호화용 `BACKUP_PASSPHRASE`, 선택으로 알림용 `ALERT_WEBHOOK_URL`. 프로젝트·조직 ID 는 비밀이 아니라 워크플로에 적어 두었다
 
 `VERCEL_TOKEN` 등록 (한 번만, 이 프로젝트 전용 토큰):
 
@@ -36,13 +36,13 @@ gh secret set VERCEL_TOKEN -R Jacob-9909/boundless   # 붙여넣고 Enter
 | `DATABASE_URL`, `DATABASE_URL_UNPOOLED` 등 | ✓ | ✓ | Neon 연동이 자동 관리 |
 | `SESSION_SECRET` | ✓ | ✓ | 환경별 무작위 값 |
 | `DEMO_LOGIN=1` | ✓ | ✓ | 시연용. 첫 화면 "심사위원 · 체험용 샘플 계정"에서 나라를 누르면 그 나라 샘플 이웃(`<코드>@example.com`)으로 바로 입장, 운영자 화면은 읽기 전용 계정(`moderator@example.com`)으로 입장. `@example.com` 계정은 로그인 코드도 화면에 보여 주고, 운영 처리 권한은 받지 못함. 실제 출시 때 지운다 |
-| `EMAIL_SENDER`, `EMAIL_PASSWORD` | **미설정** (11-18 운영자 화면에서 확인) | | Gmail 주소와 앱 비밀번호. **설정 전에는 실제 이메일로 가입할 수 없다**(샘플 계정은 영향 없음). 아래 "로그인 메일" 참고 |
-| `ADMIN_EMAILS` | 미설정 | | 운영 큐(`/admin`) 를 볼 실제 이메일 |
+| `EMAIL_SENDER`, `EMAIL_PASSWORD` | 설정됨 (11-24, 실제 주소로 코드 수신·가입 확인) | | Gmail 주소와 그 계정의 앱 비밀번호. 없으면 실제 이메일로 가입할 수 없다(샘플 계정은 영향 없음). 아래 "로그인 메일" 참고 |
+| `ADMIN_EMAILS` | 설정됨 (11-24, `/admin` 관리자 권한 확인) | | 운영 큐(`/admin`) 를 볼 실제 이메일 |
 | `NVIDIA_API_KEY` | 설정됨 (11-18 운영자 화면에서 확인) | | NVIDIA NIM 키(build.nvidia.com). 글 자동 분류(비자·지역·위기), 해결된 글의 AI 요약, 글쓰기 AI 점검에 쓴다. 없으면 이 기능들이 화면에 나오지 않을 뿐 나머지는 그대로 동작하고, 자해 표현만 정규식으로 잡는다 |
 | `CRON_SECRET` | 설정됨 (11-21, 첫 호출 200 확인) | | 매일 정리 작업(`/api/cron/cleanup`)의 인증값. Vercel Cron 이 `Authorization: Bearer` 로 보낸다. 없으면 정리 작업이 401 로 거절돼 오래된 요청 기록·만료 코드·삭제된 사진 파일이 쌓인다 |
 | `BLOB_READ_WRITE_TOKEN` | 연결됨 (11-21) | ✓ | 비공개 Blob 저장소 `boundless-images`(`sin1`)를 연결하면 자동으로 들어온다(OIDC 로 연결한 저장소는 `BLOB_STORE_ID`). 둘 다 없으면 사진을 예전처럼 Postgres 에 저장한다. 연결할 때 운영 DB 사진은 0장이라 옮길 것이 없었다. 아래 "사진 저장소" |
 | `ALERT_WEBHOOK_URL` | 선택 | | Slack·Discord 수신 웹훅. 서버 오류를 종류별로 10분에 한 번 보낸다. 같은 값을 GitHub 저장소 시크릿에도 넣으면 업타임 실패도 온다 |
-| `PRIVACY_CONTACT` | 선택 | | 운영 정책 "개인정보 국외 처리" 끝에 보이는 개인정보 문의처(팀 공용 메일 등). 개인 메일은 넣지 않는다 |
+| `PRIVACY_CONTACT` | 설정됨 (11-24) | | 운영 정책 "개인정보 국외 처리" 끝에 보이는 개인정보 문의처. 공개 페이지에 그대로 나오므로 팀이 생기면 공용 주소로 바꾼다 |
 
 ```bash
 npx vercel env add EMAIL_SENDER production
@@ -165,7 +165,7 @@ ssh -fN -L 5434:127.0.0.1:5432 oracle_vm
 
 Vercel 대신 직접 운영하는 서버로 옮길 때의 절차다.
 
-어느 클라우드든(AWS Lightsail/EC2, GCP, Azure, NCP, OCI) 리눅스 VM 한 대면 된다. 저장소의 `deploy/`가 그 구성을 전제로 한다.
+어느 클라우드든(AWS Lightsail/EC2, GCP, Azure, NCP, OCI) 리눅스 VM 한 대면 된다. 저장소의 `infra/vm/`이 그 구성을 전제로 한다.
 
 ### 1. 서버 준비
 
@@ -190,10 +190,10 @@ CREATE SCHEMA boundless AUTHORIZATION boundless;
 ```bash
 git clone git@github.com:Jacob-9909/boundless.git ~/boundless/src
 cp ~/boundless/src/.env.example ~/boundless/.env   # 아래 표대로 채우기, chmod 600
-sudo cp ~/boundless/src/deploy/boundless.service /etc/systemd/system/
+sudo cp ~/boundless/src/infra/vm/boundless.service /etc/systemd/system/
 # 사용자명이 ubuntu 가 아니면 서비스 파일의 User / 경로를 고친다
 sudo systemctl daemon-reload && sudo systemctl enable boundless
-~/boundless/src/deploy/deploy.sh                    # 첫 빌드 + 기동 + /api/health 확인
+~/boundless/src/infra/vm/deploy.sh                    # 첫 빌드 + 기동 + /api/health 확인
 ```
 
 | 환경변수 | 값 |
@@ -242,7 +242,7 @@ boundless.example.com {
 ```
 
 - Secrets: `VM_SSH_KEY`(배포 전용 키), `VM_KNOWN_HOSTS`(`ssh-keyscan <host>`), `VM_HOST`
-- 서버 `~/.ssh/authorized_keys`에서 그 키를 `command="~/boundless/src/deploy/deploy.sh",no-port-forwarding,no-pty ssh-ed25519 ...`로 제한
+- 서버 `~/.ssh/authorized_keys`에서 그 키를 `command="~/boundless/src/infra/vm/deploy.sh",no-port-forwarding,no-pty ssh-ed25519 ...`로 제한
 
 이후 `main` 푸시 → CI 통과 → SSH로 `deploy.sh` 실행 → health 실패 시 직전 빌드로 롤백.
 
@@ -257,10 +257,11 @@ psql "$NEW_DATABASE_URL" -f boundless.sql
 
 ## 출시 전 체크리스트
 
-- [ ] `EMAIL_SENDER`·`EMAIL_PASSWORD` 설정 → 운영자 화면 시스템 상태 "설정됨" 확인 → 실제 메일로 가입 테스트
-- [ ] `ADMIN_EMAILS` 지정, 운영 큐 접근 확인
+- [x] `EMAIL_SENDER`·`EMAIL_PASSWORD` 설정 → 운영자 화면 시스템 상태 "설정됨" 확인 → 실제 메일로 가입 테스트 (11-24)
+- [x] `ADMIN_EMAILS` 지정, 운영 큐 접근 확인 (11-24)
 - [x] 운영 정책에 보관 기간과 개인정보 국외 처리(업체·국가·항목·기간·거부 방법) 고지 (`/policy#retention`, `#overseas`). 가입 동의 문구에도 국외 처리를 넣었다
-- [ ] 위 정책 문구 법률 검토, 이용약관 별도 페이지, 개인정보 보호책임자 지정과 `PRIVACY_CONTACT` 설정
+- [x] `PRIVACY_CONTACT` 설정 (11-24)
+- [ ] 위 정책 문구 법률 검토, 이용약관 별도 페이지, 개인정보 보호책임자 지정
 - [x] `CRON_SECRET` 설정, 첫 호출 200 확인 (11-21)
 - [ ] 팀 정책 확정 후 임시값 교체: 가입 연령(P01), 국적 정정(P02), 재심(P03), 탈퇴 데이터(P04) — 코드에서 `ponytail:` 주석으로 검색
 - [x] `BACKUP_PASSPHRASE` 시크릿 등록, Backup 첫 실행 성공(복원 확인: 회원 62·글 59·댓글 255) (11-21)
