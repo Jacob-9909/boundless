@@ -387,7 +387,7 @@
 
 ## AI 작동 구조
 
-제출 양식의 "적용된 핵심 AI 기술 및 작동 구조"에 옮길 수 있도록 정리했습니다. 근거 코드는 `src/lib/ai.ts`(프롬프트와 검증), `src/app/actions.ts`(호출 시점과 저장), `src/lib/pii.ts`(개인정보 제거)입니다.
+제출 양식의 "적용된 핵심 AI 기술 및 작동 구조"에 옮길 수 있도록 정리했습니다. 근거 코드는 `src/features/ai/ai.ts`(프롬프트와 검증), `src/app/actions.ts`(호출 시점과 저장), `src/features/posts/pii.ts`(개인정보 제거)입니다.
 
 ### 한눈에 보기
 

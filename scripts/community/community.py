@@ -264,7 +264,7 @@ def q(s):
     return "NULL" if s is None else "'" + str(s).replace("'", "''") + "'"
 
 
-# A few values from src/lib/avatar.ts and animals.ts; parseLook refuses anything else when the page reads it.
+# A few values from src/features/avatar/avatar.ts and animals.ts; parseLook refuses anything else when the page reads it.
 SHORT = ["shortFlat", "shortRound", "shortWaved", "shortCurly", "theCaesar", "sides", "frizzle", "shaggy", "fro", "dreads01"]
 LONG = ["bob", "bun", "curly", "curvy", "straight01", "straight02", "longButNotTooLong", "bigHair", "miaWallace", "frida"]
 

@@ -1,5 +1,5 @@
 // A member's cartoon avatar: a person assembled from Avataaars parts (DiceBear; design by Pablo Stanley, free for
-// personal and commercial use) or one of our own animals (src/lib/animals.ts). Only these choices are stored, never
+// personal and commercial use) or one of our own animals (src/features/avatar/animals.ts). Only these choices are stored, never
 // a photo: the builder reads colors from a photo on the device. Shared by the server (validation, rendering) and the
 // builder in the browser.
 import { Avatar, Style } from "@dicebear/core";

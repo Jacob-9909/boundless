@@ -12,7 +12,7 @@ import viVN from "@astryxdesign/core/locales/vi-VN.generated.js";
 import zhCN from "@astryxdesign/core/locales/zh-CN.generated.js";
 import { Theme } from "@astryxdesign/core/theme";
 import { defaultThemeSlug, themes } from "@/astryx-themes";
-import type { Lang } from "@/lib/i18n";
+import type { Lang } from "@/features/i18n/i18n";
 
 // Astryx's own strings ("Loading", "Close", "Search"...) in the interface language where Astryx has a catalog.
 // ponytail: the other ten languages fall back to Astryx's English; add catalogs when Astryx ships them.

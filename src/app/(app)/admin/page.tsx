@@ -4,16 +4,16 @@ import { Banner } from "@astryxdesign/core/Banner";
 import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
 import { moderate, resolveAppeal, setStaffRole } from "@/app/actions";
-import { AdminDashboard } from "@/components/AdminDashboard";
+import { AdminDashboard } from "@/features/admin/AdminDashboard";
 import { SelectField, TextField } from "@/components/fields";
 import { Icon } from "@/components/Icon";
 import { NationalityChip, Notice, PageHead } from "@/components/ui";
-import { adminStats } from "@/lib/admin";
-import { aiEnabled } from "@/lib/ai";
-import { canModerate, canViewQueue, demoEnabled, envAdmins, getT, getUser, isAdmin } from "@/lib/auth";
+import { adminStats } from "@/features/admin/admin";
+import { aiEnabled } from "@/features/ai/ai";
+import { canModerate, canViewQueue, demoEnabled, envAdmins, getT, getUser, isAdmin } from "@/features/auth/auth";
 import { q } from "@/lib/db";
-import { ALERTS, alertOf } from "@/lib/guide";
-import { REPORT_REASONS, timeAgo, type T } from "@/lib/i18n";
+import { ALERTS, alertOf } from "@/features/guide/guide";
+import { REPORT_REASONS, timeAgo, type T } from "@/features/i18n/i18n";
 
 export const metadata = { title: "Moderation" };
 
@@ -102,7 +102,7 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
        JOIN boundless.users u ON u.id = a.user_id
        WHERE a.status = 'received' ORDER BY a.created_at LIMIT 50`,
     ),
-    // Posts the AI flagged when they were filed (src/lib/ai.ts): crises first, then the newest.
+    // Posts the AI flagged when they were filed (src/features/ai/ai.ts): crises first, then the newest.
     q<{ id: string; alert: string; created_at: Date; excerpt: string; nationality: string }>(
       `SELECT p.id, p.alert, p.created_at, left(p.title || ' — ' || p.body, 160) AS excerpt, u.nationality
        FROM boundless.posts p JOIN boundless.users u ON u.id = p.user_id

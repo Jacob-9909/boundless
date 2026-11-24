@@ -1,5 +1,5 @@
 import { q } from "@/lib/db";
-import { purgeBlobs } from "@/lib/images";
+import { purgeBlobs } from "@/features/posts/images";
 
 /**
  * Daily housekeeping (vercel.json crons; any scheduler can call it with the same header):

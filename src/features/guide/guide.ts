@@ -34,7 +34,7 @@ export const APPS = [{ name: "안전디딤돌", desc: "재난 문자와 대피�
 
 export const helpFor = (topic: string) => [...HOTLINES, ...SITES].filter((h) => h.topics.includes(topic)).slice(0, 3);
 
-// What the AI can flag when a post is filed (classifyPost in src/lib/ai.ts, which uses the same ids).
+// What the AI can flag when a post is filed (classifyPost in src/features/ai/ai.ts, which uses the same ids).
 // The card with these numbers is shown to the author only; moderators see the flag in the queue.
 export const ALERTS = [
   { id: "self_harm", ko: "자해·자살 위기", crisis: true, tels: ["109", "1577-1366", "119"] },

@@ -5,7 +5,7 @@ import { Button } from "@astryxdesign/core/Button";
 import { CheckboxInput } from "@astryxdesign/core/CheckboxInput";
 import { Dialog, DialogHeader } from "@astryxdesign/core/Dialog";
 import { deleteAccount } from "@/app/actions";
-import { useT } from "@/components/I18n";
+import { useT } from "@/features/i18n/I18nProvider";
 
 /**
  * Account deletion: a confirm dialog that still posts confirm=on, which deleteAccount checks on the server.

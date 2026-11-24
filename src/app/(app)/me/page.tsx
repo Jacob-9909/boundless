@@ -2,14 +2,14 @@ import Link from "next/link";
 import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
 import { unfollow } from "@/app/actions";
-import { RightRail } from "@/components/Community";
-import { PostList } from "@/components/Feed";
+import { RightRail } from "@/features/posts/Community";
+import { PostList } from "@/features/posts/Feed";
 import { Icon } from "@/components/Icon";
 import { NavTabs } from "@/components/NavTabs";
 import { Avatar, LevelBadge, Notice, PageHead, PostCard, SignInRequired } from "@/components/ui";
-import { getT, getUser } from "@/lib/auth";
-import { countryName } from "@/lib/i18n";
-import { followedNeighbors, followerCount, listPosts, myPosts, savedPosts } from "@/lib/posts";
+import { getT, getUser } from "@/features/auth/auth";
+import { countryName } from "@/features/i18n/i18n";
+import { followedNeighbors, followerCount, listPosts, myPosts, savedPosts } from "@/features/posts/posts";
 
 export const metadata = { title: "My posts" };
 

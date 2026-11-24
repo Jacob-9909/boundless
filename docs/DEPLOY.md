@@ -64,7 +64,7 @@ DELETE FROM boundless.users WHERE email LIKE '%@example.com';
 
 ### 로그인 메일 (Gmail SMTP)
 
-로그인 코드는 일반 Gmail 계정에서 앱 비밀번호로 보낸다(`src/lib/mail.ts`, gov24 와 같은 방식). AWS SES 같은 대량 발송 승인은 필요 없다.
+로그인 코드는 일반 Gmail 계정에서 앱 비밀번호로 보낸다(`src/features/auth/mail.ts`, gov24 와 같은 방식). AWS SES 같은 대량 발송 승인은 필요 없다.
 
 1. 보낼 Gmail 계정에서 2단계 인증을 켠다.
 2. Google 계정 → 보안 → 앱 비밀번호에서 16자리 비밀번호를 만든다.
@@ -269,4 +269,4 @@ psql "$NEW_DATABASE_URL" -f boundless.sql
 - [x] Blob 저장소 연결 (11-21). 운영 DB 사진은 0장이라 옮길 것 없음
 - [ ] `ALERT_WEBHOOK_URL`(Vercel 환경변수와 GitHub 시크릿) 설정 후 알림 받아 보기
 - [ ] 문화별 인사말을 각 언어 원어민에게 검수 (특히 크메르어 · 네팔어 · 힌디어)
-- [ ] 화면 문구 기계 번역(`src/lib/locales/*.json`)을 원어민 검수. 대부분은 Google 무료 웹 엔드포인트로 만들었고(요청이 많으면 429 로 막힘), 프랑스어·힌디어 전체와 재심·운영 정책 문구는 AI가 직접 번역했다. 초기 Google 번역분은 모두 AI가 다시 번역하거나 고쳤다(핵심 용어 63줄, 짧은 메뉴·버튼 700여 줄, 긴 안내 문장 151줄). 원어민 검수는 아직이다. 출시 전 유료 번역 API 나 사람 번역으로 교체
+- [ ] 화면 문구 기계 번역(`src/features/i18n/locales/*.json`)을 원어민 검수. 대부분은 Google 무료 웹 엔드포인트로 만들었고(요청이 많으면 429 로 막힘), 프랑스어·힌디어 전체와 재심·운영 정책 문구는 AI가 직접 번역했다. 초기 Google 번역분은 모두 AI가 다시 번역하거나 고쳤다(핵심 용어 63줄, 짧은 메뉴·버튼 700여 줄, 긴 안내 문장 151줄). 원어민 검수는 아직이다. 출시 전 유료 번역 API 나 사람 번역으로 교체

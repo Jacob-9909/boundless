@@ -4,8 +4,8 @@ import { useState, useTransition } from "react";
 import { AlertDialog } from "@astryxdesign/core/AlertDialog";
 import { Button } from "@astryxdesign/core/Button";
 import { deleteOwn } from "@/app/actions";
-import { Icon } from "./Icon";
-import { useT } from "./I18n";
+import { Icon } from "../../components/Icon";
+import { useT } from "../i18n/I18nProvider";
 
 /** Share a post: the phone's share sheet when there is one, otherwise copy the link. */
 export function ShareButton({ title, className }: { title: string; className?: string }) {

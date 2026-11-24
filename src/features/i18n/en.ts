@@ -733,7 +733,7 @@ export const EN: Record<string, string> = {
   "도움이 된 답변에 ‘도움돼요’를 눌러 고마움을 전해 보세요.": "Say thanks by tapping Helpful on the answers that helped.",
   "어떻게 해결했는지 댓글로 남기면 다음 이웃에게 큰 도움이 돼요.": "Leave a comment on how it was solved. It will help the next neighbor.",
   "욕설이나 혐오 표현이 있어서 올릴 수 없어요. 표현을 고친 뒤 다시 올려 주세요.": "This can’t be posted because it contains profanity or hate speech. Please reword it and try again.",
-  // AI helpers (src/lib/ai.ts)
+  // AI helpers (src/features/ai/ai.ts)
   "AI 요약": "AI summary",
   "이웃들의 답변을 정리했어요": "made from the neighbors’ answers",
   "요약을 만드는 중…": "Making the summary…",
@@ -783,7 +783,7 @@ export const EN: Record<string, string> = {
   "AI 우선 확인 {n}건": "AI flags to check first: {n}",
   "최근 7일 동안 AI가 긴급·위기 신호를 읽은 글이에요. 글쓴이에게는 상담 번호가 안내됐어요.": "Posts from the last 7 days where the AI read an emergency or crisis. The authors were shown helplines.",
   "글을 올리면 AI가 한 번 읽고 비자 종류·지역과 긴급·위기 신호를 분류해요. 위기 신호가 보이면 상담 번호를 글쓴이에게만 보여 주고 운영자가 먼저 살펴봐요. 글을 가리거나 막지는 않아요.": "When you post, an AI reads it once to label the visa type, region and any emergency or crisis. If it sees a crisis, only the author is shown helplines and a moderator looks first. Posts are never hidden or blocked for this.",
-  // avatar (src/lib/avatar.ts, AvatarBuilder)
+  // avatar (src/features/avatar/avatar.ts, AvatarBuilder)
   "저장했어요": "Saved",
   "내 아바타 미리 보기": "My avatar preview",
   "피부": "Skin",

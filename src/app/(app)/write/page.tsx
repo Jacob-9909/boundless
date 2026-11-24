@@ -2,14 +2,14 @@ import Link from "next/link";
 import { Badge } from "@astryxdesign/core/Badge";
 import { Card } from "@astryxdesign/core/Card";
 import { createPost } from "@/app/actions";
-import { WriteForm } from "@/components/forms";
+import { WriteForm } from "@/features/posts/forms";
 import { Icon } from "@/components/Icon";
 import { BackLink, CultureScene, Flag, PageHead, SignInRequired } from "@/components/ui";
-import { aiEnabled } from "@/lib/ai";
-import { getT, getUser } from "@/lib/auth";
-import { BOARDS, boardOf, GROUPS, isBoard, LOUNGE } from "@/lib/boards";
-import { cultureOf } from "@/lib/cultures";
-import { countryName, langName, POST_LANGS } from "@/lib/i18n";
+import { aiEnabled } from "@/features/ai/ai";
+import { getT, getUser } from "@/features/auth/auth";
+import { BOARDS, boardOf, GROUPS, isBoard, LOUNGE } from "@/features/posts/boards";
+import { cultureOf } from "@/features/culture/cultures";
+import { countryName, langName, POST_LANGS } from "@/features/i18n/i18n";
 
 export const metadata = { title: "Write" };
 

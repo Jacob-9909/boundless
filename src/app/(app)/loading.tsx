@@ -1,6 +1,6 @@
 import { Card } from "@astryxdesign/core/Card";
 import { Skeleton } from "@astryxdesign/core/Skeleton";
-import { getT } from "@/lib/auth";
+import { getT } from "@/features/auth/auth";
 
 /** Shown at once while a page's data loads, so a tap never looks ignored. */
 export default async function Loading() {

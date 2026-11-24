@@ -1,11 +1,11 @@
 import { notFound } from "next/navigation";
 import { Button } from "@astryxdesign/core/Button";
-import { WithRail } from "@/components/Community";
-import { FeedList, ListControls, listHref, parseSort } from "@/components/Feed";
+import { WithRail } from "@/features/posts/Community";
+import { FeedList, ListControls, listHref, parseSort } from "@/features/posts/Feed";
 import { Icon } from "@/components/Icon";
-import { getT, getUser } from "@/lib/auth";
-import { boardOf, isBoard } from "@/lib/boards";
-import { listPosts } from "@/lib/posts";
+import { getT, getUser } from "@/features/auth/auth";
+import { boardOf, isBoard } from "@/features/posts/boards";
+import { listPosts } from "@/features/posts/posts";
 
 export default async function BoardPage(props: PageProps<"/b/[board]">) {
   const { board: id } = await props.params;

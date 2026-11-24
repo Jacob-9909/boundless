@@ -2,15 +2,15 @@ import Link from "next/link";
 import { Banner } from "@astryxdesign/core/Banner";
 import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
-import { WithRail } from "@/components/Community";
-import { FeedList, FilterChip, ListControls, listHref, parseSort } from "@/components/Feed";
+import { WithRail } from "@/features/posts/Community";
+import { FeedList, FilterChip, ListControls, listHref, parseSort } from "@/features/posts/Feed";
 import { Icon } from "@/components/Icon";
 import { Avatar, CultureScene, Flag, TagText } from "@/components/ui";
-import { getT, getUser } from "@/lib/auth";
-import { BOARDS, isBoard } from "@/lib/boards";
-import { cultureOf, DEFAULT_CULTURE } from "@/lib/cultures";
-import { countryName, timeAgo } from "@/lib/i18n";
-import { boardCounts, communityStats, listPosts } from "@/lib/posts";
+import { getT, getUser } from "@/features/auth/auth";
+import { BOARDS, isBoard } from "@/features/posts/boards";
+import { cultureOf, DEFAULT_CULTURE } from "@/features/culture/cultures";
+import { countryName, timeAgo } from "@/features/i18n/i18n";
+import { boardCounts, communityStats, listPosts } from "@/features/posts/posts";
 
 export const metadata = { title: "Home" };
 

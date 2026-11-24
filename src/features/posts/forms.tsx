@@ -13,14 +13,14 @@ import { RadioList, RadioListItem } from "@astryxdesign/core/RadioList";
 import { TextArea } from "@astryxdesign/core/TextArea";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { aiCheckDraft, appeal, countView, reportContent, similarPosts, updateNationality, type PostState, type Result } from "@/app/actions";
-import type { DraftCheck } from "@/lib/ai";
-import { boardOf, type Board } from "@/lib/boards";
-import { REGIONS, REPORT_REASONS, VISAS } from "@/lib/i18n";
-import { findPII } from "@/lib/pii";
-import { keepValues, SelectField, TextAreaField, TextField } from "./fields";
-import { Icon } from "./Icon";
-import { useT } from "./I18n";
-import { Flag } from "./ui";
+import type { DraftCheck } from "@/features/ai/ai";
+import { boardOf, type Board } from "@/features/posts/boards";
+import { REGIONS, REPORT_REASONS, VISAS } from "@/features/i18n/i18n";
+import { findPII } from "@/features/posts/pii";
+import { keepValues, SelectField, TextAreaField, TextField } from "../../components/fields";
+import { Icon } from "../../components/Icon";
+import { useT } from "../i18n/I18nProvider";
+import { Flag } from "../../components/ui";
 
 /**
  * Astryx inputs type only their own props but pass the rest to the native element, so the browser still checks

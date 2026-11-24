@@ -299,7 +299,7 @@ await judge.goto(BASE + "/#demo");
 await judge.locator("#demo form button", { hasText: "Vietnam" }).first().click();
 await judge.waitForURL(BASE + "/feed");
 // Switching to a sample neighbor shows the app in that country's language.
-const VI = JSON.parse(readFileSync("src/lib/locales/vi.json", "utf8"));
+const VI = JSON.parse(readFileSync("src/features/i18n/locales/vi.json", "utf8"));
 assert.equal(await judge.locator("html").getAttribute("lang"), "vi");
 // The greeting heading, not getByText: Next's route announcer sometimes copies the same text after navigation.
 await judge.getByRole("heading", { name: VI["{hello}, 이웃님"].replace("{hello}", "Xin chào") }).waitFor();

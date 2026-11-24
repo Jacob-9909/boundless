@@ -1,13 +1,13 @@
 import { Button } from "@astryxdesign/core/Button";
-import { MoreButton, PostList } from "@/components/Feed";
+import { MoreButton, PostList } from "@/features/posts/Feed";
 import { SelectField, TextField } from "@/components/fields";
 import { Icon } from "@/components/Icon";
 import { NationalityChip, Notice, PageHead, PostCard, BoardBadge } from "@/components/ui";
-import { getT, getUser } from "@/lib/auth";
+import { getT, getUser } from "@/features/auth/auth";
 import { track } from "@/lib/db";
-import { BOARDS, isBoard } from "@/lib/boards";
-import { isCountry, isRegion, isVisa, REGIONS, VISAS } from "@/lib/i18n";
-import { listPosts, PAGE } from "@/lib/posts";
+import { BOARDS, isBoard } from "@/features/posts/boards";
+import { isCountry, isRegion, isVisa, REGIONS, VISAS } from "@/features/i18n/i18n";
+import { listPosts, PAGE } from "@/features/posts/posts";
 
 export const metadata = { title: "Search" };
 

@@ -2,9 +2,9 @@
 // removed, and summaries keep only real answer numbers and contacts that appear in the thread.
 // Usage: node scripts/ai-check.mjs (Node 23.6+ reads .ts directly)
 import assert from "node:assert/strict";
-import { findPII, stripPII } from "../src/lib/pii.ts";
-import { crisisFallback, normalizeVisa, parseCheck, parseClassify, parseSummary, threadText } from "../src/lib/ai.ts";
-import { ALERTS, hotline } from "../src/lib/guide.ts";
+import { findPII, stripPII } from "../src/features/posts/pii.ts";
+import { crisisFallback, normalizeVisa, parseCheck, parseClassify, parseSummary, threadText } from "../src/features/ai/ai.ts";
+import { ALERTS, hotline } from "../src/features/guide/guide.ts";
 
 assert.deepEqual(findPII("call me 010-1234-5678"), ["전화번호"]);
 assert.deepEqual(findPII("+82 10 1234 5678 or me@example.com"), ["전화번호", "이메일"]);

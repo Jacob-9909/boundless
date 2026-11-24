@@ -2,11 +2,11 @@ import type { CSSProperties, ReactNode } from "react";
 import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
 import { Token } from "@astryxdesign/core/Token";
-import type { Tag } from "@/lib/boards";
-import type { Lang, T } from "@/lib/i18n";
-import { PAGE, type PostRow } from "@/lib/posts";
-import { NavTabs } from "./NavTabs";
-import { Notice, PostCard } from "./ui";
+import type { Tag } from "@/features/posts/boards";
+import type { Lang, T } from "@/features/i18n/i18n";
+import { PAGE, type PostRow } from "@/features/posts/posts";
+import { NavTabs } from "../../components/NavTabs";
+import { Notice, PostCard } from "../../components/ui";
 
 export type Sort = "new" | "likes" | "waiting";
 export const parseSort = (v: unknown): Sort => (v === "likes" || v === "waiting" ? v : "new");

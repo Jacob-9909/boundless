@@ -1,5 +1,5 @@
 // Animal avatars drawn for Boundless (flat shapes on a 100x100 grid, no outlines), so anyone who would rather not be
-// a person can be a cat or a penguin. No imports: src/lib/avatar.ts turns these into data URIs.
+// a person can be a cat or a penguin. No imports: src/features/avatar/avatar.ts turns these into data URIs.
 
 const INK = "#1f1a17";
 const eye = (x: number, y: number, r = 3.4) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${INK}"/><circle cx="${x + 1}" cy="${y - 1.1}" r="1.1" fill="#fff"/>`;

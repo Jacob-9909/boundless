@@ -6,9 +6,9 @@ import { Card } from "@astryxdesign/core/Card";
 import { Skeleton } from "@astryxdesign/core/Skeleton";
 import { Token } from "@astryxdesign/core/Token";
 import { aiSummary, type SummaryView } from "@/app/actions";
-import { Icon } from "./Icon";
-import { useT } from "./I18n";
-import { Linkify } from "./RichText";
+import { Icon } from "../../components/Icon";
+import { useT } from "../i18n/I18nProvider";
+import { Linkify } from "../../components/RichText";
 
 const head = "mt-4 text-xs font-bold opacity-70";
 

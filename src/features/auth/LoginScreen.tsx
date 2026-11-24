@@ -11,12 +11,12 @@ import { Link as TextLink } from "@astryxdesign/core/Link";
 import { Selector } from "@astryxdesign/core/Selector";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { completeSignup, demoLogin, sendCode, setLang, verifyCode } from "@/app/actions";
-import { CULTURES, DEFAULT_CULTURE, cultureOf, themeVars, type Culture } from "@/lib/cultures";
-import { LANG_NAMES, toLang, type Lang } from "@/lib/i18n";
-import { useT } from "./I18n";
-import { Icon } from "./Icon";
-import { LangMenu } from "./LangMenu";
-import { CultureScene, Flag, Logo, NationalityChip } from "./ui";
+import { CULTURES, DEFAULT_CULTURE, cultureOf, themeVars, type Culture } from "@/features/culture/cultures";
+import { LANG_NAMES, toLang, type Lang } from "@/features/i18n/i18n";
+import { useT } from "../i18n/I18nProvider";
+import { Icon } from "../../components/Icon";
+import { LangMenu } from "../i18n/LangMenu";
+import { CultureScene, Flag, Logo, NationalityChip } from "../../components/ui";
 
 type Step = "email" | "code" | "profile";
 const PICKER: Culture[] = [...CULTURES, DEFAULT_CULTURE];

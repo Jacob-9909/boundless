@@ -25,14 +25,14 @@ import {
   type Animal,
   type Look,
   type Person,
-} from "@/lib/avatar";
+} from "@/features/avatar/avatar";
 import { Button } from "@astryxdesign/core/Button";
 import { Card } from "@astryxdesign/core/Card";
 import { CheckboxInput } from "@astryxdesign/core/CheckboxInput";
 import { SegmentedControl, SegmentedControlItem } from "@astryxdesign/core/SegmentedControl";
 import { Slider } from "@astryxdesign/core/Slider";
-import { Icon, type IconName } from "./Icon";
-import { useT } from "./I18n";
+import { Icon, type IconName } from "../../components/Icon";
+import { useT } from "../i18n/I18nProvider";
 
 const legend = "mb-1.5 block text-sm font-bold";
 // ponytail: swatches and parts stay plain aria-pressed buttons. Astryx has no swatch picker, ToggleButton's icon

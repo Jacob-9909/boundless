@@ -28,7 +28,7 @@
 ## 보안 설계 요약
 
 - 요청별 nonce 기반 CSP와 보안 헤더 (`src/proxy.ts`, `next.config.ts`)
-- 서명 쿠키 세션과 서버 측 전체 세션 무효화 (`src/lib/auth.ts`)
+- 서명 쿠키 세션과 서버 측 전체 세션 무효화 (`src/features/auth/auth.ts`)
 - 로그인 코드·글·댓글 요청 횟수 제한, IP는 해시로만 기록
 - 비공개 사진 저장소와 공개 규칙 검사 (`/api/img`)
 - 서버 오류 로그에 요청 헤더와 쿠키를 남기지 않음 (`src/instrumentation.ts`)

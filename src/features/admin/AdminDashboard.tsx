@@ -3,12 +3,12 @@
 // instead of a legend; every bar has a hover tooltip and each chart has a screen-reader table.
 import type { ReactNode } from "react";
 import { Card } from "@astryxdesign/core/Card";
-import { Icon } from "./Icon";
-import { Flag } from "./ui";
-import type { adminStats } from "@/lib/admin";
-import { boardOf } from "@/lib/boards";
-import { ALERTS } from "@/lib/guide";
-import { countryName, type Lang, type T } from "@/lib/i18n";
+import { Icon } from "../../components/Icon";
+import { Flag } from "../../components/ui";
+import type { adminStats } from "@/features/admin/admin";
+import { boardOf } from "@/features/posts/boards";
+import { ALERTS } from "@/features/guide/guide";
+import { countryName, type Lang, type T } from "@/features/i18n/i18n";
 
 type Stats = Awaited<ReturnType<typeof adminStats>>;
 export type SystemState = { ai: boolean; mail: boolean; demo: boolean; build: string };

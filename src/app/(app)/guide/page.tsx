@@ -1,7 +1,7 @@
 import { Banner } from "@astryxdesign/core/Banner";
 import { HelpItem, PageHead } from "@/components/ui";
-import { getT } from "@/lib/auth";
-import { APPS, HOTLINES, SITES } from "@/lib/guide";
+import { getT } from "@/features/auth/auth";
+import { APPS, HOTLINES, SITES } from "@/features/guide/guide";
 
 export const metadata = { title: "Official help" };
 

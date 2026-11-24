@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, use } from "react";
-import { translatorOf, type Dict } from "@/lib/i18n";
+import { translatorOf, type Dict } from "@/features/i18n/i18n";
 
 const Lines = createContext<Dict>({});
 

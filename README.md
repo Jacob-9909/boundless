@@ -135,7 +135,7 @@ flowchart LR
 | 파일 | Vercel Blob(비공개). 없으면 Postgres에 저장 |
 | 인증 | 이메일 6자리 코드 + 서명 쿠키 세션, 세션 버전으로 모든 기기 로그아웃 |
 | AI | NVIDIA NIM (`nvidia/nemotron-3.5-super-vl-120b-a12b`) |
-| 번역 | 화면 문구는 언어별 사전 16개(`src/lib/en.ts`, `src/lib/locales/*.json`), 글은 MyMemory API + DB 캐시 |
+| 번역 | 화면 문구는 언어별 사전 16개(`src/features/i18n/en.ts`, `src/features/i18n/locales/*.json`), 글은 MyMemory API + DB 캐시 |
 | 인프라 | Vercel (호스팅, Cron), GitHub Actions (CI/CD, 백업, 가동 확인), Dependabot |
 
 ## 저장소 구조
@@ -149,8 +149,19 @@ flowchart LR
 │   │   ├── (app)/           로그인 뒤 화면: 피드, 게시판, 라운지, 검색, 글, 글쓰기, 설정, 운영
 │   │   ├── api/             health, cron/cleanup, img
 │   │   └── actions.ts       모든 쓰기 동작 (Server Actions)
-│   ├── components/          공용 UI
-│   ├── lib/                 도메인 로직: 세션·역할, 게시글, AI, 번역, 사진, 로그, 문화 테마
+│   ├── features/            기능별 모듈: 로직과 그 기능의 화면 컴포넌트를 한 폴더에
+│   │   ├── auth/            세션·역할, 로그인 코드 메일, 로그인 화면
+│   │   ├── posts/           글·게시판 조회, 사진, 금칙어·개인정보 검사, 피드, 글쓰기·댓글·신고 폼
+│   │   ├── translation/     글 번역 (MyMemory)과 번역 버튼
+│   │   ├── ai/              NVIDIA NIM 분류·요약·점검과 AI 요약 카드
+│   │   ├── avatar/          아바타 부품과 꾸미기 화면
+│   │   ├── culture/         나라별 문화 테마, 장면, 랜드마크
+│   │   ├── i18n/            화면 언어 사전 16개와 언어 메뉴
+│   │   ├── admin/           운영 대시보드 지표와 화면
+│   │   ├── notifications/   알림함
+│   │   └── guide/           공식 기관 안내와 심사용 체험 가이드
+│   ├── components/          여러 기능이 같이 쓰는 UI: 디자인 요소, 아이콘, 입력 칸, 내비게이션
+│   ├── lib/                 공용 인프라: DB 연결, TLS, 오류 로그
 │   ├── themes/              Astryx 테마
 │   ├── proxy.ts             CSP와 보안 헤더
 │   └── instrumentation.ts   서버 오류 보고

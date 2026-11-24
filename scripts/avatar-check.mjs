@@ -21,7 +21,7 @@ import {
   parseLook,
   SKINS,
   TOPS,
-} from "../src/lib/avatar.ts";
+} from "../src/features/avatar/avatar.ts";
 
 assert.deepEqual(parseLook(DEFAULT_PERSON), DEFAULT_PERSON);
 assert.deepEqual(parseLook(DEFAULT_ANIMAL), DEFAULT_ANIMAL);

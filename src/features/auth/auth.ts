@@ -2,9 +2,9 @@ import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
 import { cookies, headers } from "next/headers";
 import { cache } from "react";
 import { q } from "@/lib/db";
-import { CULTURES } from "@/lib/cultures";
-import { isLang, pickLang, toLang, type Lang } from "@/lib/i18n";
-import { translator } from "@/lib/messages";
+import { CULTURES } from "@/features/culture/cultures";
+import { isLang, pickLang, toLang, type Lang } from "@/features/i18n/i18n";
+import { translator } from "@/features/i18n/messages";
 
 const SESSION = "bl_session";
 const VERIFIED = "bl_verified"; // email proven by code, profile not created yet
@@ -18,7 +18,7 @@ export type User = {
   region: string | null;
   seen_at: Date;
   read_lang: string | null;
-  avatar: unknown; // Look (src/lib/avatar.ts) or null
+  avatar: unknown; // Look (src/features/avatar/avatar.ts) or null
   avatar_public: boolean;
   role: Role;
   session_version: number;

@@ -1,9 +1,9 @@
-// Machine-translates the English UI lines (src/lib/en.ts) into src/lib/locales/<lang>.json.
+// Machine-translates the English UI lines (src/features/i18n/en.ts) into src/features/i18n/locales/<lang>.json.
 // Only lines a locale lacks are sent, so re-running after adding keys translates just the new ones.
 // Usage: node scripts/i18n-translate.mjs [lang ...]   (Node 23.6+ reads en.ts directly)
 // ponytail: Google's free web endpoint, no key. Swap in a paid API (or native reviewers) before launch.
 import { readFileSync, writeFileSync } from "node:fs";
-import { EN } from "../src/lib/en.ts";
+import { EN } from "../src/features/i18n/en.ts";
 
 const ALL = ["zh", "vi", "th", "uz", "mn", "fil", "ne", "id", "ja", "km", "kk", "ru", "fr", "hi"];
 const API = { zh: "zh-CN", fil: "tl" };
@@ -45,7 +45,7 @@ function restore(s, names) {
 }
 
 for (const lang of langs) {
-  const file = `src/lib/locales/${lang}.json`;
+  const file = `src/features/i18n/locales/${lang}.json`;
   const old = JSON.parse(readFileSync(file, "utf8"));
   const todo = Object.keys(EN).filter((k) => !old[k]);
   const got = {};
