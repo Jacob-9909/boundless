@@ -46,10 +46,10 @@ BASE_URL=http://localhost:3000 npm run e2e   # 개발 서버를 띄운 상태에
 ## 규칙
 
 - **화면 문구:** 새 문구는 `t("한국어 문장")`으로 쓰고 `src/lib/en.ts`에 영어를 추가합니다. 다른 언어는 `src/lib/locales/*.json`에 넣습니다. `npm run i18n`이 빠진 줄을 알려 줍니다.
-- **스키마:** `db/migrations/`에 다음 번호로 새 파일을 추가합니다. 이미 적용된 파일은 고치지 않고, 컬럼 삭제·이름 변경은 expand/contract 두 단계로 나눕니다. 자세한 규칙은 [docs/DEPLOY.md](docs/DEPLOY.md#스키마-변경-마이그레이션)에 있습니다.
-- **UI:** Astryx 컴포넌트를 먼저 씁니다([docs/ASTRYX.md](docs/ASTRYX.md)).
+- **스키마:** `db/migrations/`에 다음 번호로 새 파일을 추가합니다. 이미 적용된 파일은 고치지 않고, 컬럼 삭제·이름 변경은 expand/contract 두 단계로 나눕니다. 자세한 규칙은 [docs/DEPLOY.md](../docs/DEPLOY.md#스키마-변경-마이그레이션)에 있습니다.
+- **UI:** Astryx 컴포넌트를 먼저 씁니다([docs/ASTRYX.md](../docs/ASTRYX.md)).
 - **비밀값:** `.env*` 파일과 토큰은 커밋하지 않습니다. 새 환경 변수는 `.env.example`과 `docs/DEPLOY.md` 표에 함께 적습니다.
-- **Next.js:** 이 프로젝트의 Next.js 버전은 이전 버전과 API가 다릅니다. 코드를 쓰기 전에 `node_modules/next/dist/docs/`를 확인합니다([AGENTS.md](AGENTS.md)).
+- **Next.js:** 이 프로젝트의 Next.js 버전은 이전 버전과 API가 다릅니다. 코드를 쓰기 전에 `node_modules/next/dist/docs/`를 확인합니다([AGENTS.md](../AGENTS.md)).
 
 ## 보안 문제
 

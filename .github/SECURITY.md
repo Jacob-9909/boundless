@@ -35,4 +35,4 @@
 - 운영 DB 백업은 AES-256으로 암호화하고 7일 뒤 삭제 (`.github/workflows/backup.yml`)
 - Dependabot과 GitGuardian으로 의존성·비밀값 노출 점검
 
-자세한 운영 구성은 [docs/DEPLOY.md](docs/DEPLOY.md)에 있습니다.
+자세한 운영 구성은 [docs/DEPLOY.md](../docs/DEPLOY.md)에 있습니다.

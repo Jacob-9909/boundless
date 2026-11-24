@@ -1,5 +1,5 @@
 # /etc/systemd/system/boundless.service
-# Install: sudo cp infra/vm/boundless.service /etc/systemd/system/ && sudo systemctl daemon-reload && sudo systemctl enable --now boundless
+# Install: sudo cp infra/boundless.service /etc/systemd/system/ && sudo systemctl daemon-reload && sudo systemctl enable --now boundless
 [Unit]
 Description=Boundless (Next.js standalone)
 After=network-online.target postgresql.service

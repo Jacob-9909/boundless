@@ -165,7 +165,7 @@ ssh -fN -L 5434:127.0.0.1:5432 oracle_vm
 
 Vercel 대신 직접 운영하는 서버로 옮길 때의 절차다.
 
-어느 클라우드든(AWS Lightsail/EC2, GCP, Azure, NCP, OCI) 리눅스 VM 한 대면 된다. 저장소의 `infra/vm/`이 그 구성을 전제로 한다.
+어느 클라우드든(AWS Lightsail/EC2, GCP, Azure, NCP, OCI) 리눅스 VM 한 대면 된다. 저장소의 `infra/`이 그 구성을 전제로 한다.
 
 ### 1. 서버 준비
 
@@ -190,10 +190,10 @@ CREATE SCHEMA boundless AUTHORIZATION boundless;
 ```bash
 git clone git@github.com:Jacob-9909/boundless.git ~/boundless/src
 cp ~/boundless/src/.env.example ~/boundless/.env   # 아래 표대로 채우기, chmod 600
-sudo cp ~/boundless/src/infra/vm/boundless.service /etc/systemd/system/
+sudo cp ~/boundless/src/infra/boundless.service /etc/systemd/system/
 # 사용자명이 ubuntu 가 아니면 서비스 파일의 User / 경로를 고친다
 sudo systemctl daemon-reload && sudo systemctl enable boundless
-~/boundless/src/infra/vm/deploy.sh                    # 첫 빌드 + 기동 + /api/health 확인
+~/boundless/src/infra/deploy.sh                    # 첫 빌드 + 기동 + /api/health 확인
 ```
 
 | 환경변수 | 값 |
@@ -242,7 +242,7 @@ boundless.example.com {
 ```
 
 - Secrets: `VM_SSH_KEY`(배포 전용 키), `VM_KNOWN_HOSTS`(`ssh-keyscan <host>`), `VM_HOST`
-- 서버 `~/.ssh/authorized_keys`에서 그 키를 `command="~/boundless/src/infra/vm/deploy.sh",no-port-forwarding,no-pty ssh-ed25519 ...`로 제한
+- 서버 `~/.ssh/authorized_keys`에서 그 키를 `command="~/boundless/src/infra/deploy.sh",no-port-forwarding,no-pty ssh-ed25519 ...`로 제한
 
 이후 `main` 푸시 → CI 통과 → SSH로 `deploy.sh` 실행 → health 실패 시 직전 빌드로 롤백.
 
